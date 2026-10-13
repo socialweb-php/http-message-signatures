@@ -1,0 +1,17 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "timeout": 10,
+    "logs": {
+        "text": "build/logs/infection.log",
+        "summary": "build/logs/infection-summary.log"
+    },
+    "tmpDir": "build/cache/infection",
+    "mutators": {
+        "@default": true
+    }
+}
