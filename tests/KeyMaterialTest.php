@@ -20,8 +20,6 @@ use function openssl_pkey_get_private;
 use function openssl_pkey_get_public;
 use function openssl_pkey_new;
 use function openssl_verify;
-use function print_r;
-use function str_contains;
 use function str_repeat;
 use function strlen;
 use function substr;
@@ -353,10 +351,7 @@ class KeyMaterialTest extends TestCase
             KeyMaterial::fromPrivatePem($private, null);
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
-            $trace = print_r($exception->getTrace(), true);
-
-            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
-            $this->assertFalse(str_contains($trace, $line));
+            $this->assertTraceHidesSecrets($exception, $line);
         } finally {
             ini_set('zend.exception_ignore_args', $previous);
         }
@@ -380,11 +375,7 @@ class KeyMaterialTest extends TestCase
             KeyMaterial::fromPrivatePem($encrypted, 'a passphrase to keep');
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
-            $trace = print_r($exception->getTrace(), true);
-
-            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
-            $this->assertFalse(str_contains($trace, $line));
-            $this->assertFalse(str_contains($trace, 'a passphrase to keep'));
+            $this->assertTraceHidesSecrets($exception, $line, 'a passphrase to keep');
         } finally {
             ini_set('zend.exception_ignore_args', $previous);
         }

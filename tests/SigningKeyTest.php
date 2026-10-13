@@ -104,10 +104,7 @@ class SigningKeyTest extends TestCase
             SigningKey::fromSharedSecret('k', 'the secret bytes', [Algorithm::RsaV15Sha256]);
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
-            $trace = print_r($exception->getTrace(), true);
-
-            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
-            $this->assertFalse(str_contains($trace, 'the secret bytes'));
+            $this->assertTraceHidesSecrets($exception, 'the secret bytes');
         } finally {
             ini_set('zend.exception_ignore_args', $previous);
         }
