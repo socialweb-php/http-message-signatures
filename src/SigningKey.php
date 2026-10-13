@@ -55,8 +55,12 @@ final readonly class SigningKey
      *     `keyid` parameter
      * @param list<Algorithm> | null $permittedAlgorithms
      */
-    private function __construct(public string $keyId, private KeyMaterial $material, ?array $permittedAlgorithms)
-    {
+    private function __construct(
+        public string $keyId,
+        #[SensitiveParameter]
+        private KeyMaterial $material,
+        ?array $permittedAlgorithms,
+    ) {
         $this->type = $material->type;
         $this->permittedAlgorithms = $material->permittedAlgorithms($permittedAlgorithms);
     }

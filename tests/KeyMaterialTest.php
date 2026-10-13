@@ -11,6 +11,8 @@ use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
 use SocialWeb\Http\MessageSignatures\KeyMaterial;
 use SocialWeb\Http\MessageSignatures\KeyType;
 
+use function explode;
+use function ini_set;
 use function openssl_error_string;
 use function openssl_pkey_export;
 use function openssl_pkey_get_details;
@@ -18,6 +20,8 @@ use function openssl_pkey_get_private;
 use function openssl_pkey_get_public;
 use function openssl_pkey_new;
 use function openssl_verify;
+use function print_r;
+use function str_contains;
 use function str_repeat;
 use function strlen;
 use function substr;
@@ -338,6 +342,54 @@ class KeyMaterialTest extends TestCase
         $this->assertFalse($material->verify(Algorithm::HmacSha256, 'other', $signature));
     }
 
+    public function testKeepsAPrivatePemOutOfTheTraceOfAnUnsupportedKey(): void
+    {
+        [$private] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'secp521r1']);
+        $line = self::bodyLineOf($private);
+        $previous = ini_set('zend.exception_ignore_args', '0');
+        $this->assertNotFalse($previous);
+
+        try {
+            KeyMaterial::fromPrivatePem($private, null);
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $trace = print_r($exception->getTrace(), true);
+
+            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
+            $this->assertFalse(str_contains($trace, $line));
+        } finally {
+            ini_set('zend.exception_ignore_args', $previous);
+        }
+    }
+
+    public function testKeepsADecryptedPemAndItsPassphraseOutOfTheTraceOfAnUnsupportedKey(): void
+    {
+        $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'secp521r1']);
+        $this->assertNotFalse($key);
+        $plain = '';
+        openssl_pkey_export($key, $plain);
+        $this->assertIsString($plain);
+        $encrypted = '';
+        openssl_pkey_export($key, $encrypted, 'a passphrase to keep');
+        $this->assertIsString($encrypted);
+        $line = self::bodyLineOf($plain);
+        $previous = ini_set('zend.exception_ignore_args', '0');
+        $this->assertNotFalse($previous);
+
+        try {
+            KeyMaterial::fromPrivatePem($encrypted, 'a passphrase to keep');
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $trace = print_r($exception->getTrace(), true);
+
+            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
+            $this->assertFalse(str_contains($trace, $line));
+            $this->assertFalse(str_contains($trace, 'a passphrase to keep'));
+        } finally {
+            ini_set('zend.exception_ignore_args', $previous);
+        }
+    }
+
     /**
      * Leaves several distinct errors in OpenSSL's error queue, as a failed
      * verification of garbage does.
@@ -348,6 +400,17 @@ class KeyMaterialTest extends TestCase
         self::assertNotFalse($public);
         openssl_verify('base', str_repeat('x', 256), $public, 'sha512', OPENSSL_PKCS1_PSS_PADDING);
         self::assertNotFalse(openssl_error_string());
+    }
+
+    /**
+     * Returns one line from the Base64 body of a PEM
+     */
+    private static function bodyLineOf(string $pem): string
+    {
+        $line = explode("\n", $pem)[1];
+        self::assertGreaterThan(20, strlen($line));
+
+        return $line;
     }
 
     /**

@@ -51,8 +51,11 @@ final readonly class VerificationKey
     /**
      * @param list<Algorithm> | null $permittedAlgorithms
      */
-    private function __construct(private KeyMaterial $material, ?array $permittedAlgorithms)
-    {
+    private function __construct(
+        #[SensitiveParameter]
+        private KeyMaterial $material,
+        ?array $permittedAlgorithms,
+    ) {
         $this->type = $material->type;
         $this->permittedAlgorithms = $material->permittedAlgorithms($permittedAlgorithms);
     }

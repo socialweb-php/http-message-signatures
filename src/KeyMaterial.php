@@ -297,8 +297,11 @@ final readonly class KeyMaterial
      * @throws InvalidArgument when the key is of a type the package does not
      *     implement
      */
-    private static function detectType(OpenSSLAsymmetricKey &$key, string $pem): KeyType
-    {
+    private static function detectType(
+        OpenSSLAsymmetricKey &$key,
+        #[SensitiveParameter]
+        string $pem,
+    ): KeyType {
         /** @var array{type: int, ec?: array{curve_name?: string}} $details */
         $details = openssl_pkey_get_details($key);
 

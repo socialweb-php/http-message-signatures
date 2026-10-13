@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures;
 
+use SensitiveParameter;
+
 use function base64_decode;
 use function base64_encode;
 use function chunk_split;
@@ -62,8 +64,10 @@ final class RsaPssKey
      * private key or a SubjectPublicKeyInfo public key whose algorithm is
      * id-RSASSA-PSS, or `null` for any other input
      */
-    public static function toPkcs1Pem(string $pem): ?string
-    {
+    public static function toPkcs1Pem(
+        #[SensitiveParameter]
+        string $pem,
+    ): ?string {
         if (preg_match('/-----BEGIN (PRIVATE KEY|PUBLIC KEY)-----(.*?)-----END \1-----/s', $pem, $matches) !== 1) {
             return null;
         }

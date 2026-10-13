@@ -11,6 +11,7 @@ use SocialWeb\Http\MessageSignatures\KeyType;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 
 use function base64_decode;
+use function ini_set;
 use function print_r;
 use function serialize;
 use function str_contains;
@@ -64,6 +65,24 @@ class VerificationKeyTest extends TestCase
         $this->expectExceptionMessage('Algorithm RsaV15Sha256 does not fit a key of type SharedSecret');
 
         VerificationKey::fromSharedSecret('secret', [Algorithm::RsaV15Sha256]);
+    }
+
+    public function testKeepsTheSecretOutOfTheTraceWhenTheListDoesNotFit(): void
+    {
+        $previous = ini_set('zend.exception_ignore_args', '0');
+        $this->assertNotFalse($previous);
+
+        try {
+            VerificationKey::fromSharedSecret('the secret bytes', [Algorithm::RsaV15Sha256]);
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $trace = print_r($exception->getTrace(), true);
+
+            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
+            $this->assertFalse(str_contains($trace, 'the secret bytes'));
+        } finally {
+            ini_set('zend.exception_ignore_args', $previous);
+        }
     }
 
     public function testVerifiesUnderAPermittedAlgorithm(): void

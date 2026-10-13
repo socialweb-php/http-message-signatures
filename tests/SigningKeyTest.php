@@ -11,6 +11,7 @@ use SocialWeb\Http\MessageSignatures\KeyType;
 use SocialWeb\Http\MessageSignatures\SigningKey;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 
+use function ini_set;
 use function openssl_pkey_export;
 use function openssl_pkey_get_private;
 use function print_r;
@@ -92,6 +93,24 @@ class SigningKeyTest extends TestCase
         $this->expectExceptionMessage('Algorithm HmacSha256 does not fit a key of type Ed25519');
 
         SigningKey::fromPem('k', self::rfc9421Key('test-key-ed25519.private.pem'), null, [Algorithm::HmacSha256]);
+    }
+
+    public function testKeepsTheSecretOutOfTheTraceWhenTheListDoesNotFit(): void
+    {
+        $previous = ini_set('zend.exception_ignore_args', '0');
+        $this->assertNotFalse($previous);
+
+        try {
+            SigningKey::fromSharedSecret('k', 'the secret bytes', [Algorithm::RsaV15Sha256]);
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $trace = print_r($exception->getTrace(), true);
+
+            $this->assertTrue(str_contains($trace, 'SensitiveParameterValue'));
+            $this->assertFalse(str_contains($trace, 'the secret bytes'));
+        } finally {
+            ini_set('zend.exception_ignore_args', $previous);
+        }
     }
 
     public function testSignsUnderAPermittedAlgorithmAndTheSignatureVerifies(): void
