@@ -25,15 +25,17 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures;
 
 /**
- * An example class to act as a starting point for developing your library
+ * The two signature forms this package produces and verifies
  */
-class Example
+enum Form: string
 {
     /**
-     * Returns a greeting statement using the provided name
+     * The form of the expired Internet-Draft draft-cavage-http-signatures-12
      */
-    public function greet(string $name = 'World'): string
-    {
-        return "Hello, {$name}!";
-    }
+    case Cavage = 'draft-cavage-http-signatures-12';
+
+    /**
+     * HTTP Message Signatures, RFC 9421
+     */
+    case Rfc9421 = 'rfc9421';
 }
