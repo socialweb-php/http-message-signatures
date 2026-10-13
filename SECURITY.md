@@ -31,7 +31,7 @@ this repository, we encourage you to notify us.
 
 | Version | In scope | Source code |
 | ------- | :------: | ----------- |
-| latest  | ✅        | https://github.com/socialweb/http-message-signatures |
+| latest  | ✅        | https://github.com/socialweb-php/http-message-signatures |
 
 ## How to Submit a Report
 
