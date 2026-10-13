@@ -49,12 +49,12 @@ final readonly class SigningOptions
     /**
      * A Dictionary key of RFC 8941 section 3.1.2
      */
-    private const string LABEL_PATTERN = '/^[a-z*][a-z0-9_.*-]*$/';
+    private const string LABEL_PATTERN = '/^[a-z*][a-z0-9_.*-]*\z/';
 
     /**
      * The characters an RFC 8941 String may hold
      */
-    private const string STRING_PATTERN = '/^[\x20-\x7e]*$/';
+    private const string STRING_PATTERN = '/^[\x20-\x7e]*\z/';
 
     /**
      * Component identifiers in signing order, or `null` for the form's default

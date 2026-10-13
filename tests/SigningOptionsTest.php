@@ -88,6 +88,18 @@ class SigningOptionsTest extends TestCase
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, label: ''),
             'The label "" is not a valid Dictionary key',
         ];
+        yield 'a label with a trailing newline' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, label: "sig1\n"),
+            "The label \"sig1\n\" is not a valid Dictionary key",
+        ];
+        yield 'a nonce with a trailing newline' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, nonce: "abc\n"),
+            'The nonce must hold only printable ASCII characters',
+        ];
+        yield 'a tag with a trailing newline' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, tag: "t\n"),
+            'The tag must hold only printable ASCII characters',
+        ];
         yield 'a negative expiry' => [
             static fn (): SigningOptions => new SigningOptions(
                 form: Form::Rfc9421,
