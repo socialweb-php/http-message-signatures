@@ -32,6 +32,7 @@ use Psr\Http\Message\MessageInterface;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
 use function array_map;
@@ -75,7 +76,8 @@ final class FieldSerializer
      * @return T
      *
      * @throws InvalidArgument when the message already has a signature with
-     *     the label, or when one of its two fields does not parse
+     *     the label, or when one of its two fields does not parse or holds a
+     *     line break
      *
      * @template T of MessageInterface
      */
@@ -114,6 +116,8 @@ final class FieldSerializer
                 0,
                 $error,
             );
+        } catch (Failure $failure) {
+            throw new InvalidArgument('Cannot sign the message: ' . $failure->detail, 0, $failure);
         }
     }
 }

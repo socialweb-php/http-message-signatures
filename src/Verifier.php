@@ -77,7 +77,7 @@ final class Verifier
     {
         $content = new Content($message);
         $context = new MessageContext($message, $relatedRequest);
-        $form = self::detectForm($context);
+        $form = self::detectForm($message);
 
         if ($form === null) {
             return new VerificationResult(
@@ -138,19 +138,23 @@ final class Verifier
      * Step 1 of the procedure: `Signature-Input` means RFC 9421, as the RFC's
      * appendix A advises; otherwise `Signature` or an `Authorization` field
      * with the `Signature` scheme means the draft
+     *
+     * Only the first word of `Authorization` is read here, as the message
+     * gives it; a line break later in the value is met when the field is
+     * taken as a component value.
      */
-    private static function detectForm(MessageContext $context): ?Form
+    private static function detectForm(MessageInterface $message): ?Form
     {
-        if ($context->hasField('Signature-Input')) {
+        if ($message->hasHeader('Signature-Input')) {
             return Form::Rfc9421;
         }
 
-        if ($context->hasField('Signature')) {
+        if ($message->hasHeader('Signature')) {
             return Form::Cavage;
         }
 
-        if ($context->hasField('Authorization')) {
-            return preg_match('/^signature\s/i', $context->field('Authorization')) === 1 ? Form::Cavage : null;
+        if ($message->hasHeader('Authorization')) {
+            return preg_match('/^signature\s/i', $message->getHeaderLine('Authorization')) === 1 ? Form::Cavage : null;
         }
 
         return null;
@@ -224,7 +228,13 @@ final class Verifier
                 continue;
             }
 
-            $mismatch = DigestField::check($identifier->name, $context->field($identifier->name), $content);
+            try {
+                $value = $context->field($identifier->name);
+            } catch (Failure $failure) {
+                return $result($failure->reason, $failure->detail);
+            }
+
+            $mismatch = DigestField::check($identifier->name, $value, $content);
 
             if ($mismatch !== null) {
                 return $result(FailureReason::DigestMismatch, $mismatch);

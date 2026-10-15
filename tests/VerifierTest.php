@@ -12,6 +12,7 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\RequestInterface;
 use RuntimeException;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
@@ -31,6 +32,7 @@ use function fopen;
 use function openssl_pkey_get_details;
 use function openssl_pkey_new;
 use function strlen;
+use function strtolower;
 
 use const OPENSSL_KEYTYPE_EC;
 
@@ -206,6 +208,30 @@ class VerifierTest extends TestCase
             FailureReason::NoSignature,
             self::verify(self::request()->withHeader('Authorization', 'Bearer signature token'))->reason,
         );
+    }
+
+    public function testAnAuthorizationFieldOfTheSignatureSchemeWithALineBreakIsTheDraftForm(): void
+    {
+        $message = $this->withField(self::request(), 'Authorization', "Signature a\r\nb");
+
+        $result = self::verify($message);
+
+        $this->assertFalse($result->verified);
+        $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
+        $this->assertSame('the draft form is not implemented', $result->detail);
+        $this->assertSame(Form::Cavage, $result->form);
+    }
+
+    public function testAnAuthorizationFieldOfAnotherSchemeWithALineBreakIsNoSignature(): void
+    {
+        $message = $this->withField(self::request(), 'Authorization', "Bearer x\r\ny");
+
+        $result = self::verify($message);
+
+        $this->assertFalse($result->verified);
+        $this->assertSame(FailureReason::NoSignature, $result->reason);
+        $this->assertSame('the message has neither Signature-Input nor Signature', $result->detail);
+        $this->assertNull($result->form);
     }
 
     /**
@@ -500,6 +526,24 @@ class VerifierTest extends TestCase
         $this->assertSame([], $resolver->resolved);
     }
 
+    public function testACoveredDigestFieldWithALineBreakIsAResult(): void
+    {
+        $resolver = self::resolver();
+        $signed = self::signed(self::request('{"hello": "world"}'), ['@method', '@target-uri', 'content-digest;bs']);
+        $message = $this->withField($signed, 'Content-Digest', $signed->getHeaderLine('Content-Digest') . "\r\nx");
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertFalse($result->verified);
+        $this->assertSame(FailureReason::MissingComponent, $result->reason);
+        $this->assertSame(
+            'the value of content-digest holds a line break, which a component value cannot',
+            $result->detail,
+        );
+        $this->assertSame('sig1', $result->label);
+        $this->assertSame([], $resolver->resolved);
+    }
+
     public function testAKeyTheResolverDoesNotHaveIsNotFound(): void
     {
         $resolver = new ArrayKeyResolver([]);
@@ -745,6 +789,34 @@ class VerifierTest extends TestCase
             $this->assertStringStartsWith('The message body must be seekable', $exception->getMessage());
             $this->assertSame([], $resolver->resolved);
         }
+    }
+
+    /**
+     * A PSR-7 implementation that, unlike nyholm/psr7, lets a line break into
+     * a field value: the request as given, with one field set to the value
+     */
+    private function withField(Request $request, string $name, string $value): RequestInterface
+    {
+        $message = $this->createStub(RequestInterface::class);
+        $message->method('getBody')->willReturn($request->getBody());
+        $message->method('getMethod')->willReturn($request->getMethod());
+        $message->method('getUri')->willReturn($request->getUri());
+        $message->method('getRequestTarget')->willReturn($request->getRequestTarget());
+        $message->method('hasHeader')->willReturnCallback(
+            static fn (string $field): bool => strtolower($field) === strtolower($name) || $request->hasHeader($field),
+        );
+        $message->method('getHeader')->willReturnCallback(
+            static fn (string $field): array => strtolower($field) === strtolower($name)
+                ? [$value]
+                : $request->getHeader($field),
+        );
+        $message->method('getHeaderLine')->willReturnCallback(
+            static fn (string $field): string => strtolower($field) === strtolower($name)
+                ? $value
+                : $request->getHeaderLine($field),
+        );
+
+        return $message;
     }
 
     private static function generatedP256Key(): VerificationKey

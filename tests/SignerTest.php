@@ -11,10 +11,12 @@ use Ergebnis\Clock\FrozenClock;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\Stream;
+use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
@@ -25,6 +27,7 @@ use function base64_decode;
 use function fopen;
 use function strlen;
 use function strpos;
+use function strtolower;
 use function substr;
 use function trim;
 
@@ -318,6 +321,40 @@ class SignerTest extends TestCase
         $this->expectExceptionMessage('The message already has a signature with the label "sig1"');
 
         self::signer()->sign($once, self::key('test-key-rsa'), new SigningOptions(form: Form::Rfc9421));
+    }
+
+    public function testRefusesAnExistingSignatureInputFieldWithALineBreak(): void
+    {
+        $request = self::request();
+        $message = $this->createStub(RequestInterface::class);
+        $message->method('getBody')->willReturn($request->getBody());
+        $message->method('getMethod')->willReturn($request->getMethod());
+        $message->method('getUri')->willReturn($request->getUri());
+        $message->method('hasHeader')->willReturnCallback(
+            static fn (string $field): bool => strtolower($field) === 'signature-input' || $request->hasHeader($field),
+        );
+        $message->method('getHeader')->willReturnCallback(
+            static fn (string $field): array => strtolower($field) === 'signature-input'
+                ? ["sig0=();created=1\r\nx"]
+                : $request->getHeader($field),
+        );
+
+        try {
+            self::signer()->sign(
+                $message,
+                self::key(),
+                new SigningOptions(form: Form::Rfc9421, coveredComponents: ['@method', '@target-uri']),
+            );
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $this->assertSame(
+                'Cannot sign the message: the value of signature-input holds a line break, which a component value'
+                . ' cannot',
+                $exception->getMessage(),
+            );
+            $this->assertSame(0, $exception->getCode());
+            $this->assertInstanceOf(Failure::class, $exception->getPrevious());
+        }
     }
 
     public function testRefusesTheDraftFormUntilItIsImplemented(): void
