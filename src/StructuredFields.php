@@ -29,6 +29,7 @@ use Bakame\Http\StructuredFields\Ietf;
 use Bakame\Http\StructuredFields\InnerList;
 use Bakame\Http\StructuredFields\Item;
 use Bakame\Http\StructuredFields\OuterList;
+use Bakame\Http\StructuredFields\Parameters;
 use Bakame\Http\StructuredFields\SyntaxError;
 
 use function restore_error_handler;
@@ -61,7 +62,23 @@ final class StructuredFields
         }
     }
 
-    public static function serialize(Dictionary | OuterList | InnerList | Item $value): string
+    /**
+     * @param string $value the parameters, starting with a semicolon
+     *
+     * @throws SyntaxError when the value is not a list of parameters
+     */
+    public static function parseParameters(string $value): Parameters
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return Parameters::fromHttpValue($value, Ietf::Rfc8941);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    public static function serialize(Dictionary | OuterList | InnerList | Item | Parameters $value): string
     {
         return $value->toHttpValue(Ietf::Rfc8941);
     }

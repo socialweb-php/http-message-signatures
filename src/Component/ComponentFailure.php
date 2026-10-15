@@ -24,10 +24,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures\Component;
 
-use RuntimeException;
-use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
-use SocialWeb\Http\MessageSignatures\FailureReason;
-use Throwable;
+use SocialWeb\Http\MessageSignatures\Failure;
 
 /**
  * Raised inside the package when a component value cannot be taken from the
@@ -36,13 +33,6 @@ use Throwable;
  *
  * @internal
  */
-final class ComponentFailure extends RuntimeException implements MessageSignaturesException
+final class ComponentFailure extends Failure
 {
-    public function __construct(
-        public readonly FailureReason $reason,
-        public readonly string $detail,
-        ?Throwable $previous = null,
-    ) {
-        parent::__construct($reason->name . ': ' . $detail, 0, $previous);
-    }
 }
