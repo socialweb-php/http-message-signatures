@@ -31,12 +31,14 @@ use Bakame\Http\StructuredFields\SyntaxError;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
 use function array_map;
 use function implode;
 use function in_array;
+use function preg_match;
 use function sprintf;
 use function strpos;
 use function strtolower;
@@ -60,6 +62,13 @@ final class MessageContext
      * `key` parameters
      */
     private const array DICTIONARY_FIELDS = ['content-digest', 'signature', 'signature-input', 'accept-signature'];
+
+    /**
+     * The default port of each scheme, left out of `@authority` and
+     * `@target-uri` whatever the URI reports, as RFC 9110 section 4.2.3
+     * normalizes
+     */
+    private const array DEFAULT_PORTS = ['http' => 80, 'https' => 443];
 
     public function __construct(
         private readonly MessageInterface $message,
@@ -118,11 +127,12 @@ final class MessageContext
      *
      * @param string $name the field name in any case
      *
-     * @throws ComponentFailure `MissingComponent` when the field is absent
+     * @throws ComponentFailure `MissingComponent` when the field is absent or
+     *     a line holds a line break
      */
     public function field(string $name): string
     {
-        return implode(', ', $this->fieldLines($name));
+        return self::withoutLineBreak(implode(', ', $this->fieldLines($name)), strtolower($name));
     }
 
     /**
@@ -177,9 +187,16 @@ final class MessageContext
      * Returns the value of a derived component of RFC 9421 section 2.2 that
      * takes no parameter
      *
+     * `@target-uri` is the target URI as RFC 9110 section 7.1 defines it and
+     * a server reconstructs it: the scheme, the authority as `@authority`
+     * gives it, the path with an empty path written as `/`, and the query;
+     * user information and the fragment never reach a server and are left
+     * out.
+     *
      * @throws ComponentFailure `UnsupportedSignature` for a name the package
      *     does not implement or a component asked of the wrong message type,
-     *     and `MissingComponent` when the message cannot supply the value
+     *     and `MissingComponent` when the message cannot supply the value or
+     *     the value holds a line break
      */
     public function derived(string $name): string
     {
@@ -194,13 +211,13 @@ final class MessageContext
         $request = $this->request($name);
         $uri = $request->getUri();
 
-        return match ($name) {
+        $value = match ($name) {
             '@method' => $request->getMethod(),
-            '@target-uri' => (string) $uri,
+            '@target-uri' => $this->targetUri($request),
             '@authority' => $this->authority($request),
             '@scheme' => $this->scheme($request),
             '@request-target' => $request->getRequestTarget(),
-            '@path' => $uri->getPath() === '' ? '/' : $uri->getPath(),
+            '@path' => self::path($uri),
             '@query' => '?' . $uri->getQuery(),
             '@query-param' => throw new ComponentFailure(
                 FailureReason::UnsupportedSignature,
@@ -211,6 +228,8 @@ final class MessageContext
                 sprintf('the derived component %s is not implemented', $name),
             ),
         };
+
+        return self::withoutLineBreak($value, $name);
     }
 
     /**
@@ -258,7 +277,8 @@ final class MessageContext
      * lowercased, a space, and the request target as is, or with its query
      * string removed
      *
-     * @throws ComponentFailure `UnsupportedSignature` when asked of a response
+     * @throws ComponentFailure `UnsupportedSignature` when asked of a response,
+     *     and `MissingComponent` when the value holds a line break
      */
     public function cavageRequestTarget(bool $includeQuery = true): string
     {
@@ -270,7 +290,7 @@ final class MessageContext
             $target = substr($target, 0, $question);
         }
 
-        return strtolower($request->getMethod()) . ' ' . $target;
+        return self::withoutLineBreak(strtolower($request->getMethod()) . ' ' . $target, '(request-target)');
     }
 
     /**
@@ -328,6 +348,10 @@ final class MessageContext
         return $this->message;
     }
 
+    /**
+     * The host lowercased, with the port only when it is not the scheme's
+     * default, whatever the URI reports for it
+     */
     private function authority(RequestInterface $request): string
     {
         $uri = $request->getUri();
@@ -339,7 +363,44 @@ final class MessageContext
 
         $port = $uri->getPort();
 
-        return $port === null ? $host : $host . ':' . $port;
+        if ($port === null || $port === (self::DEFAULT_PORTS[strtolower($uri->getScheme())] ?? null)) {
+            return $host;
+        }
+
+        return $host . ':' . $port;
+    }
+
+    private function targetUri(RequestInterface $request): string
+    {
+        $uri = $request->getUri();
+        $authority = $this->authority($request);
+
+        return $this->scheme($request) . '://' . $authority . self::path($uri)
+            . ($uri->getQuery() === '' ? '' : '?' . $uri->getQuery());
+    }
+
+    private static function path(UriInterface $uri): string
+    {
+        return $uri->getPath() === '' ? '/' : $uri->getPath();
+    }
+
+    /**
+     * A component value never holds a line break, as RFC 9421 section 2 and
+     * the draft's section 2.3 both require, since one would add a line to the
+     * signature base.
+     *
+     * @throws ComponentFailure `MissingComponent`
+     */
+    private static function withoutLineBreak(string $value, string $component): string
+    {
+        if (preg_match('/[\r\n]/', $value) === 1) {
+            throw new ComponentFailure(
+                FailureReason::MissingComponent,
+                sprintf('the value of %s holds a line break, which a component value cannot', $component),
+            );
+        }
+
+        return $value;
     }
 
     private function scheme(RequestInterface $request): string

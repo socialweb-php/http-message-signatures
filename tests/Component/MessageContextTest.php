@@ -275,6 +275,151 @@ class MessageContextTest extends TestCase
         );
     }
 
+    /**
+     * PSR-7 says `getPort()` SHOULD return `null` for the scheme's default
+     * port; an implementation that reports it anyway gets the same value.
+     *
+     * @return iterable<string, array{string, int | null, string, string}>
+     */
+    public static function reportedPortsProvider(): iterable
+    {
+        yield 'https with 443 reported' => ['https', 443, 'example.com', 'https://example.com/'];
+        yield 'http with 80 reported' => ['http', 80, 'example.com', 'http://example.com/'];
+        yield 'https with 80 reported' => ['https', 80, 'example.com:80', 'https://example.com:80/'];
+        yield 'http with 443 reported' => ['http', 443, 'example.com:443', 'http://example.com:443/'];
+        yield 'HTTPS in uppercase with 443 reported' => ['HTTPS', 443, 'example.com', 'https://example.com/'];
+        yield 'a scheme with no default port' => ['ws', 80, 'example.com:80', 'ws://example.com:80/'];
+        yield 'no port reported' => ['https', null, 'example.com', 'https://example.com/'];
+    }
+
+    #[DataProvider('reportedPortsProvider')]
+    public function testTheDefaultPortIsOmittedWhateverTheUriReports(
+        string $scheme,
+        ?int $port,
+        string $authority,
+        string $targetUri,
+    ): void {
+        $uri = $this->createStub(UriInterface::class);
+        $uri->method('getScheme')->willReturn($scheme);
+        $uri->method('getHost')->willReturn('example.com');
+        $uri->method('getPort')->willReturn($port);
+        $uri->method('getPath')->willReturn('');
+        $uri->method('getQuery')->willReturn('');
+        $request = $this->createStub(RequestInterface::class);
+        $request->method('getUri')->willReturn($uri);
+        $context = new MessageContext($request);
+
+        $this->assertSame($authority, $context->derived('@authority'));
+        $this->assertSame($targetUri, $context->derived('@target-uri'));
+    }
+
+    /**
+     * The target URI is the one RFC 9110 section 7.1 defines and a server
+     * reconstructs: an empty path is `/`, and user information and the
+     * fragment, which never reach a server, are left out.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function targetUrisProvider(): iterable
+    {
+        yield 'an empty path' => ['https://example.com', 'https://example.com/'];
+        yield 'an empty path with a query' => ['https://example.com?a=1', 'https://example.com/?a=1'];
+        yield 'user information' => ['https://user:secret@example.com/path', 'https://example.com/path'];
+        yield 'a fragment' => ['https://example.com/path?a=1#top', 'https://example.com/path?a=1'];
+        yield 'an uppercase scheme and host' => ['HTTPS://EXAMPLE.COM/Path', 'https://example.com/Path'];
+        yield 'a port that is not the default' => ['https://example.com:8443/', 'https://example.com:8443/'];
+        yield 'percent-encoding left as is' => ['https://example.com/a%20b?c=%41', 'https://example.com/a%20b?c=%41'];
+    }
+
+    #[DataProvider('targetUrisProvider')]
+    public function testTheTargetUriIsTheOneAServerReconstructs(string $uri, string $expected): void
+    {
+        $this->assertSame($expected, (new MessageContext(new Request('GET', $uri)))->derived('@target-uri'));
+    }
+
+    public function testTheTargetUriNeedsAnAuthority(): void
+    {
+        $this->expectException(ComponentFailure::class);
+        $this->expectExceptionMessage('MissingComponent: the request URI has no authority');
+
+        (new MessageContext(new Request('GET', '/path')))->derived('@target-uri');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function lineBreaksProvider(): iterable
+    {
+        yield 'a line feed' => ["\n"];
+        yield 'a carriage return' => ["\r"];
+    }
+
+    #[DataProvider('lineBreaksProvider')]
+    public function testAFieldLineWithALineBreakIsMissing(string $break): void
+    {
+        $message = $this->createStub(MessageInterface::class);
+        $message->method('hasHeader')->willReturn(true);
+        $message->method('getHeader')->willReturn(['one', 'two' . $break . 'three']);
+
+        try {
+            (new MessageContext($message))->field('X-Broken');
+            $this->fail('Expected a ComponentFailure');
+        } catch (ComponentFailure $failure) {
+            $this->assertSame(FailureReason::MissingComponent, $failure->reason);
+            $this->assertSame(
+                'the value of x-broken holds a line break, which a component value cannot',
+                $failure->detail,
+            );
+        }
+    }
+
+    #[DataProvider('lineBreaksProvider')]
+    public function testAMethodWithALineBreakIsMissing(string $break): void
+    {
+        $uri = $this->createStub(UriInterface::class);
+        $request = $this->createStub(RequestInterface::class);
+        $request->method('getUri')->willReturn($uri);
+        $request->method('getMethod')->willReturn('GET' . $break . 'X');
+        $request->method('getRequestTarget')->willReturn('/');
+
+        try {
+            (new MessageContext($request))->derived('@method');
+            $this->fail('Expected a ComponentFailure');
+        } catch (ComponentFailure $failure) {
+            $this->assertSame(FailureReason::MissingComponent, $failure->reason);
+            $this->assertSame(
+                'the value of @method holds a line break, which a component value cannot',
+                $failure->detail,
+            );
+        }
+
+        try {
+            (new MessageContext($request))->cavageRequestTarget();
+            $this->fail('Expected a ComponentFailure');
+        } catch (ComponentFailure $failure) {
+            $this->assertSame(FailureReason::MissingComponent, $failure->reason);
+            $this->assertSame(
+                'the value of (request-target) holds a line break, which a component value cannot',
+                $failure->detail,
+            );
+        }
+    }
+
+    #[DataProvider('lineBreaksProvider')]
+    public function testARequestTargetWithALineBreakIsMissing(string $break): void
+    {
+        $uri = $this->createStub(UriInterface::class);
+        $request = $this->createStub(RequestInterface::class);
+        $request->method('getUri')->willReturn($uri);
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getRequestTarget')->willReturn('/a' . $break . 'b');
+
+        $this->expectException(ComponentFailure::class);
+        $this->expectExceptionMessage('MissingComponent: the value of @request-target holds a line break');
+
+        (new MessageContext($request))->derived('@request-target');
+    }
+
     public function testAnEmptyPathIsASlashAndAnAbsentQueryIsAQuestionMark(): void
     {
         $context = new MessageContext(new Request('GET', 'https://example.com'));
