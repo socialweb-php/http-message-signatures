@@ -237,25 +237,25 @@ final class Verifier
             return $result(FailureReason::KeyNotFound, sprintf('the resolver has no key "%s"', $signature->keyId));
         }
 
-        [$algorithm, $reason, $detail] = self::check($signature, $key, $algorithm, $base);
+        [$chosen, $reason, $detail] = self::check($signature, $key, $algorithm, $base);
 
         if ($reason === null) {
-            return $result(null, '', $algorithm);
+            return $result(null, '', $chosen);
         }
 
         if (!$this->options->retryWithRefreshedKey || !self::aRotatedKeyCouldExplain($reason)) {
-            return $result($reason, $detail, $algorithm);
+            return $result($reason, $detail, $chosen);
         }
 
         $refreshed = $this->resolver->refresh($signature->keyId);
 
         if ($refreshed === null) {
-            return $result($reason, $detail, $algorithm, true);
+            return $result($reason, $detail, $chosen, true);
         }
 
-        [$algorithm, $reason, $detail] = self::check($signature, $refreshed, $algorithm, $base);
+        [$chosen, $reason, $detail] = self::check($signature, $refreshed, $algorithm, $base);
 
-        return $result($reason, $detail, $algorithm, true);
+        return $result($reason, $detail, $chosen, true);
     }
 
     /**

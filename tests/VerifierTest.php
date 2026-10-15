@@ -711,6 +711,26 @@ class VerifierTest extends TestCase
         $this->assertSame(Algorithm::HmacSha256, $result->algorithm);
     }
 
+    public function testARefreshedKeyChoosesItsOwnAlgorithmWhenAlgIsAbsent(): void
+    {
+        $message = self::request()
+            ->withHeader(
+                'Signature-Input',
+                'sig1=("date" "@authority" "content-type");created=1618884473;keyid="test-shared-secret"',
+            )
+            ->withHeader('Signature', 'sig1=:pxcQw6G3AjtMBQjwo8XzkZf/bws5LelbaMk5rGIGtE8=:');
+        $resolver = new ArrayKeyResolver(
+            ['test-shared-secret' => self::verificationKey()],
+            ['test-shared-secret' => self::verificationKey('test-shared-secret')],
+        );
+
+        $result = self::verify($message, new VerifierOptions(requireTarget: false), $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame(Algorithm::HmacSha256, $result->algorithm);
+        $this->assertTrue($result->keyRefreshed);
+    }
+
     public function testRefusesABodyThatCannotBeRewoundBeforeAnythingElse(): void
     {
         $pipe = fopen('php://stdin', 'r');
