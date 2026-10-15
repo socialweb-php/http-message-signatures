@@ -30,9 +30,16 @@ namespace SocialWeb\Http\MessageSignatures;
 enum KeyType
 {
     /**
-     * An RSA key of any size
+     * An RSA key of any size, encoded with the rsaEncryption algorithm
+     * identifier
      */
     case Rsa;
+
+    /**
+     * An RSA key encoded with the id-RSASSA-PSS algorithm identifier, which
+     * RFC 4055 section 3.3 restricts to RSASSA-PSS
+     */
+    case RsaPss;
 
     /**
      * An EC key on the curve P-256, which OpenSSL names `prime256v1`
@@ -64,6 +71,7 @@ enum KeyType
     {
         return match ($this) {
             self::Rsa => [Algorithm::RsaV15Sha256, Algorithm::RsaPssSha512],
+            self::RsaPss => [Algorithm::RsaPssSha512],
             self::EcP256 => [Algorithm::EcdsaP256Sha256],
             self::EcP384 => [Algorithm::EcdsaP384Sha384],
             self::Ed25519 => [Algorithm::Ed25519],
@@ -75,10 +83,14 @@ enum KeyType
      * Returns whether a key of this type can run the algorithm
      *
      * An RSA key can never run HMAC, so the downgrade of RFC 9421 section
-     * 7.3.6, an HMAC keyed with a public key, cannot happen.
+     * 7.3.6, an HMAC keyed with a public key, cannot happen. A key encoded
+     * for RSASSA-PSS can never run RSASSA-PKCS1-v1_5, as RFC 4055 requires.
      */
     public function accepts(Algorithm $algorithm): bool
     {
-        return $algorithm->keyType() === $this;
+        return match ($this) {
+            self::RsaPss => $algorithm === Algorithm::RsaPssSha512,
+            default => $algorithm->keyType() === $this,
+        };
     }
 }

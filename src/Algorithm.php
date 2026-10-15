@@ -80,19 +80,47 @@ enum Algorithm
                 self::HmacSha256 => 'hmac-sha256',
                 self::RsaPssSha512, self::EcdsaP256Sha256, self::EcdsaP384Sha384 => null,
             },
-            Form::Rfc9421 => match ($this) {
-                self::RsaV15Sha256 => 'rsa-v1_5-sha256',
-                self::RsaPssSha512 => 'rsa-pss-sha512',
-                self::Ed25519 => 'ed25519',
-                self::EcdsaP256Sha256 => 'ecdsa-p256-sha256',
-                self::EcdsaP384Sha384 => 'ecdsa-p384-sha384',
-                self::HmacSha256 => 'hmac-sha256',
-            },
+            Form::Rfc9421 => $this->rfc9421Name(),
         };
     }
 
     /**
-     * Returns the one key type this algorithm fits
+     * Returns the name this algorithm has in the RFC 9421 "HTTP Signature
+     * Algorithms" registry; every algorithm has one
+     */
+    public function rfc9421Name(): string
+    {
+        return match ($this) {
+            self::RsaV15Sha256 => 'rsa-v1_5-sha256',
+            self::RsaPssSha512 => 'rsa-pss-sha512',
+            self::Ed25519 => 'ed25519',
+            self::EcdsaP256Sha256 => 'ecdsa-p256-sha256',
+            self::EcdsaP384Sha384 => 'ecdsa-p384-sha384',
+            self::HmacSha256 => 'hmac-sha256',
+        };
+    }
+
+    /**
+     * Returns the algorithm that has the name in the form, or `null` for a
+     * name the form does not know
+     *
+     * Names are compared exactly, as RFC 9421 section 6.2 says: an identifier
+     * is a whole string and is never parsed.
+     */
+    public static function tryFromName(string $name, Form $form): ?self
+    {
+        foreach (self::cases() as $algorithm) {
+            if ($algorithm->name($form) === $name) {
+                return $algorithm;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the key type this algorithm fits; `RsaPssSha512` also fits
+     * `KeyType::RsaPss`, which `KeyType::accepts()` knows
      */
     public function keyType(): KeyType
     {

@@ -50,12 +50,35 @@ class AlgorithmTest extends TestCase
     }
 
     #[DataProvider('keyTypesProvider')]
-    public function testFitsExactlyOneKeyType(Algorithm $algorithm, KeyType $expected): void
+    public function testFitsOneKeyTypeAndRsaPssFitsThePssKeyToo(Algorithm $algorithm, KeyType $expected): void
     {
         $this->assertSame($expected, $algorithm->keyType());
 
         foreach (KeyType::cases() as $type) {
-            $this->assertSame($type === $expected, $type->accepts($algorithm));
+            $fits = $type === $expected || ($type === KeyType::RsaPss && $algorithm === Algorithm::RsaPssSha512);
+            $this->assertSame($fits, $type->accepts($algorithm));
         }
+    }
+
+    #[DataProvider('namesProvider')]
+    public function testHasAnRfc9421Name(Algorithm $algorithm, ?string $cavage, string $rfc9421): void
+    {
+        $this->assertSame($rfc9421, $algorithm->rfc9421Name());
+        $this->assertSame($algorithm, Algorithm::tryFromName($rfc9421, Form::Rfc9421));
+
+        if ($cavage !== null) {
+            $this->assertContains($algorithm, [Algorithm::tryFromName($cavage, Form::Cavage), Algorithm::Ed25519]);
+        }
+    }
+
+    public function testFindsAnAlgorithmByItsNameInAForm(): void
+    {
+        $this->assertSame(Algorithm::RsaV15Sha256, Algorithm::tryFromName('rsa-sha256', Form::Cavage));
+        $this->assertSame(Algorithm::Ed25519, Algorithm::tryFromName('hs2019', Form::Cavage));
+        $this->assertSame(Algorithm::HmacSha256, Algorithm::tryFromName('hmac-sha256', Form::Cavage));
+        $this->assertNull(Algorithm::tryFromName('rsa-pss-sha512', Form::Cavage));
+        $this->assertNull(Algorithm::tryFromName('rsa-sha256', Form::Rfc9421));
+        $this->assertNull(Algorithm::tryFromName('RSA-PSS-SHA512', Form::Rfc9421));
+        $this->assertNull(Algorithm::tryFromName('', Form::Rfc9421));
     }
 }

@@ -56,7 +56,7 @@ class KeyMaterialTest extends TestCase
     public static function privateKeysProvider(): iterable
     {
         yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.private.pem', KeyType::Rsa];
-        yield 'RSA in PKCS#8 form with the PSS identifier (B.1.2)' => ['test-key-rsa-pss.private.pem', KeyType::Rsa];
+        yield 'RSA in PKCS#8 form with the PSS identifier (B.1.2)' => ['test-key-rsa-pss.private.pem', KeyType::RsaPss];
         yield 'P-256 (B.1.3)' => ['test-key-ecc-p256.private.pem', KeyType::EcP256];
         yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.private.pem', KeyType::Ed25519];
     }
@@ -85,7 +85,7 @@ class KeyMaterialTest extends TestCase
 
         $material = KeyMaterial::fromPrivatePem($encrypted, 'secret');
 
-        $this->assertSame(KeyType::Rsa, $material->type);
+        $this->assertSame(KeyType::RsaPss, $material->type);
 
         $signature = $material->sign(Algorithm::RsaPssSha512, 'base');
         $public = KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa-pss.public.pem'));
@@ -104,6 +104,34 @@ class KeyMaterialTest extends TestCase
         $this->expectExceptionMessage('OpenSSL cannot read the private key: error:');
 
         KeyMaterial::fromPrivatePem($encrypted, 'wrong');
+    }
+
+    public function testRejectsAPublicKeyGivenAsAFilePath(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage('A key must be given as PEM text, not as a file path');
+
+        KeyMaterial::fromPublicPem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.public.pem');
+    }
+
+    public function testRejectsAPrivateKeyGivenAsAFilePath(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage('A key must be given as PEM text, not as a file path');
+
+        KeyMaterial::fromPrivatePem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.private.pem', null);
+    }
+
+    public function testAKeyEncodedForRsassaPssDoesNotPermitPkcs1V15(): void
+    {
+        $material = KeyMaterial::fromPrivatePem(self::rfc9421Key('test-key-rsa-pss.private.pem'), null);
+
+        $this->assertSame([Algorithm::RsaPssSha512], $material->permittedAlgorithms(null));
+
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage('Algorithm RsaV15Sha256 does not fit a key of type RsaPss');
+
+        $material->permittedAlgorithms([Algorithm::RsaV15Sha256]);
     }
 
     public function testRejectsAPublicPemOpenSslCannotRead(): void

@@ -44,6 +44,7 @@ use function openssl_sign;
 use function openssl_verify;
 use function sprintf;
 use function str_contains;
+use function str_starts_with;
 
 use const OPENSSL_KEYTYPE_EC;
 use const OPENSSL_KEYTYPE_ED25519;
@@ -74,11 +75,13 @@ final readonly class KeyMaterial
     /**
      * Loads a public key from a PEM in SubjectPublicKeyInfo or PKCS#1 form
      *
-     * @throws InvalidArgument when OpenSSL cannot read the PEM or the key is
-     *     of a type the package does not implement
+     * @throws InvalidArgument when the string is a file path, when OpenSSL
+     *     cannot read the PEM, or when the key is of a type the package does
+     *     not implement
      */
     public static function fromPublicPem(string $pem): self
     {
+        self::refuseFilePath($pem);
         self::clearOpenSslErrors();
         $key = openssl_pkey_get_public($pem);
 
@@ -93,8 +96,9 @@ final readonly class KeyMaterial
      * Loads a private key from a PEM, decrypting it with the passphrase when
      * one is given
      *
-     * @throws InvalidArgument when OpenSSL cannot read the PEM or the key is
-     *     of a type the package does not implement
+     * @throws InvalidArgument when the string is a file path, when OpenSSL
+     *     cannot read the PEM, or when the key is of a type the package does
+     *     not implement
      */
     public static function fromPrivatePem(
         #[SensitiveParameter]
@@ -102,6 +106,7 @@ final readonly class KeyMaterial
         #[SensitiveParameter]
         ?string $passphrase,
     ): self {
+        self::refuseFilePath($pem);
         self::clearOpenSslErrors();
         $key = openssl_pkey_get_private($pem, $passphrase);
 
@@ -179,7 +184,12 @@ final readonly class KeyMaterial
     /**
      * Signs the signature base and returns the raw signature bytes
      *
-     * @throws InvalidArgument when the algorithm does not fit the key's type
+     * The key classes refuse a permitted list that does not fit the key's
+     * type, so the one check here is that a shared secret gets HMAC and a key
+     * does not.
+     *
+     * @throws InvalidArgument when a shared secret is asked for an asymmetric
+     *     algorithm or a key for HMAC
      * @throws SigningFailed when OpenSSL fails
      */
     public function sign(Algorithm $algorithm, string $signatureBase): string
@@ -231,7 +241,8 @@ final readonly class KeyMaterial
     /**
      * Returns whether the signature is valid for the signature base
      *
-     * @throws InvalidArgument when the algorithm does not fit the key's type
+     * @throws InvalidArgument when a shared secret is asked for an asymmetric
+     *     algorithm or a key for HMAC
      */
     public function verify(Algorithm $algorithm, string $signatureBase, string $signature): bool
     {
@@ -292,7 +303,8 @@ final readonly class KeyMaterial
      *
      * The `$pem` must be what was loaded or, for an encrypted private key,
      * its unencrypted export, and the loaded key is replaced by the rewrapped
-     * one so that signing takes the padding argument.
+     * one so that signing takes the padding argument. The rewrapped key is
+     * `KeyType::RsaPss`, so that it stays restricted to RSASSA-PSS.
      *
      * @throws InvalidArgument when the key is of a type the package does not
      *     implement
@@ -335,13 +347,28 @@ final readonly class KeyMaterial
             if ($rewrapped !== false) {
                 $key = $rewrapped;
 
-                return KeyType::Rsa;
+                return KeyType::RsaPss;
             }
         }
 
         throw new InvalidArgument(
             sprintf('Keys of OpenSSL type %d are not implemented; use RSA, P-256, P-384, or Ed25519', $details['type']),
         );
+    }
+
+    /**
+     * The OpenSSL functions read a local file for a string that begins with
+     * `file://`; a key is given as PEM text, never as a path.
+     *
+     * @throws InvalidArgument
+     */
+    private static function refuseFilePath(
+        #[SensitiveParameter]
+        string $pem,
+    ): void {
+        if (str_starts_with($pem, 'file://')) {
+            throw new InvalidArgument('A key must be given as PEM text, not as a file path');
+        }
     }
 
     private static function clearOpenSslErrors(): void
