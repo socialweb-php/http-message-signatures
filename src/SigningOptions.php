@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures;
 
 use DateInterval;
+use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 use function in_array;
@@ -64,6 +65,11 @@ final readonly class SigningOptions
     public ?array $coveredComponents;
 
     /**
+     * @var list<ComponentIdentifier> | null
+     */
+    private ?array $coveredComponentIdentifiers;
+
+    /**
      * Which digests to compute for the digest field
      *
      * @var non-empty-list<DigestAlgorithm>
@@ -73,7 +79,9 @@ final readonly class SigningOptions
     /**
      * @param Form $form which form to produce
      * @param list<string> | null $coveredComponents component identifiers in
-     *     signing order; `null` means the form's default
+     *     signing order, each a component name followed by its parameters in
+     *     the syntax of RFC 8941, as in `@query-param;name="Pet"` or
+     *     `content-digest;req`; `null` means the form's default
      * @param Algorithm | null $algorithm `null` means the first algorithm the
      *     key permits that has a name in the form
      * @param string $label the signature label; RFC 9421 only
@@ -88,9 +96,10 @@ final readonly class SigningOptions
      * @throws InvalidArgument for an option that does not fit the form: an
      *     algorithm with no name in the form, or a `nonce`, `tag`, or `label`
      *     other than the default under the draft; and for a value that fits
-     *     no form: an empty component identifier, a label that is not a valid
-     *     Dictionary key, a negative expiry, a nonce or tag outside printable
-     *     ASCII, or a digest list that is empty or holds a duplicate
+     *     no form: a component identifier that is empty, does not parse,
+     *     appears twice, or names `@signature-params`, a label that is not a
+     *     valid Dictionary key, a negative expiry, a nonce or tag outside
+     *     printable ASCII, or a digest list that is empty or holds a duplicate
      */
     public function __construct(
         public Form $form,
@@ -103,13 +112,7 @@ final readonly class SigningOptions
         public ?string $tag = null,
         array $digestAlgorithms = [DigestAlgorithm::Sha256],
     ) {
-        if ($coveredComponents !== null) {
-            foreach ($coveredComponents as $component) {
-                if ($component === '') {
-                    throw new InvalidArgument('A covered component identifier must not be empty');
-                }
-            }
-        }
+        $identifiers = $coveredComponents === null ? null : self::parseIdentifiers($coveredComponents);
 
         if ($algorithm !== null && $algorithm->name($form) === null) {
             throw new InvalidArgument(
@@ -164,6 +167,52 @@ final readonly class SigningOptions
         }
 
         $this->coveredComponents = $coveredComponents;
+        $this->coveredComponentIdentifiers = $identifiers;
         $this->digestAlgorithms = $seen;
+    }
+
+    /**
+     * Returns the covered components as parsed, or `null` for the form's
+     * default
+     *
+     * @internal
+     *
+     * @return list<ComponentIdentifier> | null
+     */
+    public function coveredComponentIdentifiers(): ?array
+    {
+        return $this->coveredComponentIdentifiers;
+    }
+
+    /**
+     * @param list<string> $components
+     *
+     * @return list<ComponentIdentifier>
+     *
+     * @throws InvalidArgument
+     */
+    private static function parseIdentifiers(array $components): array
+    {
+        $identifiers = [];
+
+        foreach ($components as $component) {
+            $identifier = ComponentIdentifier::parse($component);
+
+            if ($identifier->name === '@signature-params') {
+                throw new InvalidArgument('@signature-params cannot be a covered component');
+            }
+
+            foreach ($identifiers as $earlier) {
+                if ($earlier->equals($identifier)) {
+                    throw new InvalidArgument(
+                        sprintf('The covered component %s appears more than once', $identifier->toString()),
+                    );
+                }
+            }
+
+            $identifiers[] = $identifier;
+        }
+
+        return $identifiers;
     }
 }

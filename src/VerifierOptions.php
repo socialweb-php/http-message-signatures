@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures;
 
+use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 use function in_array;
@@ -61,6 +62,11 @@ final readonly class VerifierOptions
     public array $requiredComponents;
 
     /**
+     * @var list<ComponentIdentifier>
+     */
+    private array $requiredComponentIdentifiers;
+
+    /**
      * @param non-empty-list<Form> $forms forms the verifier accepts; must not
      *     be empty
      * @param TimePolicy $timePolicy how far a signature's times may stray
@@ -69,7 +75,8 @@ final readonly class VerifierOptions
      * @param bool $requireContentDigest a message with content must cover its
      *     digest field
      * @param list<string> $requiredComponents component identifiers that must
-     *     be covered
+     *     be covered, each a component name followed by its parameters in
+     *     the syntax of RFC 8941, as in `content-digest;req`
      * @param bool $requireNonce the `nonce` parameter must be present; RFC
      *     9421 only
      * @param bool $retryWithRefreshedKey call the resolver's `refresh()` once
@@ -81,8 +88,8 @@ final readonly class VerifierOptions
      *     giving up; at least 1
      *
      * @throws InvalidArgument when the list of forms is empty or holds a
-     *     duplicate, when a required component identifier is empty, or when
-     *     `maxSignatures` is below 1
+     *     duplicate, when a required component identifier is empty or does
+     *     not parse, or when `maxSignatures` is below 1
      */
     public function __construct(
         array $forms = [Form::Cavage, Form::Rfc9421],
@@ -110,10 +117,10 @@ final readonly class VerifierOptions
             $seen[] = $form;
         }
 
+        $identifiers = [];
+
         foreach ($requiredComponents as $component) {
-            if ($component === '') {
-                throw new InvalidArgument('A required component identifier must not be empty');
-            }
+            $identifiers[] = ComponentIdentifier::parse($component);
         }
 
         if ($maxSignatures < 1) {
@@ -122,6 +129,19 @@ final readonly class VerifierOptions
 
         $this->forms = $seen;
         $this->requiredComponents = $requiredComponents;
+        $this->requiredComponentIdentifiers = $identifiers;
+    }
+
+    /**
+     * Returns the required components as parsed
+     *
+     * @internal
+     *
+     * @return list<ComponentIdentifier>
+     */
+    public function requiredComponentIdentifiers(): array
+    {
+        return $this->requiredComponentIdentifiers;
     }
 
     /**

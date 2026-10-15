@@ -79,7 +79,11 @@ class VerifierOptionsTest extends TestCase
         ];
         yield 'an empty required component' => [
             static fn (): VerifierOptions => new VerifierOptions(requiredComponents: ['date', '']),
-            'A required component identifier must not be empty',
+            'A component identifier must not be empty',
+        ];
+        yield 'a required component whose parameters do not parse' => [
+            static fn (): VerifierOptions => new VerifierOptions(requiredComponents: ['content-digest;req=']),
+            'The parameters of the component identifier "content-digest;req=" do not parse',
         ];
         yield 'zero signatures' => [
             static fn (): VerifierOptions => new VerifierOptions(maxSignatures: 0),

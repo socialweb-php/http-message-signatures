@@ -70,7 +70,39 @@ class SigningOptionsTest extends TestCase
     {
         yield 'an empty component identifier' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, coveredComponents: ['@method', '']),
-            'A covered component identifier must not be empty',
+            'A component identifier must not be empty',
+        ];
+        yield 'a component identifier whose parameters do not parse' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                coveredComponents: ['@method;req='],
+            ),
+            'The parameters of the component identifier "@method;req=" do not parse',
+        ];
+        yield 'a component identifier that is not a name' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, coveredComponents: ['"@method"']),
+            '""@method"" is not a component name',
+        ];
+        yield 'a covered component that appears twice' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                coveredComponents: ['@method', 'Date', 'date'],
+            ),
+            'The covered component date appears more than once',
+        ];
+        yield 'a covered component that appears twice with the same parameters' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                coveredComponents: ['@query-param;name="Pet"', '@query-param;name="Pet"'],
+            ),
+            'The covered component @query-param;name="Pet" appears more than once',
+        ];
+        yield '@signature-params among the covered components' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                coveredComponents: ['@method', '@signature-params'],
+            ),
+            '@signature-params cannot be a covered component',
         ];
         yield 'an algorithm with no draft name' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, algorithm: Algorithm::RsaPssSha512),
