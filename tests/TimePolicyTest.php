@@ -101,6 +101,40 @@ class TimePolicyTest extends TestCase
         $this->assertSame($expected, $policy->evaluate($clock->now(), $created, $expires));
     }
 
+    /**
+     * Without a creation time, which the verifier allows only when its option
+     * `requireCreationTime` is off, `expires` alone decides, with no clamping.
+     *
+     * @return iterable<string, array{int, int | null, FailureReason | null}>
+     */
+    public static function evaluationsWithoutACreationTimeProvider(): iterable
+    {
+        yield 'no expiry either' => [0, null, null];
+        yield 'far in the future with no expiry' => [-864000, null, null];
+        yield 'far in the past with no expiry' => [864000, null, null];
+        yield 'at the expiry plus the skew' => [60, 0, null];
+        yield 'one second after the expiry plus the skew' => [61, 0, FailureReason::Expired];
+        yield 'an expiry beyond the maximum lifetime is not clamped' => [3600, 7200, null];
+    }
+
+    #[DataProvider('evaluationsWithoutACreationTimeProvider')]
+    public function testEvaluatesExpiresAloneWithoutACreationTime(
+        int $nowOffset,
+        ?int $expiresOffset,
+        ?FailureReason $expected,
+    ): void {
+        $policy = new TimePolicy(
+            clockSkew: new DateInterval('PT60S'),
+            defaultLifetime: new DateInterval('PT300S'),
+            maximumLifetime: new DateInterval('PT600S'),
+        );
+        $reference = new DateTimeImmutable('@1618884473');
+        $now = $reference->modify(sprintf('%+d seconds', $nowOffset));
+        $expires = $expiresOffset === null ? null : $reference->modify(sprintf('%+d seconds', $expiresOffset));
+
+        $this->assertSame($expected, $policy->evaluate($now, null, $expires));
+    }
+
     public function testAZeroSkewAcceptsACreationTimeEqualToNow(): void
     {
         $policy = new TimePolicy(clockSkew: new DateInterval('PT0S'));

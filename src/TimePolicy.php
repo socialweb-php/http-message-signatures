@@ -75,28 +75,35 @@ final readonly class TimePolicy
      * `null` when it passes
      *
      * A creation time after now plus the clock skew is `NotYetValid`. Now
-     * after the effective expiry plus the clock skew is `Expired`.
+     * after the effective expiry plus the clock skew is `Expired`. A
+     * signature with no creation time, which the verifier allows only when
+     * its option `requireCreationTime` is off, is judged by `expires` alone,
+     * with no clamping, and passes when that is absent too.
      *
      * @param DateTimeImmutable $now the injected clock's current time
-     * @param DateTimeImmutable $created the signature's creation time
+     * @param DateTimeImmutable | null $created the signature's creation time
      * @param DateTimeImmutable | null $expires the signature's `expires`
      *     parameter, as sent
      */
     public function evaluate(
         DateTimeImmutable $now,
-        DateTimeImmutable $created,
+        ?DateTimeImmutable $created,
         ?DateTimeImmutable $expires,
     ): ?FailureReason {
-        if ($created > $now->add($this->clockSkew)) {
-            return FailureReason::NotYetValid;
+        if ($created === null) {
+            $effectiveExpiry = $expires;
+        } else {
+            if ($created > $now->add($this->clockSkew)) {
+                return FailureReason::NotYetValid;
+            }
+
+            $effectiveExpiry = min(
+                $expires ?? $created->add($this->defaultLifetime),
+                $created->add($this->maximumLifetime),
+            );
         }
 
-        $effectiveExpiry = min(
-            $expires ?? $created->add($this->defaultLifetime),
-            $created->add($this->maximumLifetime),
-        );
-
-        if ($now > $effectiveExpiry->add($this->clockSkew)) {
+        if ($effectiveExpiry !== null && $now > $effectiveExpiry->add($this->clockSkew)) {
             return FailureReason::Expired;
         }
 
