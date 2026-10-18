@@ -1,8 +1,16 @@
 {
     "name": "socialweb/http-message-signatures",
-    "description": "",
+    "description": "Signs and verifies HTTP messages under RFC 9421 and draft-cavage-http-signatures-12",
     "license": "LGPL-3.0-or-later",
     "type": "library",
+    "keywords": [
+        "http",
+        "http-message-signatures",
+        "http-signatures",
+        "rfc9421",
+        "psr-7",
+        "signature"
+    ],
     "require": {
         "php": "^8.5",
         "ext-openssl": "*",
