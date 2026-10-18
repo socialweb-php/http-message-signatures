@@ -154,7 +154,8 @@ $resolver = new ArrayKeyResolver([
     'https://example.com/keys/1' => VerificationKey::fromPem($publicKeyPem),
 ]);
 
-$result = (new Verifier($resolver, $clock))->verify($incomingRequest);
+$verifier = new Verifier($resolver, $clock);
+$result = $verifier->verify($incomingRequest);
 
 if ($result->verified) {
     echo "Signed by {$result->keyId} in the form {$result->form?->value}\n";
