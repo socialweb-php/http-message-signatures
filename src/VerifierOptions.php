@@ -153,10 +153,13 @@ final readonly class VerifierOptions
         $applying = [];
 
         foreach ($this->requiredComponentIdentifiers as $identifier) {
-            $appliesToCavage = $identifier->isPseudoHeader()
-                || (!$identifier->isDerived() && $identifier->parameters->isEmpty());
+            $applies = match ($form) {
+                Form::Cavage => $identifier->isPseudoHeader()
+                    || (!$identifier->isDerived() && $identifier->parameters->isEmpty()),
+                Form::Rfc9421 => !$identifier->isPseudoHeader(),
+            };
 
-            if ($form === Form::Cavage ? $appliesToCavage : !$identifier->isPseudoHeader()) {
+            if ($applies) {
                 $applying[] = $identifier;
             }
         }
