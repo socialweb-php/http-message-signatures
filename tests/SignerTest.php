@@ -492,6 +492,30 @@ class SignerTest extends TestCase
         );
     }
 
+    public function testSignsInTheDraftFormWithTheAlgorithmTheOptionsName(): void
+    {
+        $signed = self::signer()->sign(
+            self::request(),
+            SigningKey::fromPem(
+                'test-key-rsa',
+                self::rfc9421Key('test-key-rsa.private.pem'),
+                permittedAlgorithms: [Algorithm::RsaPssSha512, Algorithm::RsaV15Sha256],
+            ),
+            new SigningOptions(form: Form::Cavage, algorithm: Algorithm::RsaV15Sha256),
+        );
+        $value = $signed->getHeaderLine('Signature');
+
+        $this->assertStringStartsWith('keyId="test-key-rsa",algorithm="rsa-sha256",', $value);
+        $this->assertTrue(
+            VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->verify(
+                Algorithm::RsaV15Sha256,
+                "(request-target): post /foo?param=Value&Pet=dog\nhost: example.com\n"
+                    . 'date: Tue, 20 Apr 2021 02:07:53 GMT',
+                self::cavageSignatureBytes($value),
+            ),
+        );
+    }
+
     public function testReplacesAnExistingSignatureField(): void
     {
         $signed = self::signer()->sign(
