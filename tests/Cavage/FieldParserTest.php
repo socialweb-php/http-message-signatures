@@ -246,6 +246,15 @@ class FieldParserTest extends TestCase
         yield 'the Signature scheme after another' => ['Bearer Signature keyId="a",signature="c2lnbmF0dXJl"'];
     }
 
+    public function testAMessageWithNeitherFieldHasNoSignature(): void
+    {
+        $this->assertFailure(
+            self::context(['Content-Type' => 'application/json']),
+            FailureReason::NoSignature,
+            'the message has neither a Signature field nor an Authorization field',
+        );
+    }
+
     #[DataProvider('otherSchemesProvider')]
     public function testRejectsAnAuthorizationFieldWithAnotherScheme(string $value): void
     {

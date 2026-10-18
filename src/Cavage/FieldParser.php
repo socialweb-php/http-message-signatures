@@ -89,12 +89,13 @@ final class FieldParser
      * `(created)` under an algorithm that begins with `rsa`, `hmac`, or
      * `ecdsa`; its appendix C.1 signs `date` by default under `rsa-sha256`.
      *
-     * @throws Failure `MalformedSignature` when the field is not a list of
-     *     auth-params, a parameter appears twice, `keyId` or `signature` is
-     *     absent or empty, the signature is not strict Base64, `created` or
-     *     `expires` is not a number of seconds, or `headers` is empty or has
-     *     an empty name; `UnsupportedSignature` for a name in parentheses
-     *     that the draft does not define
+     * @throws Failure `NoSignature` when the message has neither field;
+     *     `MalformedSignature` when the field is not a list of auth-params, a
+     *     parameter appears twice, `keyId` or `signature` is absent or empty,
+     *     the signature is not strict Base64, `created` or `expires` is not a
+     *     number of seconds, or `headers` is empty or has an empty name; and
+     *     `UnsupportedSignature` for a name in parentheses that the draft
+     *     does not define
      */
     public static function parse(MessageContext $context): ParsedSignature
     {
@@ -146,10 +147,17 @@ final class FieldParser
     /**
      * @return array{string, string} the field's name and its value
      *
-     * @throws Failure `MalformedSignature`
+     * @throws Failure `NoSignature` or `MalformedSignature`
      */
     private static function fieldValue(MessageContext $context): array
     {
+        if (!$context->hasField(self::SIGNATURE) && !$context->hasField(self::AUTHORIZATION)) {
+            throw new Failure(
+                FailureReason::NoSignature,
+                'the message has neither a Signature field nor an Authorization field',
+            );
+        }
+
         try {
             if ($context->hasField(self::SIGNATURE)) {
                 return [self::SIGNATURE, $context->field(self::SIGNATURE)];
