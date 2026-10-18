@@ -217,9 +217,19 @@ class VerifierTest extends TestCase
         $result = self::verify($message);
 
         $this->assertFalse($result->verified);
-        $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
-        $this->assertSame('the draft form is not implemented', $result->detail);
+        $this->assertSame(FailureReason::MalformedSignature, $result->reason);
+        $this->assertSame(
+            'the value of authorization holds a line break, which a component value cannot',
+            $result->detail,
+        );
         $this->assertSame(Form::Cavage, $result->form);
+    }
+
+    public function testTheSchemeOfAnAuthorizationFieldIsReadAfterLeadingWhitespace(): void
+    {
+        $message = $this->withField(self::request(), 'Authorization', ' Signature keyId="k",signature="AQ=="');
+
+        $this->assertSame(Form::Cavage, self::verify($message)->form);
     }
 
     public function testAnAuthorizationFieldOfAnotherSchemeWithALineBreakIsNoSignature(): void
@@ -249,14 +259,12 @@ class VerifierTest extends TestCase
     }
 
     #[DataProvider('draftFormProvider')]
-    public function testTheDraftFormIsDetectedAndNotImplementedYet(Request $request): void
+    public function testTheDraftFormIsDetected(Request $request): void
     {
         $result = self::verify($request);
 
-        $this->assertFalse($result->verified);
-        $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
-        $this->assertSame('the draft form is not implemented', $result->detail);
         $this->assertSame(Form::Cavage, $result->form);
+        $this->assertSame('k', $result->keyId);
     }
 
     public function testSignatureInputDecidesTheFormWhenBothFieldsArePresent(): void
@@ -396,6 +404,8 @@ class VerifierTest extends TestCase
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the signature has no created parameter', $result->detail);
         $this->assertNull($result->created);
+        $this->assertFalse($result->keyRefreshed);
+        $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
 
         $this->assertTrue(self::verify($message, new VerifierOptions(requireCreationTime: false))->verified);
     }
