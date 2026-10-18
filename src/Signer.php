@@ -203,7 +203,7 @@ final class Signer
             'Signature',
             Cavage\FieldSerializer::serialize(
                 $key->keyId,
-                $algorithmName,
+                $algorithm,
                 $created,
                 $expires,
                 $covered,

@@ -6,6 +6,7 @@ namespace SocialWeb\Test\Http\MessageSignatures\Cavage;
 
 use Nyholm\Psr7\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
+use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Cavage\FieldParser;
 use SocialWeb\Http\MessageSignatures\Cavage\FieldSerializer;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
@@ -41,7 +42,7 @@ class FieldSerializerTest extends TestCase
     {
         $value = FieldSerializer::serialize(
             'Test',
-            'rsa-sha256',
+            Algorithm::RsaV15Sha256,
             null,
             null,
             self::identifiers(['(request-target)', 'host', 'date']),
@@ -59,7 +60,7 @@ class FieldSerializerTest extends TestCase
     {
         $value = FieldSerializer::serialize(
             'https://example.com/key',
-            'hs2019',
+            Algorithm::Ed25519,
             1402170695,
             1402170699,
             self::identifiers(['(request-target)', '(created)']),
@@ -75,7 +76,14 @@ class FieldSerializerTest extends TestCase
 
     public function testEscapesTheKeyIdentifierSoThatItParsesBack(): void
     {
-        $value = FieldSerializer::serialize('a"b\c', 'hmac-sha256', null, null, self::identifiers(['date']), 'x');
+        $value = FieldSerializer::serialize(
+            'a"b\c',
+            Algorithm::HmacSha256,
+            null,
+            null,
+            self::identifiers(['date']),
+            'x',
+        );
         $parsed = FieldParser::parse(
             new MessageContext(new Request('GET', 'https://example.com/', ['Signature' => $value])),
         );
@@ -102,6 +110,16 @@ class FieldSerializerTest extends TestCase
             'Under the draft form the key identifier must hold only printable ASCII characters',
         );
 
-        FieldSerializer::serialize($keyId, 'hmac-sha256', null, null, self::identifiers(['date']), 'x');
+        FieldSerializer::serialize($keyId, Algorithm::HmacSha256, null, null, self::identifiers(['date']), 'x');
+    }
+
+    public function testRefusesAnAlgorithmWithNoNameInTheDraftForm(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage(
+            'The algorithm EcdsaP256Sha256 has no name in the form draft-cavage-http-signatures-12',
+        );
+
+        FieldSerializer::serialize('a', Algorithm::EcdsaP256Sha256, null, null, self::identifiers(['date']), 'x');
     }
 }

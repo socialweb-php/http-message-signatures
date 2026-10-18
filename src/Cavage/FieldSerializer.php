@@ -24,14 +24,17 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures\Cavage;
 
+use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\Form;
 
 use function addcslashes;
 use function array_map;
 use function base64_encode;
 use function implode;
 use function preg_match;
+use function sprintf;
 
 /**
  * Serializes the `Signature` field of draft-cavage-http-signatures-12
@@ -48,32 +51,41 @@ final class FieldSerializer
 {
     /**
      * @param string $keyId the `keyId` parameter
-     * @param string $algorithm the `algorithm` parameter
+     * @param Algorithm $algorithm the algorithm, written as its draft name in
+     *     the `algorithm` parameter
      * @param int | null $created the `created` parameter, when emitted
      * @param int | null $expires the `expires` parameter, when emitted
      * @param list<ComponentIdentifier> $coveredComponents the `headers`
      *     parameter, in order
      * @param string $signature the raw signature bytes
      *
-     * @throws InvalidArgument when the key identifier holds a character
-     *     outside printable ASCII, which a quoted-string can hold only as
-     *     obsolete text
+     * @throws InvalidArgument when the algorithm has no name in the draft
+     *     form, or when the key identifier holds a character outside printable
+     *     ASCII, which a quoted-string can hold only as obsolete text
      */
     public static function serialize(
         string $keyId,
-        string $algorithm,
+        Algorithm $algorithm,
         ?int $created,
         ?int $expires,
         array $coveredComponents,
         string $signature,
     ): string {
+        $algorithmName = $algorithm->name(Form::Cavage);
+
+        if ($algorithmName === null) {
+            throw new InvalidArgument(
+                sprintf('The algorithm %s has no name in the form %s', $algorithm->name, Form::Cavage->value),
+            );
+        }
+
         if (preg_match('/^[\x20-\x7e]*\z/', $keyId) !== 1) {
             throw new InvalidArgument(
                 'Under the draft form the key identifier must hold only printable ASCII characters',
             );
         }
 
-        $parameters = ['keyId="' . addcslashes($keyId, '"\\') . '"', 'algorithm="' . $algorithm . '"'];
+        $parameters = ['keyId="' . addcslashes($keyId, '"\\') . '"', 'algorithm="' . $algorithmName . '"'];
 
         if ($created !== null) {
             $parameters[] = 'created=' . $created;
