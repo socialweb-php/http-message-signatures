@@ -546,6 +546,20 @@ class SignerTest extends TestCase
         self::signer()->sign(self::request(), self::key($key), $options);
     }
 
+    public function testRefusesADraftKeyIdentifierAQuotedStringCannotHold(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage(
+            'Under the draft form the key identifier must hold only printable ASCII characters',
+        );
+
+        self::signer()->sign(
+            self::request(),
+            SigningKey::fromPem("caf\u{e9}", self::rfc9421Key('test-key-rsa.private.pem')),
+            new SigningOptions(form: Form::Cavage),
+        );
+    }
+
     public function testRefusesAComponentTheMessageLacks(): void
     {
         try {

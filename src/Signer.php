@@ -81,8 +81,9 @@ final class Signer
      *
      * @throws InvalidArgument when the message body cannot be rewound, when
      *     the key permits no algorithm that has a name in the form, when the
-     *     label is already present, or when a covered component cannot be
-     *     taken from the message
+     *     label is already present under RFC 9421, when the key identifier has
+     *     a character outside printable ASCII under the draft form, or when a
+     *     covered component cannot be taken from the message
      * @throws SigningFailed when OpenSSL fails
      *
      * @template T of MessageInterface
