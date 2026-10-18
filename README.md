@@ -28,10 +28,11 @@ P-256 and P-384, Ed25519, and HMAC with SHA-256. It works on any
 sends or fetches anything: keys come from a resolver that you write.
 
 The verifier tells the two forms apart from the fields of the message. It
-never throws because of a message; it returns a result that says whether the
-signature verified and, when it did not, a reason and a detail. It does bounded
-work on untrusted input, compares signatures and digests in constant time, and
-looks up a key only after everything that needs no key has passed.
+never throws because of what a message contains, only for a body it cannot
+rewind; it returns a result that says whether the signature verified and, when
+it did not, a reason and a detail. It does bounded work on untrusted input,
+compares signatures and digests in constant time, and looks up a key only after
+everything that needs no key has passed.
 
 Not included: the `Accept-Signature` field, replay protection, fetching and
 caching keys, sending requests, trailer fields, the JSON Web Signature

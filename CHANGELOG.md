@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Signer` and `Verifier`, which sign and verify HTTP requests and responses as HTTP Message Signatures of RFC 9421 and in the form of draft-cavage-http-signatures-12. The verifier tells the two forms apart, never throws because of a message, and tries a draft-form `(request-target)` once more without its query string.
+- `Signer` and `Verifier`, which sign and verify HTTP requests and responses as HTTP Message Signatures of RFC 9421 and in the form of draft-cavage-http-signatures-12. The verifier tells the two forms apart, never throws because of what a message contains, and tries a draft-form `(request-target)` once more without its query string.
 - `SigningOptions`, `VerifierOptions`, and `TimePolicy`, which choose what a signature covers and what a verifier requires and accepts, and the enum `Form`.
 - `SigningKey` and `VerificationKey`, built from PEM or a shared secret, with the enums `KeyType` and `Algorithm`: RSASSA-PKCS1-v1_5 with SHA-256, RSASSA-PSS with SHA-512, ECDSA on P-256 and P-384, Ed25519, and HMAC with SHA-256.
 - `KeyResolver`, the interface through which the verifier gets the key a signature names, and refreshes it once after a failure a rotated key could explain.
