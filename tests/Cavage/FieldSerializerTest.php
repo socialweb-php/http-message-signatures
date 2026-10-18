@@ -100,6 +100,7 @@ class FieldSerializerTest extends TestCase
         yield 'a non-ASCII character' => ["caf\u{e9}"];
         yield 'a line feed' => ["a\nb"];
         yield 'a tab' => ["a\tb"];
+        yield 'a delete character' => ["a\x7fb"];
     }
 
     #[DataProvider('rejectedKeyIdsProvider')]
