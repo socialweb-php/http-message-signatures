@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures;
 
+use DateTimeImmutable;
 use DateTimeZone;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Message\MessageInterface;
@@ -38,6 +39,7 @@ use SocialWeb\Http\MessageSignatures\Rfc9421\FieldSerializer;
 use SocialWeb\Http\MessageSignatures\Rfc9421\SignatureBase;
 
 use function array_map;
+use function sprintf;
 
 /**
  * Signs a message
@@ -68,7 +70,8 @@ final class Signer
      * over the content and set, replacing any existing one. When `date` is
      * covered and the message has no `Date` field, one is added from the
      * clock; an existing one is never replaced. Under RFC 9421 a label the
-     * message already has is `InvalidArgument`.
+     * message already has is `InvalidArgument`; under the draft the
+     * `Signature` field is replaced, since the draft has one.
      *
      * @param T $message the request or response to sign
      * @param RequestInterface | null $relatedRequest the request a response
@@ -77,8 +80,9 @@ final class Signer
      * @return T
      *
      * @throws InvalidArgument when the message body cannot be rewound, when
-     *     the label is already present, or when a covered component cannot
-     *     be taken from the message
+     *     the key permits no algorithm that has a name in the form, when the
+     *     label is already present, or when a covered component cannot be
+     *     taken from the message
      * @throws SigningFailed when OpenSSL fails
      *
      * @template T of MessageInterface
@@ -90,15 +94,9 @@ final class Signer
         ?RequestInterface $relatedRequest = null,
     ): MessageInterface {
         $content = new Content($message);
-
-        if ($options->form === Form::Cavage) {
-            throw new InvalidArgument('The draft form is not implemented');
-        }
-
-        // Every algorithm has a name in RFC 9421, so the key's first permitted
-        // algorithm is the first that has a name in the form.
-        $algorithm = $options->algorithm ?? $key->permittedAlgorithms[0];
-        $covered = $options->coveredComponentIdentifiers() ?? self::defaultComponents($message, $content);
+        [$algorithm, $algorithmName] = self::algorithm($key, $options);
+        $covered = $options->coveredComponentIdentifiers()
+            ?? self::defaultComponents($message, $content, $options->form);
 
         foreach ($covered as $identifier) {
             if (!self::isDigestOfTheMessage($identifier)) {
@@ -118,6 +116,10 @@ final class Signer
             $message = $message->withHeader('Date', $date);
         }
 
+        if ($options->form === Form::Cavage) {
+            return self::signCavage($message, $key, $options, $algorithm, $algorithmName, $covered, $now);
+        }
+
         $parameters = [];
 
         if ($options->created) {
@@ -132,7 +134,7 @@ final class Signer
             $parameters['nonce'] = $options->nonce;
         }
 
-        $parameters['alg'] = $algorithm->rfc9421Name();
+        $parameters['alg'] = $algorithmName;
         $parameters['keyid'] = $key->keyId;
 
         if ($options->tag !== null) {
@@ -151,22 +153,124 @@ final class Signer
     }
 
     /**
-     * The default covered components under RFC 9421: `@method`,
-     * `@target-uri`, `host`, and `date` for a request, `@status` and `date`
-     * for a response, and `content-digest` when the message has content
+     * Signs in the draft form and sets the `Signature` field, replacing any
+     * existing one
+     *
+     * The draft signs a parameter only through its pseudo-header, so `created`
+     * and `expires` are emitted only when `(created)` and `(expires)` are
+     * covered; a parameter the signature does not cover would be unsigned.
+     * The draft forbids those pseudo-headers under the named algorithms, so
+     * the parameters are emitted under `hs2019` alone. The signer never uses
+     * the `Authorization` field.
+     *
+     * @param T $message
+     * @param list<ComponentIdentifier> $covered
+     *
+     * @return T
+     *
+     * @throws InvalidArgument
+     *
+     * @template T of MessageInterface
+     */
+    private static function signCavage(
+        MessageInterface $message,
+        SigningKey $key,
+        SigningOptions $options,
+        Algorithm $algorithm,
+        string $algorithmName,
+        array $covered,
+        DateTimeImmutable $now,
+    ): MessageInterface {
+        $created = $options->created && self::coversPlain($covered, '(created)') ? $now->getTimestamp() : null;
+        $expires = $options->expires !== null && self::coversPlain($covered, '(expires)')
+            ? $now->add($options->expires)->getTimestamp()
+            : null;
+
+        try {
+            $base = Cavage\SignatureBase::build(
+                new MessageContext($message),
+                $covered,
+                $algorithmName,
+                $created === null ? null : (string) $created,
+                $expires === null ? null : (string) $expires,
+            );
+        } catch (Failure $failure) {
+            throw new InvalidArgument('Cannot sign the message: ' . $failure->detail, 0, $failure);
+        }
+
+        return $message->withHeader(
+            'Signature',
+            Cavage\FieldSerializer::serialize(
+                $key->keyId,
+                $algorithmName,
+                $created,
+                $expires,
+                $covered,
+                $key->sign($algorithm, $base),
+            ),
+        );
+    }
+
+    /**
+     * The algorithm the options name, or the first the key permits that has
+     * a name in the form, with that name
+     *
+     * @return array{Algorithm, string}
+     *
+     * @throws InvalidArgument when the key permits no algorithm that has a
+     *     name in the form, as for an ECDSA key under the draft
+     */
+    private static function algorithm(SigningKey $key, SigningOptions $options): array
+    {
+        // The options refuse an algorithm with no name in the form, so the
+        // one they name is always found.
+        $candidates = $options->algorithm === null ? $key->permittedAlgorithms : [$options->algorithm];
+
+        foreach ($candidates as $algorithm) {
+            $name = $algorithm->name($options->form);
+
+            if ($name !== null) {
+                return [$algorithm, $name];
+            }
+        }
+
+        throw new InvalidArgument(
+            sprintf('The key permits no algorithm that has a name in the form %s', $options->form->value),
+        );
+    }
+
+    /**
+     * The default covered components: under RFC 9421, `@method`,
+     * `@target-uri`, `host`, and `date` for a request and `@status` and
+     * `date` for a response; under the draft, `(request-target)`, `host`, and
+     * `date` for a request and `date` for a response; and the form's digest
+     * field when the message has content
      *
      * A response has no `Host` field, so `host` is a request component here.
      *
      * @return list<ComponentIdentifier>
      */
-    private static function defaultComponents(MessageInterface $message, Content $content): array
+    private static function defaultComponents(MessageInterface $message, Content $content, Form $form): array
     {
-        $names = $message instanceof RequestInterface
-            ? ['@method', '@target-uri', 'host', 'date']
-            : ['@status', 'date'];
+        $isRequest = $message instanceof RequestInterface;
+
+        if ($form === Form::Cavage) {
+            $names = $isRequest ? ['(request-target)', 'host', 'date'] : ['date'];
+
+            if ($content->hasContent()) {
+                $names[] = DigestField::DIGEST;
+            }
+
+            return array_map(
+                static fn (string $name): ComponentIdentifier => ComponentIdentifier::parseCavage($name),
+                $names,
+            );
+        }
+
+        $names = $isRequest ? ['@method', '@target-uri', 'host', 'date'] : ['@status', 'date'];
 
         if ($content->hasContent()) {
-            $names[] = 'content-digest';
+            $names[] = DigestField::CONTENT_DIGEST;
         }
 
         return array_map(static fn (string $name): ComponentIdentifier => ComponentIdentifier::parse($name), $names);

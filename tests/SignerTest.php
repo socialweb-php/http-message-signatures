@@ -11,6 +11,7 @@ use Ergebnis\Clock\FrozenClock;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\Stream;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
@@ -25,6 +26,7 @@ use SocialWeb\Http\MessageSignatures\VerificationKey;
 
 use function base64_decode;
 use function fopen;
+use function preg_match;
 use function strlen;
 use function strpos;
 use function strtolower;
@@ -77,6 +79,13 @@ class SignerTest extends TestCase
         self::assertNotFalse($end);
 
         return (string) base64_decode(substr($value, $start, $end - $start), true);
+    }
+
+    private static function cavageSignatureBytes(string $value): string
+    {
+        self::assertSame(1, preg_match('/signature="([^"]+)"/', $value, $matches));
+
+        return (string) base64_decode($matches[1], true);
     }
 
     public function testSignsARequestWithTheDefaultComponentsAndAddsADateField(): void
@@ -357,12 +366,184 @@ class SignerTest extends TestCase
         }
     }
 
-    public function testRefusesTheDraftFormUntilItIsImplemented(): void
+    public function testSignsARequestInTheDraftFormWithTheDefaultComponents(): void
+    {
+        $signed = self::signer()->sign(
+            self::request(),
+            self::key('test-key-rsa'),
+            new SigningOptions(form: Form::Cavage),
+        );
+        $value = $signed->getHeaderLine('Signature');
+
+        $this->assertStringStartsWith(
+            'keyId="test-key-rsa",algorithm="rsa-sha256",headers="(request-target) host date",signature="',
+            $value,
+        );
+        $this->assertSame('Tue, 20 Apr 2021 02:07:53 GMT', $signed->getHeaderLine('Date'));
+        $this->assertFalse($signed->hasHeader('Digest'));
+        $this->assertTrue(
+            VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->verify(
+                Algorithm::RsaV15Sha256,
+                "(request-target): post /foo?param=Value&Pet=dog\nhost: example.com\n"
+                    . 'date: Tue, 20 Apr 2021 02:07:53 GMT',
+                self::cavageSignatureBytes($value),
+            ),
+        );
+    }
+
+    public function testSignsARequestWithContentInTheDraftFormAndAddsItsDigest(): void
+    {
+        $signed = self::signer()->sign(
+            self::request('{"hello": "world"}'),
+            self::key('test-key-rsa'),
+            new SigningOptions(form: Form::Cavage),
+        );
+
+        $this->assertStringStartsWith(
+            'keyId="test-key-rsa",algorithm="rsa-sha256",headers="(request-target) host date digest",signature="',
+            $signed->getHeaderLine('Signature'),
+        );
+        $this->assertSame('SHA-256=' . self::SHA256, $signed->getHeaderLine('Digest'));
+        $this->assertFalse($signed->hasHeader('Content-Digest'));
+    }
+
+    public function testSignsAResponseInTheDraftFormWithTheDefaultComponents(): void
+    {
+        $signed = self::signer()->sign(
+            new Response(200, [], '{"message": "good dog"}'),
+            self::key('test-key-rsa'),
+            new SigningOptions(form: Form::Cavage),
+        );
+
+        $this->assertStringStartsWith(
+            'keyId="test-key-rsa",algorithm="rsa-sha256",headers="date digest",signature="',
+            $signed->getHeaderLine('Signature'),
+        );
+    }
+
+    public function testEmitsTheTimesUnderHs2019(): void
+    {
+        $signed = self::signer()->sign(
+            self::request(),
+            self::key(),
+            new SigningOptions(
+                form: Form::Cavage,
+                coveredComponents: ['(request-target)', '(created)', '(expires)', 'host'],
+                expires: new DateInterval('PT5M'),
+            ),
+        );
+        $value = $signed->getHeaderLine('Signature');
+
+        $this->assertStringStartsWith(
+            'keyId="test-key-ed25519",algorithm="hs2019",created=1618884473,expires=1618884773,'
+                . 'headers="(request-target) (created) (expires) host",signature="',
+            $value,
+        );
+        $this->assertFalse($signed->hasHeader('Date'));
+        $this->assertTrue(
+            VerificationKey::fromPem(self::rfc9421Key('test-key-ed25519.public.pem'))->verify(
+                Algorithm::Ed25519,
+                "(request-target): post /foo?param=Value&Pet=dog\n(created): 1618884473\n(expires): 1618884773\n"
+                    . 'host: example.com',
+                self::cavageSignatureBytes($value),
+            ),
+        );
+    }
+
+    public function testEmitsATimeOnlyWhenItsPseudoHeaderIsCovered(): void
+    {
+        $withCreated = self::signer()->sign(
+            self::request(),
+            self::key(),
+            new SigningOptions(
+                form: Form::Cavage,
+                coveredComponents: ['(request-target)', '(created)', 'host'],
+                expires: new DateInterval('PT5M'),
+            ),
+        );
+        $withNeither = self::signer()->sign(
+            self::request(),
+            self::key(),
+            new SigningOptions(form: Form::Cavage, expires: new DateInterval('PT5M')),
+        );
+
+        $this->assertStringStartsWith(
+            'keyId="test-key-ed25519",algorithm="hs2019",created=1618884473,'
+                . 'headers="(request-target) (created) host",signature="',
+            $withCreated->getHeaderLine('Signature'),
+        );
+        $this->assertStringStartsWith(
+            'keyId="test-key-ed25519",algorithm="hs2019",headers="(request-target) host date",signature="',
+            $withNeither->getHeaderLine('Signature'),
+        );
+    }
+
+    public function testLeavesTheTimesOutUnderANamedAlgorithm(): void
+    {
+        $signed = self::signer()->sign(
+            self::request(),
+            SigningKey::fromSharedSecret('shared', self::rfc9421SharedSecret()),
+            new SigningOptions(form: Form::Cavage, expires: new DateInterval('PT5M')),
+        );
+
+        $this->assertStringStartsWith(
+            'keyId="shared",algorithm="hmac-sha256",headers="(request-target) host date",signature="',
+            $signed->getHeaderLine('Signature'),
+        );
+    }
+
+    public function testReplacesAnExistingSignatureField(): void
+    {
+        $signed = self::signer()->sign(
+            self::request()->withHeader('Signature', 'keyId="old",signature="b2xk"'),
+            self::key('test-key-rsa'),
+            new SigningOptions(form: Form::Cavage),
+        );
+
+        $this->assertCount(1, $signed->getHeader('Signature'));
+        $this->assertStringStartsWith('keyId="test-key-rsa",', $signed->getHeaderLine('Signature'));
+    }
+
+    /**
+     * @return iterable<string, array{string, SigningOptions, string}>
+     */
+    public static function rejectedCavageProvider(): iterable
+    {
+        yield '(created) under a named algorithm' => [
+            'test-key-rsa',
+            new SigningOptions(form: Form::Cavage, coveredComponents: ['(request-target)', '(created)']),
+            'Cannot sign the message: (created) cannot be covered under the algorithm rsa-sha256',
+        ];
+        yield '(created) without the creation time' => [
+            'test-key-ed25519',
+            new SigningOptions(form: Form::Cavage, coveredComponents: ['(created)'], created: false),
+            'Cannot sign the message: (created) is covered and the created parameter is absent',
+        ];
+        yield '(expires) without an expiry' => [
+            'test-key-ed25519',
+            new SigningOptions(form: Form::Cavage, coveredComponents: ['(expires)']),
+            'Cannot sign the message: (expires) is covered and the expires parameter is absent',
+        ];
+        yield 'a key with no algorithm in the draft form' => [
+            'test-key-ecc-p256',
+            new SigningOptions(form: Form::Cavage),
+            'The key permits no algorithm that has a name in the form draft-cavage-http-signatures-12',
+        ];
+        yield 'a field the message lacks' => [
+            'test-key-rsa',
+            new SigningOptions(form: Form::Cavage, coveredComponents: ['date', 'x-absent']),
+            'Cannot sign the message: the field "x-absent" is not in the message',
+        ];
+    }
+
+    #[DataProvider('rejectedCavageProvider')]
+    public function testRefusesWhatTheDraftFormCannotSign(string $key, SigningOptions $options, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The draft form is not implemented');
+        $this->expectExceptionMessage($message);
+        $this->expectExceptionCode(0);
 
-        self::signer()->sign(self::request(), self::key(), new SigningOptions(form: Form::Cavage));
+        self::signer()->sign(self::request(), self::key($key), $options);
     }
 
     public function testRefusesAComponentTheMessageLacks(): void

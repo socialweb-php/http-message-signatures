@@ -87,9 +87,10 @@ final readonly class SigningOptions
      * @param Algorithm | null $algorithm `null` means the first algorithm the
      *     key permits that has a name in the form
      * @param string $label the signature label; RFC 9421 only
-     * @param bool $created whether to emit the creation time
+     * @param bool $created whether to emit the creation time; under the draft
+     *     form it is emitted only when `(created)` is covered
      * @param DateInterval | null $expires emit an expiry this long after the
-     *     creation time
+     *     creation time; under the draft form only when `(expires)` is covered
      * @param string | null $nonce RFC 9421 only
      * @param string | null $tag RFC 9421 only
      * @param list<DigestAlgorithm> $digestAlgorithms which digests to compute
