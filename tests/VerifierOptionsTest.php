@@ -8,10 +8,13 @@ use Closure;
 use DateInterval;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
+use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\TimePolicy;
 use SocialWeb\Http\MessageSignatures\VerifierOptions;
+
+use function array_map;
 
 class VerifierOptionsTest extends TestCase
 {
@@ -85,6 +88,10 @@ class VerifierOptionsTest extends TestCase
             static fn (): VerifierOptions => new VerifierOptions(requiredComponents: ['content-digest;req=']),
             'The parameters of the component identifier "content-digest;req=" do not parse',
         ];
+        yield 'a required name in parentheses the draft does not define' => [
+            static fn (): VerifierOptions => new VerifierOptions(requiredComponents: ['(foo)']),
+            '"(foo)" is not a component name of the draft form',
+        ];
         yield 'zero signatures' => [
             static fn (): VerifierOptions => new VerifierOptions(maxSignatures: 0),
             'maxSignatures must be at least 1; 0 given',
@@ -105,5 +112,19 @@ class VerifierOptionsTest extends TestCase
         $this->expectExceptionMessage($message);
 
         $build();
+    }
+
+    public function testEachRequiredComponentAppliesToTheFormsItCanBeWrittenIn(): void
+    {
+        $options = new VerifierOptions(
+            requiredComponents: ['host', '(request-target)', '@method', 'content-digest;req', 'Digest'],
+        );
+        $names = static fn (Form $form): array => array_map(
+            static fn (ComponentIdentifier $identifier): string => $identifier->toString(),
+            $options->requiredComponentIdentifiers($form),
+        );
+
+        $this->assertSame(['host', '(request-target)', 'digest'], $names(Form::Cavage));
+        $this->assertSame(['host', '@method', 'content-digest;req', 'digest'], $names(Form::Rfc9421));
     }
 }

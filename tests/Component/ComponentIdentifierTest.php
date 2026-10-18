@@ -168,4 +168,95 @@ class ComponentIdentifierTest extends TestCase
                 ->equals(ComponentIdentifier::parse('@query-param;name="pet"')),
         );
     }
+
+    /**
+     * @return iterable<string, array{string, string, bool}>
+     */
+    public static function cavageNamesProvider(): iterable
+    {
+        yield 'the request target' => ['(request-target)', '(request-target)', true];
+        yield 'the creation time in another case' => ['(Created)', '(created)', true];
+        yield 'the expiry' => ['(expires)', '(expires)', true];
+        yield 'a field in another case' => ['Content-Type', 'content-type', false];
+    }
+
+    #[DataProvider('cavageNamesProvider')]
+    public function testParsesADraftName(string $given, string $name, bool $isPseudoHeader): void
+    {
+        $identifier = ComponentIdentifier::parseCavage($given);
+
+        $this->assertSame($name, $identifier->name);
+        $this->assertSame($name, $identifier->toString());
+        $this->assertSame($isPseudoHeader, $identifier->isPseudoHeader());
+        $this->assertFalse($identifier->isDerived());
+        $this->assertTrue($identifier->isPlain($name));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function rejectedCavageNamesProvider(): iterable
+    {
+        yield 'empty' => ['', 'A component identifier must not be empty'];
+        yield 'a derived component' => ['@method', '"@method" is not a component name of the draft form'];
+        yield 'a name in parentheses the draft does not define' => [
+            '(foo)',
+            '"(foo)" is not a component name of the draft form',
+        ];
+        yield 'a field with a parameter' => ['date;req', '"date;req" is not a component name of the draft form'];
+        yield 'a name with a space' => ['content type', '"content type" is not a component name of the draft form'];
+    }
+
+    #[DataProvider('rejectedCavageNamesProvider')]
+    public function testRejectsWhatIsNotADraftName(string $given, string $message): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage($message);
+
+        ComponentIdentifier::parseCavage($given);
+    }
+
+    public function testBuildsFromANameOfTheHeadersParameter(): void
+    {
+        $this->assertTrue(ComponentIdentifier::fromCavageName('(expires)')->isPseudoHeader());
+        $this->assertTrue(ComponentIdentifier::fromCavageName('digest')->isPlain('digest'));
+        $this->assertTrue(
+            ComponentIdentifier::fromCavageName('(request-target)')
+                ->equals(ComponentIdentifier::parseCavage('(Request-Target)')),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string, FailureReason, string}>
+     */
+    public static function rejectedHeadersNamesProvider(): iterable
+    {
+        yield 'a name in parentheses the draft does not define' => [
+            '(foo)',
+            FailureReason::UnsupportedSignature,
+            '(foo) is not a name the draft form defines',
+        ];
+        yield 'a quoted name' => ['"date"', FailureReason::MalformedSignature, '""date"" is not a field name'];
+        yield 'a field name followed by parentheses' => [
+            'date(foo)',
+            FailureReason::MalformedSignature,
+            '"date(foo)" is not a field name',
+        ];
+        yield 'a derived component' => ['@method', FailureReason::MalformedSignature, '"@method" is not a field name'];
+    }
+
+    #[DataProvider('rejectedHeadersNamesProvider')]
+    public function testRejectsANameOfTheHeadersParameterItCannotUse(
+        string $name,
+        FailureReason $reason,
+        string $detail,
+    ): void {
+        try {
+            ComponentIdentifier::fromCavageName($name);
+            $this->fail('Expected a Failure');
+        } catch (Failure $failure) {
+            $this->assertSame($reason, $failure->reason);
+            $this->assertSame($detail, $failure->detail);
+        }
+    }
 }

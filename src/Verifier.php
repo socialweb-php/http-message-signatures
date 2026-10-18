@@ -297,7 +297,7 @@ final class Verifier
             return 'the signature has no nonce parameter';
         }
 
-        foreach ($options->requiredComponentIdentifiers() as $required) {
+        foreach ($options->requiredComponentIdentifiers(Form::Rfc9421) as $required) {
             if (!self::covers($signature, $required)) {
                 return sprintf('the required component %s is not covered', $required->toString());
             }

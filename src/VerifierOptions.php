@@ -29,6 +29,7 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 use function in_array;
 use function sprintf;
+use function str_starts_with;
 
 /**
  * What `Verifier::verify()` accepts
@@ -42,6 +43,11 @@ use function sprintf;
  * has no response target. The creation-time rule is satisfied by a `created`
  * parameter in either form, or by a covered `date` field under the draft,
  * which is where the implementations put it when `created` is absent.
+ *
+ * Each required component applies to the forms it can be written in: a field
+ * name with no parameters to both, a name in parentheses such as
+ * `(request-target)` to the draft only, and a derived component or a
+ * component with parameters to RFC 9421 only.
  */
 final readonly class VerifierOptions
 {
@@ -76,7 +82,8 @@ final readonly class VerifierOptions
      *     digest field
      * @param list<string> $requiredComponents component identifiers that must
      *     be covered, each a component name followed by its parameters in
-     *     the syntax of RFC 8941, as in `content-digest;req`
+     *     the syntax of RFC 8941, as in `content-digest;req`, or one of the
+     *     draft form's `(request-target)`, `(created)`, and `(expires)`
      * @param bool $requireNonce the `nonce` parameter must be present; RFC
      *     9421 only
      * @param bool $retryWithRefreshedKey call the resolver's `refresh()` once
@@ -120,7 +127,9 @@ final readonly class VerifierOptions
         $identifiers = [];
 
         foreach ($requiredComponents as $component) {
-            $identifiers[] = ComponentIdentifier::parse($component);
+            $identifiers[] = str_starts_with($component, '(')
+                ? ComponentIdentifier::parseCavage($component)
+                : ComponentIdentifier::parse($component);
         }
 
         if ($maxSignatures < 1) {
@@ -133,15 +142,26 @@ final readonly class VerifierOptions
     }
 
     /**
-     * Returns the required components as parsed
+     * Returns the required components, as parsed, that apply to the form
      *
      * @internal
      *
      * @return list<ComponentIdentifier>
      */
-    public function requiredComponentIdentifiers(): array
+    public function requiredComponentIdentifiers(Form $form): array
     {
-        return $this->requiredComponentIdentifiers;
+        $applying = [];
+
+        foreach ($this->requiredComponentIdentifiers as $identifier) {
+            $appliesToCavage = $identifier->isPseudoHeader()
+                || (!$identifier->isDerived() && $identifier->parameters->isEmpty());
+
+            if ($form === Form::Cavage ? $appliesToCavage : !$identifier->isPseudoHeader()) {
+                $applying[] = $identifier;
+            }
+        }
+
+        return $applying;
     }
 
     /**

@@ -8,10 +8,13 @@ use Closure;
 use DateInterval;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
+use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\SigningOptions;
+
+use function array_map;
 
 class SigningOptionsTest extends TestCase
 {
@@ -63,11 +66,42 @@ class SigningOptionsTest extends TestCase
         $this->assertSame(Algorithm::Ed25519, $options->algorithm);
     }
 
+    public function testParsesTheCoveredComponentsByForm(): void
+    {
+        $options = new SigningOptions(form: Form::Cavage, coveredComponents: ['(request-target)', 'Host', '(Created)']);
+        $identifiers = $options->coveredComponentIdentifiers() ?? [];
+
+        $this->assertSame(['(request-target)', 'Host', '(Created)'], $options->coveredComponents);
+        $this->assertSame(
+            ['(request-target)', 'host', '(created)'],
+            array_map(static fn (ComponentIdentifier $identifier): string => $identifier->toString(), $identifiers),
+        );
+    }
+
     /**
      * @return iterable<string, array{Closure(): SigningOptions, string}>
      */
     public static function rejectedOptionsProvider(): iterable
     {
+        yield 'a derived component under the draft' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['@method']),
+            '"@method" is not a component name of the draft form',
+        ];
+        yield 'a component with a parameter under the draft' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['date;req']),
+            '"date;req" is not a component name of the draft form',
+        ];
+        yield 'a draft name under RFC 9421' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                coveredComponents: ['(request-target)'],
+            ),
+            '"(request-target)" is not a component name',
+        ];
+        yield 'a duplicate under the draft' => [
+            static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['date', 'Date']),
+            'The covered component date appears more than once',
+        ];
         yield 'an empty component identifier' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, coveredComponents: ['@method', '']),
             'A component identifier must not be empty',

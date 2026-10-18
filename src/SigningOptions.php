@@ -39,11 +39,11 @@ use function sprintf;
  * the draft form: `(request-target)`, `host`, `date`, and `digest` when the
  * message has content. Under RFC 9421: `@method`, `@target-uri`, `host`,
  * `date`, and `content-digest` when the message has content. For a response,
- * `(request-target)`, `@method`, and `@target-uri` are replaced by `@status`
- * under RFC 9421 and dropped under the draft. A caller who names the
- * components gets exactly what was named: the digest field is then included
- * only if listed, and listing it on a message without content signs the digest
- * of empty content, which RFC 9530 allows.
+ * the defaults are `@status` under RFC 9421, `date`, and the digest field when
+ * the message has content. A caller who names the components gets exactly
+ * what was named: the digest field is then included only if listed, and
+ * listing it on a message without content signs the digest of empty content,
+ * which RFC 9530 allows.
  */
 final readonly class SigningOptions
 {
@@ -79,9 +79,11 @@ final readonly class SigningOptions
     /**
      * @param Form $form which form to produce
      * @param list<string> | null $coveredComponents component identifiers in
-     *     signing order, each a component name followed by its parameters in
-     *     the syntax of RFC 8941, as in `@query-param;name="Pet"` or
-     *     `content-digest;req`; `null` means the form's default
+     *     signing order; under RFC 9421 each is a component name followed by
+     *     its parameters in the syntax of RFC 8941, as in
+     *     `@query-param;name="Pet"` or `content-digest;req`, and under the
+     *     draft form each is a field name or `(request-target)`, `(created)`,
+     *     or `(expires)`; `null` means the form's default
      * @param Algorithm | null $algorithm `null` means the first algorithm the
      *     key permits that has a name in the form
      * @param string $label the signature label; RFC 9421 only
@@ -112,7 +114,7 @@ final readonly class SigningOptions
         public ?string $tag = null,
         array $digestAlgorithms = [DigestAlgorithm::Sha256],
     ) {
-        $identifiers = $coveredComponents === null ? null : self::parseIdentifiers($coveredComponents);
+        $identifiers = $coveredComponents === null ? null : self::parseIdentifiers($coveredComponents, $form);
 
         if ($algorithm !== null && $algorithm->name($form) === null) {
             throw new InvalidArgument(
@@ -191,12 +193,14 @@ final readonly class SigningOptions
      *
      * @throws InvalidArgument
      */
-    private static function parseIdentifiers(array $components): array
+    private static function parseIdentifiers(array $components, Form $form): array
     {
         $identifiers = [];
 
         foreach ($components as $component) {
-            $identifier = ComponentIdentifier::parse($component);
+            $identifier = $form === Form::Cavage
+                ? ComponentIdentifier::parseCavage($component)
+                : ComponentIdentifier::parse($component);
 
             if ($identifier->name === '@signature-params') {
                 throw new InvalidArgument('@signature-params cannot be a covered component');

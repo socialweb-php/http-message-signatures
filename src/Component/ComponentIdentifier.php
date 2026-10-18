@@ -32,6 +32,7 @@ use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
+use function in_array;
 use function is_string;
 use function preg_match;
 use function sprintf;
@@ -42,18 +43,27 @@ use function substr;
 
 /**
  * A component identifier of RFC 9421 section 2: a component name and its
+ * parameters; or a name of the draft form's `headers` parameter, which has no
  * parameters
  *
  * The options write an identifier as the name followed by its parameters in
  * the syntax of RFC 8941, as in `@query-param;name="Pet"` or
  * `content-digest;req`. The signature base writes it with the name in double
  * quotes, as in `"@query-param";name="Pet"`. A field name is lowercased on
- * the way in; a derived component name is lowercase by the registry.
+ * the way in; a derived component name is lowercase by the registry. Under
+ * the draft form a name is a field name or one of the draft's three names in
+ * parentheses, such as `(request-target)`.
  *
  * @internal
  */
 final class ComponentIdentifier
 {
+    /**
+     * The names of draft-cavage-http-signatures-12 section 2.3 that are not
+     * fields
+     */
+    public const array CAVAGE_PSEUDO_HEADERS = ['(request-target)', '(created)', '(expires)'];
+
     /**
      * A derived component name of RFC 9421 section 6.4.1
      */
@@ -105,6 +115,56 @@ final class ComponentIdentifier
     }
 
     /**
+     * Parses a name of the draft form as the options write it: a field name
+     * or one of the draft's three names in parentheses, in any case
+     *
+     * @throws InvalidArgument when the name is empty or is neither
+     */
+    public static function parseCavage(string $name): self
+    {
+        if ($name === '') {
+            throw new InvalidArgument('A component identifier must not be empty');
+        }
+
+        $lowercase = strtolower($name);
+        $isPseudoHeader = in_array($lowercase, self::CAVAGE_PSEUDO_HEADERS, true);
+
+        if (!$isPseudoHeader && preg_match(self::FIELD_NAME_PATTERN, $name) !== 1) {
+            throw new InvalidArgument(sprintf('"%s" is not a component name of the draft form', $name));
+        }
+
+        return new self($lowercase, Parameters::new());
+    }
+
+    /**
+     * Builds an identifier from a name of the draft form's `headers`
+     * parameter, which the parser has lowercased
+     *
+     * @throws Failure `UnsupportedSignature` for a name in parentheses that
+     *     the draft does not define, and `MalformedSignature` for a name that
+     *     is not a field name
+     */
+    public static function fromCavageName(string $name): self
+    {
+        if (in_array($name, self::CAVAGE_PSEUDO_HEADERS, true)) {
+            return new self($name, Parameters::new());
+        }
+
+        if (preg_match('/^\(.*\)\z/', $name) === 1) {
+            throw new Failure(
+                FailureReason::UnsupportedSignature,
+                sprintf('%s is not a name the draft form defines', $name),
+            );
+        }
+
+        if (preg_match(self::FIELD_NAME_PATTERN, $name) !== 1) {
+            throw new Failure(FailureReason::MalformedSignature, sprintf('"%s" is not a field name', $name));
+        }
+
+        return new self($name, Parameters::new());
+    }
+
+    /**
      * Builds an identifier from a member of a parsed `Signature-Input` Inner
      * List
      *
@@ -138,6 +198,14 @@ final class ComponentIdentifier
     public function isDerived(): bool
     {
         return str_starts_with($this->name, '@');
+    }
+
+    /**
+     * Returns whether this is one of the draft form's names in parentheses
+     */
+    public function isPseudoHeader(): bool
+    {
+        return str_starts_with($this->name, '(');
     }
 
     /**
