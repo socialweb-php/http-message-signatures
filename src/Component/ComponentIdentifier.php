@@ -42,9 +42,9 @@ use function strtolower;
 use function substr;
 
 /**
- * A component identifier of RFC 9421 section 2: a component name and its
- * parameters; or a name of the draft form's `headers` parameter, which has no
- * parameters
+ * A component identifier: under RFC 9421, a component name and its
+ * parameters, as section 2 defines them; under the draft form, a name from the
+ * `headers` parameter, with nothing after it
  *
  * The options write an identifier as the name followed by its parameters in
  * the syntax of RFC 8941, as in `@query-param;name="Pet"` or
