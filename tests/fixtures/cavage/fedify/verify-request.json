@@ -1,0 +1,30 @@
+{
+    "source": "Fedify f56118e197798465021d622a2177ec8c017df073, packages/fedify/src/sig/http.test.ts lines 84-108; key from packages/fixture/src/fixtures/example.com/key.json",
+    "currentTime": 1709624984,
+    "method": "POST",
+    "url": "https://example.com/",
+    "headers": [
+        [
+            "Accept",
+            "text/plain"
+        ],
+        [
+            "Content-Type",
+            "text/plain; charset=utf-8"
+        ],
+        [
+            "Date",
+            "Tue, 05 Mar 2024 07:49:44 GMT"
+        ],
+        [
+            "Digest",
+            "sha-256=MV9b23bQeMQ7isAGTkoBZGErH853yGk0W/yUx1iU7dM="
+        ],
+        [
+            "Signature",
+            "keyId=\"https://example.com/key\",headers=\"(request-target) accept content-type date digest host\",signature=\"ZDeMzjBKPfJvkv4QaxAdOQxKCJ96pOzOCFhhGgGnlsw4N80oN4GEZ/n8nNKjpoW95Bcs8N0dZVSQHj3g08AReKIOXpun0tgmaWGKRcRT4kEhAW+uP1wVZPbuOIvVCEhMYv6+SbnttgX0GvN365BTZpxh7+gRrRC4mns5qV69cv45I5iJB0aw24GJW9u7lUAm6yDEh4N0aXfNqNRq3LHiuPqlDzSenfXbHr0UnAMaGuI4v9/uflu/jNi3hRX4Y/T+ngM1zvLvi/BjKK4I1rh520qnkrWpxz9ikLCjIMO7Dwh1nOsPzrZE2t43XHD3evdvm1RM5Ppes+M6DrfkfQuUBw==\""
+        ]
+    ],
+    "body": "Hello, world!",
+    "keyFile": "verify-request.public.pem"
+}

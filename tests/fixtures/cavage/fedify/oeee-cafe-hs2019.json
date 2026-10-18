@@ -1,0 +1,30 @@
+{
+    "source": "Fedify f56118e197798465021d622a2177ec8c017df073, packages/fedify/src/sig/http.test.ts lines 260-277; key from packages/fixture/src/fixtures/oeee.cafe/ap/users/3609fd4e-d51d-4db8-9f04-4189815864dd.json",
+    "currentTime": 1756126694,
+    "method": "POST",
+    "url": "https://c27a97f98d5f.ngrok.app/i/inbox",
+    "headers": [
+        [
+            "Host",
+            "c27a97f98d5f.ngrok.app"
+        ],
+        [
+            "Content-Type",
+            "application/activity+json"
+        ],
+        [
+            "Date",
+            "Mon, 25 Aug 2025 12:58:14 GMT"
+        ],
+        [
+            "Digest",
+            "SHA-256=YZyjeVQW5GwliJowASkteBJhFBTq3eQk/AMqRETc//A="
+        ],
+        [
+            "Signature",
+            "keyId=\"https://oeee.cafe/ap/users/3609fd4e-d51d-4db8-9f04-4189815864dd#main-key\",algorithm=\"hs2019\",created=\"1756126694\",expires=\"1756130294\",headers=\"(request-target) (created) (expires) content-type date digest host\",signature=\"XFb0jl2uMhE7RhbneE9sK9Zls2qZec8iy6+9O8UgDQeBGJThORFLjXKlps4QO1WAf1YSVB/i5aV6yF+h73Lm3ZiuAJDx1h+00iLsxoYuIw1CZvF0V2jELoo3sQ2/ZzqeoO6H5TbK7tKnU+ulFAPTuJgjIvPwYl11OMRouVS34NiaHP9Yx9pU813TLv37thG/hUKanyq8kk0IJWtDWteY/zxDvzoe7VOkBXVBHslMyrNAI/5JGulVQAQp/E61dJAhTHHIyGxkc/7iutWFZuqFXIiPJ9KR2OuKDj/B32hEzlsf5xH/CjqOJPIg1qMK8FzDiALCq6zjiKIBEnW8HQc/hQ==\""
+        ]
+    ],
+    "body": "{\"@context\":[\"https://www.w3.org/ns/activitystreams\",\"https://w3id.org/security/v1\"],\"actor\":\"https://oeee.cafe/ap/users/3609fd4e-d51d-4db8-9f04-4189815864dd\",\"object\":{\"actor\":\"https://c27a97f98d5f.ngrok.app/i\",\"object\":\"https://oeee.cafe/ap/users/3609fd4e-d51d-4db8-9f04-4189815864dd\",\"type\":\"Follow\",\"id\":\"https://c27a97f98d5f.ngrok.app/i#follows/https://oeee.cafe/ap/users/3609fd4e-d51d-4db8-9f04-4189815864dd\"},\"type\":\"Accept\",\"id\":\"https://oeee.cafe/objects/0fc2608f-5660-4b91-b8c7-63c0c2ac2e20\"}",
+    "keyFile": "oeee-cafe-hs2019.public.pem"
+}

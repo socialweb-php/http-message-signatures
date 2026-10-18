@@ -31,8 +31,9 @@ use const OPENSSL_KEYTYPE_EC;
 use const OPENSSL_KEYTYPE_ED25519;
 
 /**
- * Signs and then verifies under every algorithm, on requests and responses,
- * with and without content, and proves the negative cases
+ * Signs and then verifies under every algorithm in every form it has a name
+ * in, on requests and responses, with and without content, and proves the
+ * negative cases
  */
 class RoundTripTest extends TestCase
 {
@@ -99,7 +100,7 @@ class RoundTripTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{Algorithm, MessageInterface}>
+     * @return iterable<string, array{Form, Algorithm, MessageInterface}>
      */
     public static function casesProvider(): iterable
     {
@@ -119,25 +120,54 @@ class RoundTripTest extends TestCase
             ),
         ];
 
-        foreach (Algorithm::cases() as $algorithm) {
-            foreach ($messages as $description => $message) {
-                yield sprintf('%s on %s', $algorithm->rfc9421Name(), $description) => [$algorithm, $message];
+        foreach (Form::cases() as $form) {
+            foreach (Algorithm::cases() as $algorithm) {
+                $name = $algorithm->name($form);
+
+                if ($name === null) {
+                    continue;
+                }
+
+                foreach ($messages as $description => $message) {
+                    yield sprintf('%s, %s on %s', $form->value, $name, $description) => [$form, $algorithm, $message];
+                }
             }
         }
     }
 
     #[DataProvider('casesProvider')]
-    public function testWhatTheSignerProducesTheVerifierAccepts(Algorithm $algorithm, MessageInterface $message): void
-    {
+    public function testWhatTheSignerProducesTheVerifierAccepts(
+        Form $form,
+        Algorithm $algorithm,
+        MessageInterface $message,
+    ): void {
         [$signingKey, $verificationKey] = self::keyPair($algorithm);
         $clock = new FrozenClock(new DateTimeImmutable('@' . self::NOW));
 
-        $signed = (new Signer($clock))->sign($message, $signingKey, new SigningOptions(form: Form::Rfc9421));
+        $signed = (new Signer($clock))->sign($message, $signingKey, new SigningOptions(form: $form));
         $result = (new Verifier(new ArrayKeyResolver([$algorithm->name => $verificationKey]), $clock))->verify($signed);
 
         $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame($form, $result->form);
         $this->assertSame($algorithm, $result->algorithm);
         $this->assertSame($algorithm->name, $result->keyId);
+    }
+
+    public function testOneRequestSignedInBothFormsVerifiesInEach(): void
+    {
+        [$signingKey, $verificationKey] = self::keyPair(Algorithm::RsaV15Sha256);
+        $clock = new FrozenClock(new DateTimeImmutable('@' . self::NOW));
+        $signer = new Signer($clock);
+        $verifier = new Verifier(new ArrayKeyResolver([Algorithm::RsaV15Sha256->name => $verificationKey]), $clock);
+        $request = new Request('POST', 'https://example.com/foo', ['Host' => 'example.com'], '{"hello": "world"}');
+
+        $rfc9421 = $verifier->verify($signer->sign($request, $signingKey, new SigningOptions(form: Form::Rfc9421)));
+        $cavage = $verifier->verify($signer->sign($request, $signingKey, new SigningOptions(form: Form::Cavage)));
+
+        $this->assertTrue($rfc9421->verified, $rfc9421->detail);
+        $this->assertSame(Form::Rfc9421, $rfc9421->form);
+        $this->assertTrue($cavage->verified, $cavage->detail);
+        $this->assertSame(Form::Cavage, $cavage->form);
     }
 
     private static function signedRequest(): Request

@@ -39,6 +39,21 @@ class TestCase extends BaseTestCase
     }
 
     /**
+     * Returns the contents of a fixture of the draft form, under
+     * `tests/fixtures/cavage/`
+     */
+    protected static function cavageFixture(string $file): string
+    {
+        $contents = file_get_contents(__DIR__ . '/fixtures/cavage/' . $file);
+
+        if ($contents === false) {
+            throw new RuntimeException('Cannot read the fixture ' . $file);
+        }
+
+        return $contents;
+    }
+
+    /**
      * Returns the bytes of the shared secret of RFC 9421 appendix B.1.5
      */
     protected static function rfc9421SharedSecret(): string
