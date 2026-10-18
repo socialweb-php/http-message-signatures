@@ -101,7 +101,7 @@ class KeyMaterialTest extends TestCase
         $this->assertIsString($encrypted);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('OpenSSL cannot read the private key: error:');
+        $this->expectExceptionMessageIsOrContains('OpenSSL cannot read the private key: error:');
 
         KeyMaterial::fromPrivatePem($encrypted, 'wrong');
     }
@@ -109,7 +109,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAPublicKeyGivenAsAFilePath(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('A key must be given as PEM text, not as a file path');
+        $this->expectExceptionMessageIsOrContains('A key must be given as PEM text, not as a file path');
 
         KeyMaterial::fromPublicPem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.public.pem');
     }
@@ -117,7 +117,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAPrivateKeyGivenAsAFilePath(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('A key must be given as PEM text, not as a file path');
+        $this->expectExceptionMessageIsOrContains('A key must be given as PEM text, not as a file path');
 
         KeyMaterial::fromPrivatePem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.private.pem', null);
     }
@@ -129,7 +129,7 @@ class KeyMaterialTest extends TestCase
         $this->assertSame([Algorithm::RsaPssSha512], $material->permittedAlgorithms(null));
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaV15Sha256 does not fit a key of type RsaPss');
+        $this->expectExceptionMessageIsOrContains('Algorithm RsaV15Sha256 does not fit a key of type RsaPss');
 
         $material->permittedAlgorithms([Algorithm::RsaV15Sha256]);
     }
@@ -187,7 +187,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAPrivatePemGivenAsAPublicKey(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('OpenSSL cannot read the public key');
+        $this->expectExceptionMessageIsOrContains('OpenSSL cannot read the public key');
 
         KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa.private.pem'));
     }
@@ -195,7 +195,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAPublicPemGivenAsAPrivateKey(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('OpenSSL cannot read the private key');
+        $this->expectExceptionMessageIsOrContains('OpenSSL cannot read the private key');
 
         KeyMaterial::fromPrivatePem(self::rfc9421Key('test-key-rsa.public.pem'), null);
     }
@@ -205,7 +205,9 @@ class KeyMaterialTest extends TestCase
         [$private] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'secp521r1']);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('EC keys on the curve secp521r1 are not implemented; use P-256 or P-384');
+        $this->expectExceptionMessageIsOrContains(
+            'EC keys on the curve secp521r1 are not implemented; use P-256 or P-384',
+        );
 
         KeyMaterial::fromPrivatePem($private, null);
     }
@@ -215,7 +217,9 @@ class KeyMaterialTest extends TestCase
         [, $public] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_ED448]);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Keys of OpenSSL type 7 are not implemented; use RSA, P-256, P-384, or Ed25519');
+        $this->expectExceptionMessageIsOrContains(
+            'Keys of OpenSSL type 7 are not implemented; use RSA, P-256, P-384, or Ed25519',
+        );
 
         KeyMaterial::fromPublicPem($public);
     }
@@ -225,7 +229,7 @@ class KeyMaterialTest extends TestCase
         [$private] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_X25519]);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Keys of OpenSSL type 4 are not implemented');
+        $this->expectExceptionMessageIsOrContains('Keys of OpenSSL type 4 are not implemented');
 
         KeyMaterial::fromPrivatePem($private, null);
     }
@@ -235,7 +239,7 @@ class KeyMaterialTest extends TestCase
         [, $public] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_DSA, 'private_key_bits' => 1024]);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Keys of OpenSSL type 1 are not implemented');
+        $this->expectExceptionMessageIsOrContains('Keys of OpenSSL type 1 are not implemented');
 
         KeyMaterial::fromPublicPem($public);
     }
@@ -243,7 +247,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAnEmptySecret(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The shared secret must not be empty');
+        $this->expectExceptionMessageIsOrContains('The shared secret must not be empty');
 
         KeyMaterial::fromSecret('');
     }
@@ -268,7 +272,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAnEmptyPermittedList(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The list of permitted algorithms must not be empty');
+        $this->expectExceptionMessageIsOrContains('The list of permitted algorithms must not be empty');
 
         KeyMaterial::fromSecret('s')->permittedAlgorithms([]);
     }
@@ -276,7 +280,7 @@ class KeyMaterialTest extends TestCase
     public function testRejectsAnAlgorithmThatDoesNotFitTheType(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm HmacSha256 does not fit a key of type Rsa');
+        $this->expectExceptionMessageIsOrContains('Algorithm HmacSha256 does not fit a key of type Rsa');
 
         KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa.public.pem'))
             ->permittedAlgorithms([Algorithm::RsaV15Sha256, Algorithm::HmacSha256]);
@@ -285,7 +289,9 @@ class KeyMaterialTest extends TestCase
     public function testRejectsADuplicateInThePermittedList(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaPssSha512 appears more than once in the permitted list');
+        $this->expectExceptionMessageIsOrContains(
+            'Algorithm RsaPssSha512 appears more than once in the permitted list',
+        );
 
         KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa.public.pem'))
             ->permittedAlgorithms([Algorithm::RsaPssSha512, Algorithm::RsaPssSha512]);
@@ -294,7 +300,7 @@ class KeyMaterialTest extends TestCase
     public function testASharedSecretCannotSignWithAnAsymmetricAlgorithm(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Ed25519 needs a key, not a shared secret');
+        $this->expectExceptionMessageIsOrContains('Ed25519 needs a key, not a shared secret');
 
         KeyMaterial::fromSecret('s')->sign(Algorithm::Ed25519, 'base');
     }
@@ -302,7 +308,7 @@ class KeyMaterialTest extends TestCase
     public function testASharedSecretCannotVerifyWithAnAsymmetricAlgorithm(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('RsaV15Sha256 needs a key, not a shared secret');
+        $this->expectExceptionMessageIsOrContains('RsaV15Sha256 needs a key, not a shared secret');
 
         KeyMaterial::fromSecret('s')->verify(Algorithm::RsaV15Sha256, 'base', 'sig');
     }
@@ -310,7 +316,7 @@ class KeyMaterialTest extends TestCase
     public function testAKeyCannotSignWithHmac(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('HmacSha256 needs a shared secret, not a key');
+        $this->expectExceptionMessageIsOrContains('HmacSha256 needs a shared secret, not a key');
 
         KeyMaterial::fromPrivatePem(self::rfc9421Key('test-key-rsa.private.pem'), null)
             ->sign(Algorithm::HmacSha256, 'b');
@@ -319,7 +325,7 @@ class KeyMaterialTest extends TestCase
     public function testAKeyCannotVerifyWithHmac(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('HmacSha256 needs a shared secret, not a key');
+        $this->expectExceptionMessageIsOrContains('HmacSha256 needs a shared secret, not a key');
 
         KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa.public.pem'))
             ->verify(Algorithm::HmacSha256, 'b', 's');

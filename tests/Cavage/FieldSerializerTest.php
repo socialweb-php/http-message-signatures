@@ -107,7 +107,7 @@ class FieldSerializerTest extends TestCase
     public function testRejectsAKeyIdentifierAQuotedStringCannotHold(string $keyId): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'Under the draft form the key identifier must hold only printable ASCII characters',
         );
 
@@ -117,7 +117,7 @@ class FieldSerializerTest extends TestCase
     public function testRefusesAnAlgorithmWithNoNameInTheDraftForm(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'The algorithm EcdsaP256Sha256 has no name in the form draft-cavage-http-signatures-12',
         );
 

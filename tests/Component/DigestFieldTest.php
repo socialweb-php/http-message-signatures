@@ -53,7 +53,7 @@ class DigestFieldTest extends TestCase
     public function testRefusesToSerializeNothing(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('There are no digests to serialize');
+        $this->expectExceptionMessageIsOrContains('There are no digests to serialize');
 
         DigestField::serialize('digest', []);
     }
@@ -61,7 +61,7 @@ class DigestFieldTest extends TestCase
     public function testRefusesToSerializeAnUnknownAlgorithm(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('"md5" is not a digest algorithm the package knows');
+        $this->expectExceptionMessageIsOrContains('"md5" is not a digest algorithm the package knows');
 
         DigestField::serialize('digest', ['md5' => hash('md5', '', true)]);
     }
@@ -69,7 +69,7 @@ class DigestFieldTest extends TestCase
     public function testRefusesToSerializeAnotherField(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('"repr-digest" is not a digest field');
+        $this->expectExceptionMessageIsOrContains('"repr-digest" is not a digest field');
 
         DigestField::serialize('repr-digest', ['sha-256' => hash('sha256', '', true)]);
     }
@@ -77,7 +77,7 @@ class DigestFieldTest extends TestCase
     public function testRefusesToCheckAnotherField(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('"repr-digest" is not a digest field');
+        $this->expectExceptionMessageIsOrContains('"repr-digest" is not a digest field');
 
         DigestField::check('repr-digest', 'sha-256=:' . self::SHA256 . ':', self::content());
     }

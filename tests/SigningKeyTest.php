@@ -58,7 +58,7 @@ class SigningKeyTest extends TestCase
     public function testRejectsAnEmptyKeyIdForAPem(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The key identifier must not be empty');
+        $this->expectExceptionMessageIsOrContains('The key identifier must not be empty');
 
         SigningKey::fromPem('', self::rfc9421Key('test-key-rsa.private.pem'));
     }
@@ -66,7 +66,7 @@ class SigningKeyTest extends TestCase
     public function testRejectsAnEmptyKeyIdForASecret(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The key identifier must not be empty');
+        $this->expectExceptionMessageIsOrContains('The key identifier must not be empty');
 
         SigningKey::fromSharedSecret('', 'secret');
     }
@@ -74,7 +74,7 @@ class SigningKeyTest extends TestCase
     public function testRejectsAPemOpenSslCannotRead(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('OpenSSL cannot read the private key');
+        $this->expectExceptionMessageIsOrContains('OpenSSL cannot read the private key');
 
         SigningKey::fromPem('k', 'not a key');
     }
@@ -82,7 +82,7 @@ class SigningKeyTest extends TestCase
     public function testRejectsAnEmptySecret(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The shared secret must not be empty');
+        $this->expectExceptionMessageIsOrContains('The shared secret must not be empty');
 
         SigningKey::fromSharedSecret('k', '');
     }
@@ -90,7 +90,7 @@ class SigningKeyTest extends TestCase
     public function testRejectsAListThatDoesNotFitTheType(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm HmacSha256 does not fit a key of type Ed25519');
+        $this->expectExceptionMessageIsOrContains('Algorithm HmacSha256 does not fit a key of type Ed25519');
 
         SigningKey::fromPem('k', self::rfc9421Key('test-key-ed25519.private.pem'), null, [Algorithm::HmacSha256]);
     }
@@ -127,7 +127,7 @@ class SigningKeyTest extends TestCase
         $key = SigningKey::fromPem('k', self::rfc9421Key('test-key-rsa.private.pem'), null, [Algorithm::RsaPssSha512]);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaV15Sha256 is not permitted for this key');
+        $this->expectExceptionMessageIsOrContains('Algorithm RsaV15Sha256 is not permitted for this key');
 
         $key->sign(Algorithm::RsaV15Sha256, 'base');
     }
@@ -148,7 +148,7 @@ class SigningKeyTest extends TestCase
         $key = SigningKey::fromSharedSecret('k', 'the secret bytes');
 
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('A SigningKey cannot be serialized');
+        $this->expectExceptionMessageIsOrContains('A SigningKey cannot be serialized');
 
         serialize($key);
     }

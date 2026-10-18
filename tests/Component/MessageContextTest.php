@@ -96,7 +96,7 @@ class MessageContextTest extends TestCase
         $context = new MessageContext(new Request('GET', 'https://example.com/'));
 
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the field "x-absent" is not in the message');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the field "x-absent" is not in the message');
 
         $context->field('X-Absent');
     }
@@ -119,7 +119,7 @@ class MessageContextTest extends TestCase
     public function testBinaryWrappingOfAnAbsentFieldIsMissing(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the field "x-absent" is not in the message');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the field "x-absent" is not in the message');
 
         (new MessageContext(new Request('GET', 'https://example.com/')))->fieldBinaryWrapped('x-absent');
     }
@@ -223,7 +223,7 @@ class MessageContextTest extends TestCase
     public function testAnAbsentStructuredFieldIsMissing(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the field "signature" is not in the message');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the field "signature" is not in the message');
 
         (new MessageContext(new Request('GET', 'https://example.com/')))->fieldStructured('Signature');
     }
@@ -340,7 +340,7 @@ class MessageContextTest extends TestCase
     public function testTheTargetUriNeedsAnAuthority(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the request URI has no authority');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the request URI has no authority');
 
         (new MessageContext(new Request('GET', '/path')))->derived('@target-uri');
     }
@@ -415,7 +415,7 @@ class MessageContextTest extends TestCase
         $request->method('getRequestTarget')->willReturn('/a' . $break . 'b');
 
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the value of @request-target holds a line break');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the value of @request-target holds a line break');
 
         (new MessageContext($request))->derived('@request-target');
     }
@@ -551,7 +551,7 @@ class MessageContextTest extends TestCase
         $context = new MessageContext(new Request('GET', 'https://example.com/path?param=value'));
 
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('MissingComponent: the query has no parameter "pet"');
+        $this->expectExceptionMessageIsOrContains('MissingComponent: the query has no parameter "pet"');
 
         $context->queryParameter('pet');
     }
@@ -561,7 +561,9 @@ class MessageContextTest extends TestCase
         $context = new MessageContext(new Request('GET', 'https://example.com/path?a=1&b=2&a=3'));
 
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('UnsupportedSignature: the query parameter "a" occurs more than once');
+        $this->expectExceptionMessageIsOrContains(
+            'UnsupportedSignature: the query parameter "a" occurs more than once',
+        );
 
         $context->queryParameter('a');
     }
@@ -569,7 +571,7 @@ class MessageContextTest extends TestCase
     public function testAQueryParameterOfAResponseIsUnsupported(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('UnsupportedSignature: @query-param is a request component');
+        $this->expectExceptionMessageIsOrContains('UnsupportedSignature: @query-param is a request component');
 
         (new MessageContext(new Response()))->queryParameter('a');
     }
@@ -593,7 +595,7 @@ class MessageContextTest extends TestCase
     public function testTheDraftRequestTargetOfAResponseIsUnsupported(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage('UnsupportedSignature: (request-target) is a request component');
+        $this->expectExceptionMessageIsOrContains('UnsupportedSignature: (request-target) is a request component');
 
         (new MessageContext(new Response()))->cavageRequestTarget();
     }
@@ -612,7 +614,7 @@ class MessageContextTest extends TestCase
     public function testReqOnARequestIsUnsupported(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'UnsupportedSignature: the req parameter cannot be used when the target message is a request',
         );
 
@@ -622,7 +624,7 @@ class MessageContextTest extends TestCase
     public function testReqWithoutARelatedRequestIsMissing(): void
     {
         $this->expectException(ComponentFailure::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'MissingComponent: a component with the req parameter needs the related request, which was not given',
         );
 

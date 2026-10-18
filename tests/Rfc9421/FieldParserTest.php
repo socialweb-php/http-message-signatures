@@ -259,7 +259,7 @@ class FieldParserTest extends TestCase
     public function testTheLabelsOfBothFieldsMustMatchEvenBeyondTheLimit(): void
     {
         $this->expectException(Failure::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'MalformedSignature: the label "sig2" is in Signature and not in Signature-Input',
         );
 

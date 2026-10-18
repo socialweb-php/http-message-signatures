@@ -32,7 +32,7 @@ class ContentTest extends TestCase
         $request = new Request('POST', 'https://example.com/', [], Stream::create($pipe));
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The message body must be seekable');
+        $this->expectExceptionMessageIsOrContains('The message body must be seekable');
 
         new Content($request);
     }

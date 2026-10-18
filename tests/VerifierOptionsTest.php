@@ -109,7 +109,7 @@ class VerifierOptionsTest extends TestCase
     public function testRejectsAnOptionItCannotAccept(Closure $build, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         $build();
     }

@@ -582,7 +582,7 @@ class VerifierTest extends TestCase
         };
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('the key server is down');
+        $this->expectExceptionMessageIsOrContains('the key server is down');
 
         self::verify(self::signed(self::request()), resolver: $resolver);
     }

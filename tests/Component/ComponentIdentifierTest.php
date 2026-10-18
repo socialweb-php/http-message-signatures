@@ -89,7 +89,7 @@ class ComponentIdentifierTest extends TestCase
     public function testRejectsWhatIsNotAnIdentifier(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         ComponentIdentifier::parse($given);
     }
@@ -244,7 +244,7 @@ class ComponentIdentifierTest extends TestCase
     public function testRejectsAnIdentifierThatDoesNotParseInItsForm(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         ComponentIdentifier::parseInEitherForm($given);
     }
@@ -253,7 +253,7 @@ class ComponentIdentifierTest extends TestCase
     public function testRejectsWhatIsNotADraftName(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         ComponentIdentifier::parseCavage($given);
     }

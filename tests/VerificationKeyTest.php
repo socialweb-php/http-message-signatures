@@ -62,7 +62,7 @@ class VerificationKeyTest extends TestCase
     public function testRejectsAListThatDoesNotFitTheType(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaV15Sha256 does not fit a key of type SharedSecret');
+        $this->expectExceptionMessageIsOrContains('Algorithm RsaV15Sha256 does not fit a key of type SharedSecret');
 
         VerificationKey::fromSharedSecret('secret', [Algorithm::RsaV15Sha256]);
     }
@@ -100,7 +100,7 @@ class VerificationKeyTest extends TestCase
         $key = VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'), [Algorithm::RsaPssSha512]);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaV15Sha256 is not permitted for this key');
+        $this->expectExceptionMessageIsOrContains('Algorithm RsaV15Sha256 is not permitted for this key');
 
         $key->verify(Algorithm::RsaV15Sha256, 'base', 'signature');
     }
@@ -121,7 +121,7 @@ class VerificationKeyTest extends TestCase
         $key = VerificationKey::fromSharedSecret('the secret bytes');
 
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('A VerificationKey cannot be serialized');
+        $this->expectExceptionMessageIsOrContains('A VerificationKey cannot be serialized');
 
         serialize($key);
     }

@@ -217,7 +217,7 @@ class SigningOptionsTest extends TestCase
     public function testRejectsAnOptionThatDoesNotFit(Closure $build, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         $build();
     }
@@ -228,7 +228,7 @@ class SigningOptionsTest extends TestCase
         $expires->invert = 1;
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('expires must not be negative');
+        $this->expectExceptionMessageIsOrContains('expires must not be negative');
 
         new SigningOptions(form: Form::Rfc9421, expires: $expires);
     }

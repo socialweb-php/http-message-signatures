@@ -294,7 +294,7 @@ class SignerTest extends TestCase
     public function testRefusesAnAlgorithmTheKeyDoesNotPermit(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('Algorithm RsaV15Sha256 is not permitted for this key');
+        $this->expectExceptionMessageIsOrContains('Algorithm RsaV15Sha256 is not permitted for this key');
 
         self::signer()->sign(
             self::request(),
@@ -327,7 +327,7 @@ class SignerTest extends TestCase
         $once = self::signer()->sign(self::request(), self::key(), new SigningOptions(form: Form::Rfc9421));
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The message already has a signature with the label "sig1"');
+        $this->expectExceptionMessageIsOrContains('The message already has a signature with the label "sig1"');
 
         self::signer()->sign($once, self::key('test-key-rsa'), new SigningOptions(form: Form::Rfc9421));
     }
@@ -564,7 +564,7 @@ class SignerTest extends TestCase
     public function testRefusesWhatTheDraftFormCannotSign(string $key, SigningOptions $options, string $message): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
         $this->expectExceptionCode(0);
 
         self::signer()->sign(self::request(), self::key($key), $options);
@@ -573,7 +573,7 @@ class SignerTest extends TestCase
     public function testRefusesADraftKeyIdentifierAQuotedStringCannotHold(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'Under the draft form the key identifier must hold only printable ASCII characters',
         );
 
@@ -606,7 +606,7 @@ class SignerTest extends TestCase
     public function testRefusesAReqComponentWithoutTheRelatedRequest(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'Cannot sign the message: a component with the req parameter needs the related request, which was not'
             . ' given',
         );
@@ -624,7 +624,7 @@ class SignerTest extends TestCase
         $this->assertNotFalse($pipe);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The message body must be seekable');
+        $this->expectExceptionMessageIsOrContains('The message body must be seekable');
 
         self::signer()->sign(
             self::request()->withBody(Stream::create($pipe)),

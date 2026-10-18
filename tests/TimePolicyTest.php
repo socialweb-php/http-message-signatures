@@ -57,7 +57,7 @@ class TimePolicyTest extends TestCase
     public function testRejectsANegativeInterval(string $name, DateInterval $interval): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage($name . ' must not be negative');
+        $this->expectExceptionMessageIsOrContains($name . ' must not be negative');
 
         new TimePolicy(...[$name => $interval]);
     }

@@ -81,7 +81,7 @@ class FieldSerializerTest extends TestCase
         $params = FieldSerializer::signatureParams([], ['keyid' => 'k']);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The message already has a signature with the label "sig1"');
+        $this->expectExceptionMessageIsOrContains('The message already has a signature with the label "sig1"');
 
         FieldSerializer::append($message, 'sig1', $params, "\x01");
     }
@@ -92,7 +92,7 @@ class FieldSerializerTest extends TestCase
         $params = FieldSerializer::signatureParams([], ['keyid' => 'k']);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The message already has a signature with the label "sig1"');
+        $this->expectExceptionMessageIsOrContains('The message already has a signature with the label "sig1"');
 
         FieldSerializer::append($message, 'sig1', $params, "\x01");
     }
@@ -121,7 +121,7 @@ class FieldSerializerTest extends TestCase
         $params = FieldSerializer::signatureParams([], ['keyid' => 'k']);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessage('The signature field of the message does not parse as a Dictionary');
+        $this->expectExceptionMessageIsOrContains('The signature field of the message does not parse as a Dictionary');
 
         FieldSerializer::append($message, 'sig2', $params, "\x01");
     }
