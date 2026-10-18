@@ -414,6 +414,16 @@ class VerifierCavageTest extends TestCase
         $this->assertSame('the required component content-type is not covered', $result->detail);
     }
 
+    public function testRequiredFieldNamesAreMetByTheFieldsADraftSignatureCovers(): void
+    {
+        $message = self::signed(self::request('{"hello": "world"}'));
+        $options = new VerifierOptions(requiredComponents: ['Host', 'date', '(request-target)', 'digest']);
+
+        $result = self::verify($message, $options);
+
+        $this->assertTrue($result->verified, $result->detail);
+    }
+
     public function testTheNonceRuleDoesNotApplyToTheDraft(): void
     {
         $result = self::verify(self::signed(self::request()), new VerifierOptions(requireNonce: true));
