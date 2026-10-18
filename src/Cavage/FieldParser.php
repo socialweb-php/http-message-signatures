@@ -57,8 +57,8 @@ use const PREG_UNMATCHED_AS_NULL;
  */
 final class FieldParser
 {
-    public const string SIGNATURE = 'signature';
-    public const string AUTHORIZATION = 'authorization';
+    private const string SIGNATURE = 'signature';
+    private const string AUTHORIZATION = 'authorization';
 
     /**
      * One auth-param: a token, `=` with optional whitespace around it, and a
