@@ -41,6 +41,16 @@ class HttpDateTest extends TestCase
             '2026-10-16',
             '0100-11-06T08:49:37+00:00',
         ];
+        yield 'an IMF-fixdate in the year 26' => [
+            'Sat, 06 Nov 0026 08:49:37 GMT',
+            '2026-10-16',
+            '0026-11-06T08:49:37+00:00',
+        ];
+        yield 'an asctime date in the year 26' => [
+            'Sat Nov  6 08:49:37 0026',
+            '2026-10-16',
+            '0026-11-06T08:49:37+00:00',
+        ];
         yield 'an RFC 850 date read in the year 2000' => [
             'Saturday, 06-Nov-10 08:49:37 GMT',
             '2000-06-01',
@@ -65,6 +75,7 @@ class HttpDateTest extends TestCase
     public static function rejectedProvider(): iterable
     {
         yield 'not a date' => ['wrong date'];
+        yield 'the year 0' => ['Sun, 06 Nov 0000 08:49:37 GMT'];
         yield 'empty' => [''];
         yield 'another time zone' => ['Sun, 06 Nov 1994 08:49:37 UTC'];
         yield 'a lowercase month' => ['Sun, 06 nov 1994 08:49:37 GMT'];

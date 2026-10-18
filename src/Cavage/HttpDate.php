@@ -30,6 +30,7 @@ use DateTimeZone;
 use function checkdate;
 use function intdiv;
 use function preg_match;
+use function strlen;
 
 /**
  * Reads the `Date` field that the draft form takes as the creation time when
@@ -91,7 +92,7 @@ final class HttpDate
 
         $year = (int) $matches['year'];
 
-        if ($year < 100) {
+        if (strlen($matches['year']) === 2) {
             $thisYear = (int) $now->setTimezone(new DateTimeZone('UTC'))->format('Y');
             $year += intdiv($thisYear, 100) * 100;
 
