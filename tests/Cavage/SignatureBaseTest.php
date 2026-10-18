@@ -169,6 +169,33 @@ class SignatureBaseTest extends TestCase
             FailureReason::MalformedSignature,
             '(expires) is covered and the expires parameter is not an integer',
         ];
+        yield 'a (created) that is not a number' => [
+            $request,
+            '(created)',
+            'hs2019',
+            'soon',
+            null,
+            FailureReason::MalformedSignature,
+            '(created) is covered and the created parameter is not an integer',
+        ];
+        yield 'a (created) with a trailing line break' => [
+            $request,
+            '(created)',
+            'hs2019',
+            "1402170695\n",
+            null,
+            FailureReason::MalformedSignature,
+            '(created) is covered and the created parameter is not an integer',
+        ];
+        yield 'a decimal (created)' => [
+            $request,
+            '(created)',
+            'hs2019',
+            '1402170695.5',
+            null,
+            FailureReason::MalformedSignature,
+            '(created) is covered and the created parameter is not an integer',
+        ];
         yield '(request-target) of a response' => [
             new Response(200),
             '(request-target)',
