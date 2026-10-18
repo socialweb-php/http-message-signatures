@@ -87,6 +87,17 @@ class FieldParserTest extends TestCase
         $this->assertSame('a', FieldParser::parse(new MessageContext($request))->keyId);
     }
 
+    public function testAnEmptyAlgorithmIsAnAlgorithmNamedAndNotTheKeysChoice(): void
+    {
+        $parsed = FieldParser::parse(self::context([
+            'Signature' => 'keyId="a",algorithm="",signature="c2lnbmF0dXJl"',
+        ]));
+
+        $this->assertSame('', $parsed->algorithm);
+        $this->assertFalse($parsed->keyDecidesAlgorithm());
+        $this->assertSame(['date'], $parsed->coveredComponentNames());
+    }
+
     public function testFollowsTheAuthParamGrammar(): void
     {
         $parsed = FieldParser::parse(self::context([
