@@ -72,10 +72,12 @@ $clock = new class implements ClockInterface {
 ### Signing a request in both forms with one key
 
 `Signer::sign()` returns the message it was given, with the signature fields
-of the chosen form added, a `Date` field added when the message has none, and
-the digest field added when the message has content. Signing is a pure
-function of its arguments and the clock, so the same request can be signed in
-each form, for a receiver that accepts only one of them.
+of the chosen form added. When the signature covers `date` and the message has
+no `Date` field, one is added; when it covers a digest field, that field is
+computed and set. The default components cover `date` and cover the digest
+field when the message has content. Signing is a pure function of its arguments
+and the clock, so the same request can be signed in each form, for a receiver
+that accepts only one of them.
 
 ``` php
 use Nyholm\Psr7\Request;
