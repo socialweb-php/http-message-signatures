@@ -172,7 +172,8 @@ default lifetime of five minutes, and a maximum lifetime of twelve hours.
 Under the draft form, a signature over a `(request-target)` without the query
 string is accepted when the one with it fails, since some implementations
 leave the query string out; the result's `requestTargetVerifiedWithoutQuery`
-says when that happened. Also under the draft form, the `created` and
+says when that happened. When it is `true`, the query string was not signed,
+so treat it as input from anyone. Also under the draft form, the `created` and
 `expires` parameters count only when `(created)` and `(expires)` are covered,
 since only then are they signed; otherwise the covered `Date` field is the
 creation time.
