@@ -285,6 +285,7 @@ class ComponentIdentifierTest extends TestCase
             '"date(foo)" is not a field name',
         ];
         yield 'a derived component' => ['@method', FailureReason::MalformedSignature, '"@method" is not a field name'];
+        yield 'an empty name' => ['', FailureReason::MalformedSignature, '"" is not a field name'];
     }
 
     #[DataProvider('rejectedHeadersNamesProvider')]
