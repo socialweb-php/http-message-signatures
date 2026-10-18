@@ -59,6 +59,7 @@ The examples use [nyholm/psr7][nyholm] for the messages; any PSR-7
 implementation works. Each needs a PSR-20 clock, which can be as small as this:
 
 ``` php
+use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 
 $clock = new class implements ClockInterface {
