@@ -137,6 +137,19 @@ final class ComponentIdentifier
     }
 
     /**
+     * Parses an identifier that may be written in either form: a name in
+     * parentheses as the draft form writes it, and anything else as RFC 9421
+     * writes it
+     *
+     * @throws InvalidArgument when the identifier does not parse in the form
+     *     it is written in
+     */
+    public static function parseInEitherForm(string $identifier): self
+    {
+        return str_starts_with($identifier, '(') ? self::parseCavage($identifier) : self::parse($identifier);
+    }
+
+    /**
      * Builds an identifier from a name of the draft form's `headers`
      * parameter, which the parser has lowercased
      *

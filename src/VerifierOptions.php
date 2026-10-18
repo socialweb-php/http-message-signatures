@@ -29,7 +29,6 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 use function in_array;
 use function sprintf;
-use function str_starts_with;
 
 /**
  * What `Verifier::verify()` accepts
@@ -127,9 +126,7 @@ final readonly class VerifierOptions
         $identifiers = [];
 
         foreach ($requiredComponents as $component) {
-            $identifiers[] = str_starts_with($component, '(')
-                ? ComponentIdentifier::parseCavage($component)
-                : ComponentIdentifier::parse($component);
+            $identifiers[] = ComponentIdentifier::parseInEitherForm($component);
         }
 
         if ($maxSignatures < 1) {

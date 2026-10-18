@@ -207,6 +207,48 @@ class ComponentIdentifierTest extends TestCase
         yield 'a name with a space' => ['content type', '"content type" is not a component name of the draft form'];
     }
 
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function eitherFormProvider(): iterable
+    {
+        yield 'a draft name in another case' => ['(Request-Target)', '(request-target)'];
+        yield 'a derived component' => ['@method', '@method'];
+        yield 'a field with a parameter' => ['content-digest;req', 'content-digest;req'];
+        yield 'a field in another case' => ['Host', 'host'];
+    }
+
+    #[DataProvider('eitherFormProvider')]
+    public function testParsesAnIdentifierInTheFormItIsWrittenIn(string $given, string $serialized): void
+    {
+        $this->assertSame($serialized, ComponentIdentifier::parseInEitherForm($given)->toString());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function rejectedEitherFormProvider(): iterable
+    {
+        yield 'a name in parentheses the draft does not define' => [
+            '(foo)',
+            '"(foo)" is not a component name of the draft form',
+        ];
+        yield 'a draft name with a parameter' => [
+            '(created);req',
+            '"(created);req" is not a component name of the draft form',
+        ];
+        yield 'a name that is neither' => ['content type', '"content type" is not a component name'];
+    }
+
+    #[DataProvider('rejectedEitherFormProvider')]
+    public function testRejectsAnIdentifierThatDoesNotParseInItsForm(string $given, string $message): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage($message);
+
+        ComponentIdentifier::parseInEitherForm($given);
+    }
+
     #[DataProvider('rejectedCavageNamesProvider')]
     public function testRejectsWhatIsNotADraftName(string $given, string $message): void
     {
