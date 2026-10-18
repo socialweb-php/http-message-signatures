@@ -127,4 +127,18 @@ class VerifierOptionsTest extends TestCase
         $this->assertSame(['host', '(request-target)', 'digest'], $names(Form::Cavage));
         $this->assertSame(['host', '@method', 'content-digest;req', 'digest'], $names(Form::Rfc9421));
     }
+
+    public function testARequiredDraftNameInAnotherCaseIsLowercased(): void
+    {
+        $options = new VerifierOptions(requiredComponents: ['(Request-Target)']);
+
+        $this->assertSame(
+            ['(request-target)'],
+            array_map(
+                static fn (ComponentIdentifier $identifier): string => $identifier->toString(),
+                $options->requiredComponentIdentifiers(Form::Cavage),
+            ),
+        );
+        $this->assertSame([], $options->requiredComponentIdentifiers(Form::Rfc9421));
+    }
 }
