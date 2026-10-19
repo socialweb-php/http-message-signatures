@@ -49,15 +49,36 @@ final readonly class VerificationKey
     public array $permittedAlgorithms;
 
     /**
+     * Whose key this is, as the resolver that built the key claims it, in
+     * whatever form its protocol gives: an actor's identifier, a URL, an
+     * account name; `null` when the resolver has no identity to report
+     *
+     * The package never computes it and never compares it with anything. The
+     * verifier reports it as `VerificationResult::$keyOwner` only when the
+     * signature verified under this key.
+     *
+     * @var non-empty-string | null
+     */
+    public ?string $owner;
+
+    /**
      * @param list<Algorithm> | null $permittedAlgorithms
+     *
+     * @throws InvalidArgument when the owner is an empty string
      */
     private function __construct(
         #[SensitiveParameter]
         private KeyMaterial $material,
         ?array $permittedAlgorithms,
+        ?string $owner,
     ) {
+        if ($owner === '') {
+            throw new InvalidArgument('The key owner must not be empty');
+        }
+
         $this->type = $material->type;
         $this->permittedAlgorithms = $material->permittedAlgorithms($permittedAlgorithms);
+        $this->owner = $owner;
     }
 
     /**
@@ -66,14 +87,17 @@ final readonly class VerificationKey
      *
      * @param list<Algorithm> | null $permittedAlgorithms the algorithms this
      *     key may verify, or `null` for the type's default list
+     * @param string | null $owner whose key this is, as the resolver claims
+     *     it, or `null` when it has no identity to report
      *
      * @throws InvalidArgument when OpenSSL cannot read the PEM, when the key
-     *     is of a type the package does not implement, or when the list is
-     *     empty, holds an algorithm the type cannot run, or holds a duplicate
+     *     is of a type the package does not implement, when the list is
+     *     empty, holds an algorithm the type cannot run, or holds a
+     *     duplicate, or when the owner is an empty string
      */
-    public static function fromPem(string $pem, ?array $permittedAlgorithms = null): self
+    public static function fromPem(string $pem, ?array $permittedAlgorithms = null, ?string $owner = null): self
     {
-        return new self(KeyMaterial::fromPublicPem($pem), $permittedAlgorithms);
+        return new self(KeyMaterial::fromPublicPem($pem), $permittedAlgorithms, $owner);
     }
 
     /**
@@ -81,16 +105,20 @@ final readonly class VerificationKey
      *
      * @param list<Algorithm> | null $permittedAlgorithms the algorithms this
      *     key may verify, or `null` for the type's default list
+     * @param string | null $owner whose key this is, as the resolver claims
+     *     it, or `null` when it has no identity to report
      *
-     * @throws InvalidArgument when the secret is empty, or when the list is
-     *     empty, holds an algorithm the type cannot run, or holds a duplicate
+     * @throws InvalidArgument when the secret is empty, when the list is
+     *     empty, holds an algorithm the type cannot run, or holds a
+     *     duplicate, or when the owner is an empty string
      */
     public static function fromSharedSecret(
         #[SensitiveParameter]
         string $secret,
         ?array $permittedAlgorithms = null,
+        ?string $owner = null,
     ): self {
-        return new self(KeyMaterial::fromSecret($secret), $permittedAlgorithms);
+        return new self(KeyMaterial::fromSecret($secret), $permittedAlgorithms, $owner);
     }
 
     /**
@@ -117,11 +145,11 @@ final readonly class VerificationKey
     }
 
     /**
-     * @return array{type: KeyType, permittedAlgorithms: non-empty-list<Algorithm>}
+     * @return array{type: KeyType, permittedAlgorithms: non-empty-list<Algorithm>, owner: non-empty-string | null}
      */
     public function __debugInfo(): array
     {
-        return ['type' => $this->type, 'permittedAlgorithms' => $this->permittedAlgorithms];
+        return ['type' => $this->type, 'permittedAlgorithms' => $this->permittedAlgorithms, 'owner' => $this->owner];
     }
 
     /**

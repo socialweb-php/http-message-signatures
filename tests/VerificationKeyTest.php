@@ -45,6 +45,46 @@ class VerificationKeyTest extends TestCase
         $this->assertSame([Algorithm::HmacSha256], $key->permittedAlgorithms);
     }
 
+    public function testHasNoOwnerUnlessOneIsGiven(): void
+    {
+        $this->assertNull(VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->owner);
+        $this->assertNull(VerificationKey::fromSharedSecret('secret')->owner);
+    }
+
+    public function testNamesItsOwnerFromAPem(): void
+    {
+        $key = VerificationKey::fromPem(
+            self::rfc9421Key('test-key-rsa.public.pem'),
+            owner: 'https://example.com/users/alice',
+        );
+
+        $this->assertSame('https://example.com/users/alice', $key->owner);
+        $this->assertSame([Algorithm::RsaV15Sha256, Algorithm::RsaPssSha512], $key->permittedAlgorithms);
+    }
+
+    public function testNamesItsOwnerFromASharedSecret(): void
+    {
+        $key = VerificationKey::fromSharedSecret('secret', [Algorithm::HmacSha256], 'alice');
+
+        $this->assertSame('alice', $key->owner);
+    }
+
+    public function testRejectsAnEmptyOwnerForAPem(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains('The key owner must not be empty');
+
+        VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'), owner: '');
+    }
+
+    public function testRejectsAnEmptyOwnerForASecret(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains('The key owner must not be empty');
+
+        VerificationKey::fromSharedSecret('secret', owner: '');
+    }
+
     public function testRejectsAPemOpenSslCannotRead(): void
     {
         $this->expectException(InvalidArgument::class);
@@ -107,13 +147,14 @@ class VerificationKeyTest extends TestCase
 
     public function testDoesNotExposeItsMaterialWhenDumped(): void
     {
-        $key = VerificationKey::fromSharedSecret('the secret bytes');
+        $key = VerificationKey::fromSharedSecret('the secret bytes', owner: 'alice');
 
         $this->assertSame(
-            ['type' => KeyType::SharedSecret, 'permittedAlgorithms' => [Algorithm::HmacSha256]],
+            ['type' => KeyType::SharedSecret, 'permittedAlgorithms' => [Algorithm::HmacSha256], 'owner' => 'alice'],
             $key->__debugInfo(),
         );
         $this->assertFalse(str_contains(print_r($key, true), 'the secret bytes'));
+        $this->assertTrue(str_contains(print_r($key, true), 'alice'));
     }
 
     public function testCannotBeSerialized(): void
