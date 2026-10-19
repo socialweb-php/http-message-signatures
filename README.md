@@ -70,15 +70,13 @@ $clock = new class implements ClockInterface {
 };
 ```
 
-### Signing a request in both forms with one key
+### Sending a request
 
 `Signer::sign()` returns the message it was given, with the signature fields
 of the chosen form added. When the signature covers `date` and the message has
 no `Date` field, one is added; when it covers a digest field, that field is
 computed and set. The default components cover `date` and cover the digest
-field when the message has content. Signing is a pure function of its arguments
-and the clock, so the same request can be signed in each form, for a receiver
-that accepts only one of them.
+field when the message has content.
 
 ``` php
 use Nyholm\Psr7\Request;
@@ -119,55 +117,102 @@ each has a default. The key's algorithm is the first one it permits that has
 a name in the form, so an RSA key signs with RSASSA-PKCS1-v1_5 and SHA-256 by
 default.
 
-### Verifying with a resolver that holds keys in an array
+A receiver that accepts only one form refuses the other. A sender that does
+not know which form a receiver accepts signs the request once in each form,
+as above, sends the RFC 9421 form, and sends the draft form when the receiver
+refuses it. Signing is a pure function of its arguments and the clock, so the
+two calls sign the same request without rebuilding it, and the second
+signature is the only added cost.
 
-`Verifier` asks a `KeyResolver` for the key that a signature names. The
-resolver is where key policy belongs: it may refuse keys below a size, keys
-from an origin it does not trust, or keys that have been revoked, by returning
-`null` or throwing. Anything it throws passes through `verify()` unchanged.
+The response that comes back can be signed over the request it answers, as
+"Sending a response" below shows. The client is the one holding the request
+it sent, so it verifies the response with that request as the second
+argument, and with a resolver that holds the server's key; the next section
+says what a resolver is.
 
 ``` php
+use SocialWeb\Http\MessageSignatures\Verifier;
+
+$verifier = new Verifier($resolver, $clock);
+$result = $verifier->verify($response, $signed);
+```
+
+### Receiving a request
+
+`Verifier` asks a `KeyResolver` for the key that a signature names. Write the
+resolver for where your keys come from. This one holds them in an array, each
+with the identity it belongs to:
+
+``` php
+use SocialWeb\Http\MessageSignatures\KeyLookup;
 use SocialWeb\Http\MessageSignatures\KeyResolver;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
-use SocialWeb\Http\MessageSignatures\Verifier;
 
 final class ArrayKeyResolver implements KeyResolver
 {
     /**
-     * @param array<string, VerificationKey> $keys
+     * @param array<string, VerificationKey> $keys by key identifier
      */
     public function __construct(private readonly array $keys)
     {
     }
 
-    public function resolve(string $keyId): ?VerificationKey
+    public function resolve(KeyLookup $lookup): ?VerificationKey
     {
-        return $this->keys[$keyId] ?? null;
+        return $this->keys[$lookup->keyId] ?? null;
     }
 
-    public function refresh(string $keyId): ?VerificationKey
+    public function refresh(KeyLookup $lookup): ?VerificationKey
     {
-        return $this->resolve($keyId);
+        return $this->resolve($lookup);
     }
 }
 
 $resolver = new ArrayKeyResolver([
-    'https://example.com/keys/1' => VerificationKey::fromPem($publicKeyPem),
+    'https://example.com/keys/1' => VerificationKey::fromPem($publicKeyPem, owner: 'https://example.com/users/alice'),
 ]);
-
-$verifier = new Verifier($resolver, $clock);
-$result = $verifier->verify($incomingRequest);
-
-if ($result->verified) {
-    echo "Signed by {$result->keyId} in the form {$result->form?->value}\n";
-} else {
-    echo "Not verified: {$result->reason?->name}, {$result->detail}\n";
-}
 ```
 
-`refresh()` is called once, after a failure that a rotated key could explain,
-so a resolver that caches keys can fetch the key again there. A resolver with
-no cache gives the same answer as `resolve()`.
+The resolver receives a `KeyLookup`: the message, the form, the key
+identifier as the message gave it, the related request when a response is
+verified, and every parameter of the signature, that is, the label, the
+algorithm, the creation and expiry times, the nonce, the tag, and the covered
+components. The verifier calls it only after every check that needs no key
+has passed: the fields parse, the policy is met, the signature base was built,
+and every covered digest matches the content. The signature bytes have not
+been verified at that point, so everything the resolver reads from the
+message is a claim, good for finding a key and for nothing else. The resolver
+is where key policy belongs: it may refuse keys below a size, keys from an
+origin it does not trust, or keys that have been revoked, by returning `null`
+or throwing. Anything it throws passes through `verify()` unchanged.
+
+`refresh()` is called once, with the same `KeyLookup`, after a failure that a
+rotated key could explain, so a resolver that caches keys fetches the key
+again there. A resolver with no cache gives the same answer as `resolve()`.
+When the fetch fails, return `null` and keep the cached key; the original
+failure stands.
+
+Build the verifier with the options that state your policy, and act on the
+result. `keyOwner` is the owner the resolver gave the key that verified the
+signature, and `null` when that key had none or the signature did not verify.
+Compare it with whoever the message claims to be from before you trust the
+message; the package does not know who that is.
+
+``` php
+use SocialWeb\Http\MessageSignatures\Verifier;
+use SocialWeb\Http\MessageSignatures\VerifierOptions;
+
+$verifier = new Verifier($resolver, $clock, new VerifierOptions());
+$result = $verifier->verify($incomingRequest);
+
+if (!$result->verified) {
+    echo "Not verified: {$result->reason?->name}, {$result->detail}\n";
+} elseif ($result->keyOwner !== $claimedSender) {
+    echo "Signed by {$result->keyId}, which is not a key of {$claimedSender}\n";
+} else {
+    echo "Signed by {$result->keyOwner} in the form {$result->form?->value}\n";
+}
+```
 
 `VerifierOptions` sets the forms the verifier accepts and what a signature
 must cover. By default a request's signature must cover its target, the
@@ -186,11 +231,18 @@ creation time.
 The result also has what a replay store needs: the key identifier, the
 creation and expiry times, the nonce, and the signature bytes.
 
-### Signing a response that covers request components
+`@target-uri`, `@authority`, and `@scheme` are taken from the request's URI,
+so they are only as true as the URI that your server's request factory
+builds. A server behind a proxy that terminates TLS must build the request
+with the scheme and the authority that the signer saw, as RFC 9421 section
+7.4.3 says. The package cannot check this.
+
+### Sending a response
 
 Under RFC 9421, a response's signature can cover components of the request it
 answers, with the `req` parameter. Give the request as the last argument when
-signing, and again when verifying.
+signing; the client verifies the response with the same request, as "Sending
+a request" above shows.
 
 ``` php
 use SocialWeb\Http\MessageSignatures\Form;
@@ -205,17 +257,7 @@ $signedResponse = $signer->sign(
     ),
     $request,
 );
-
-$result = $verifier->verify($signedResponse, $request);
 ```
-
-### Behind a proxy
-
-`@target-uri`, `@authority`, and `@scheme` are taken from the request's URI,
-so they are only as true as the URI that your server's request factory
-builds. A server behind a proxy that terminates TLS must build the request
-with the scheme and the authority that the signer saw, as RFC 9421 section
-7.4.3 says. The package cannot check this.
 
 ## Contributing
 
