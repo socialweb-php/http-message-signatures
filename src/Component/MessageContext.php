@@ -87,6 +87,15 @@ final class MessageContext
     }
 
     /**
+     * Returns the request the message answers, as given to the verifier, or
+     * `null` when none was given
+     */
+    public function relatedRequest(): ?RequestInterface
+    {
+        return $this->relatedRequest;
+    }
+
+    /**
      * Returns a context over the related request, for a component that
      * has the `req` parameter
      *

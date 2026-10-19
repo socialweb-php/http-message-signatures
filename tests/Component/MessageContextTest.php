@@ -31,6 +31,15 @@ class MessageContextTest extends TestCase
         $this->assertFalse((new MessageContext($response))->isRequest());
     }
 
+    public function testKnowsTheRelatedRequestWhenOneWasGiven(): void
+    {
+        $request = new Request('GET', 'https://example.com/');
+        $response = new Response();
+
+        $this->assertSame($request, (new MessageContext($response, $request))->relatedRequest());
+        $this->assertNull((new MessageContext($response))->relatedRequest());
+    }
+
     public function testFieldValuesFollowRfc9421Section21(): void
     {
         $request = new Request('POST', 'https://www.example.com/', [
