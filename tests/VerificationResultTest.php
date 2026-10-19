@@ -24,6 +24,7 @@ class VerificationResultTest extends TestCase
             form: Form::Rfc9421,
             algorithm: Algorithm::Ed25519,
             keyId: 'test-key-ed25519',
+            keyOwner: 'https://example.com/users/alice',
             label: 'sig-b26',
             coveredComponents: ['date', '@method'],
             created: $created,
@@ -40,6 +41,7 @@ class VerificationResultTest extends TestCase
         $this->assertSame(Form::Rfc9421, $result->form);
         $this->assertSame(Algorithm::Ed25519, $result->algorithm);
         $this->assertSame('test-key-ed25519', $result->keyId);
+        $this->assertSame('https://example.com/users/alice', $result->keyOwner);
         $this->assertSame('sig-b26', $result->label);
         $this->assertSame(['date', '@method'], $result->coveredComponents);
         $this->assertSame($created, $result->created);
@@ -48,6 +50,15 @@ class VerificationResultTest extends TestCase
         $this->assertSame('bytes', $result->signature);
         $this->assertTrue($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
+    }
+
+    public function testASuccessUnderAKeyWithNoOwnerHasNone(): void
+    {
+        $result = new VerificationResult(verified: true, form: Form::Cavage, keyId: 'test-key-rsa');
+
+        $this->assertTrue($result->verified);
+        $this->assertSame('test-key-rsa', $result->keyId);
+        $this->assertNull($result->keyOwner);
     }
 
     public function testAFailureDefaultsEverythingElse(): void
@@ -60,6 +71,7 @@ class VerificationResultTest extends TestCase
         $this->assertNull($result->form);
         $this->assertNull($result->algorithm);
         $this->assertNull($result->keyId);
+        $this->assertNull($result->keyOwner);
         $this->assertNull($result->label);
         $this->assertSame([], $result->coveredComponents);
         $this->assertNull($result->created);
@@ -109,6 +121,16 @@ class VerificationResultTest extends TestCase
         yield 'failed without a reason' => [
             static fn (): VerificationResult => new VerificationResult(verified: false, form: Form::Rfc9421),
             'A failed result must have a failure reason',
+        ];
+        yield 'failed with a key owner' => [
+            static fn (): VerificationResult => new VerificationResult(
+                verified: false,
+                reason: FailureReason::SignatureInvalid,
+                form: Form::Rfc9421,
+                keyId: 'test-key-ed25519',
+                keyOwner: 'https://example.com/users/alice',
+            ),
+            'A failed result cannot have a key owner',
         ];
         yield 'verified without a form' => [
             static fn (): VerificationResult => new VerificationResult(verified: true),

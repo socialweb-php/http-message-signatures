@@ -31,7 +31,10 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
  * What `Verifier::verify()` found
  *
  * Everything a replay store needs is here: the key identifier, the times, the
- * nonce, and the signature bytes.
+ * nonce, and the signature bytes. So is what an authorization check needs:
+ * `keyOwner`, the identity the resolver gave the key that verified the
+ * signature, which the caller compares with whoever the message claims to be
+ * from before it trusts the message.
  */
 final readonly class VerificationResult
 {
@@ -44,6 +47,10 @@ final readonly class VerificationResult
      *     `NoSignature`
      * @param Algorithm | null $algorithm set once the algorithm is resolved
      * @param string | null $keyId set once the fields are parsed
+     * @param string | null $keyOwner the `owner` of the key that verified
+     *     the signature; `null` when that key had none, and always on a
+     *     failure, since an identity is never read off a signature that did
+     *     not verify under the key
      * @param string | null $label the signature label; RFC 9421 only
      * @param list<string> $coveredComponents as the signature named them
      * @param DateTimeImmutable | null $created the creation time
@@ -56,8 +63,9 @@ final readonly class VerificationResult
      *     retry without the query string is what verified
      *
      * @throws InvalidArgument when a verified result has a reason or a
-     *     detail, when a failed result has no reason, or when the form is
-     *     absent for a reason other than `NoSignature` or present for it
+     *     detail, when a failed result has no reason or has a key owner, or
+     *     when the form is absent for a reason other than `NoSignature` or
+     *     present for it
      */
     public function __construct(
         public bool $verified,
@@ -66,6 +74,7 @@ final readonly class VerificationResult
         public ?Form $form = null,
         public ?Algorithm $algorithm = null,
         public ?string $keyId = null,
+        public ?string $keyOwner = null,
         public ?string $label = null,
         public array $coveredComponents = [],
         public ?DateTimeImmutable $created = null,
@@ -85,6 +94,10 @@ final readonly class VerificationResult
 
         if (!$verified && $reason === null) {
             throw new InvalidArgument('A failed result must have a failure reason');
+        }
+
+        if (!$verified && $keyOwner !== null) {
+            throw new InvalidArgument('A failed result cannot have a key owner');
         }
 
         if (($form === null) !== ($reason === FailureReason::NoSignature)) {
