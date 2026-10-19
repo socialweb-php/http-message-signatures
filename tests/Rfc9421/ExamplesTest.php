@@ -399,8 +399,8 @@ class ExamplesTest extends TestCase
         $this->assertFalse($result->keyRefreshed);
         // The client's signature was tried first, failed on the changed
         // authority, and was retried once with a refreshed key.
-        $this->assertSame(['test-key-ecc-p256', 'test-key-rsa'], $resolver->resolved);
-        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshed);
+        $this->assertSame(['test-key-ecc-p256', 'test-key-rsa'], $resolver->resolvedKeyIds());
+        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshedKeyIds());
     }
 
     public function testTheSection43ProxySignatureIsNotReadWhenTheLimitIsOne(): void
@@ -413,7 +413,7 @@ class ExamplesTest extends TestCase
         $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
         $this->assertSame('sig1', $result->label);
         $this->assertSame('the signature "sig1" does not verify under ecdsa-p256-sha256', $result->detail);
-        $this->assertSame(['test-key-ecc-p256'], $resolver->resolved);
+        $this->assertSame(['test-key-ecc-p256'], $resolver->resolvedKeyIds());
     }
 
     private static function appendixB4Request(): Request

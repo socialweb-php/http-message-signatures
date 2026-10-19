@@ -208,6 +208,7 @@ final class Verifier
             ?Algorithm $algorithm = null,
             bool $keyRefreshed = false,
             bool $withoutQuery = false,
+            ?string $keyOwner = null,
         ): VerificationResult => new VerificationResult(
             verified: $reason === null,
             reason: $reason,
@@ -215,6 +216,7 @@ final class Verifier
             form: Form::Cavage,
             algorithm: $algorithm,
             keyId: $signature->keyId,
+            keyOwner: $keyOwner,
             coveredComponents: $signature->coveredComponentNames(),
             created: $created,
             expires: $expires,
@@ -276,9 +278,16 @@ final class Verifier
         }
 
         $outcome = $this->checkWithKey(
-            $signature->keyId,
-            $algorithm,
-            Form::Cavage,
+            new KeyLookup(
+                message: $context->message(),
+                form: Form::Cavage,
+                keyId: $signature->keyId,
+                relatedRequest: $context->relatedRequest(),
+                algorithm: $algorithm,
+                created: $created,
+                expires: $expires,
+                coveredComponents: $signature->coveredComponentNames(),
+            ),
             $signature->signature,
             $bases,
             'the signature',
@@ -304,6 +313,7 @@ final class Verifier
             ?Algorithm $algorithm = null,
             bool $keyRefreshed = false,
             bool $withoutQuery = false,
+            ?string $keyOwner = null,
         ): VerificationResult => new VerificationResult(
             verified: $reason === null,
             reason: $reason,
@@ -311,6 +321,7 @@ final class Verifier
             form: Form::Rfc9421,
             algorithm: $algorithm,
             keyId: $signature->keyId,
+            keyOwner: $keyOwner,
             label: $signature->label,
             coveredComponents: $signature->coveredComponentNames(),
             created: $created,
@@ -352,9 +363,19 @@ final class Verifier
         }
 
         $outcome = $this->checkWithKey(
-            $signature->keyId,
-            $algorithm,
-            Form::Rfc9421,
+            new KeyLookup(
+                message: $context->message(),
+                form: Form::Rfc9421,
+                keyId: $signature->keyId,
+                relatedRequest: $context->relatedRequest(),
+                label: $signature->label,
+                algorithm: $algorithm,
+                created: $created,
+                expires: $expires,
+                nonce: $signature->nonce,
+                tag: $signature->tag,
+                coveredComponents: $signature->coveredComponentNames(),
+            ),
             $signature->signature,
             [$base],
             sprintf('the signature "%s"', $signature->label),
@@ -577,35 +598,39 @@ final class Verifier
      * Steps 7 to 10: resolve the key, check the signature with it, and on a
      * failure a rotated key could explain, once more with a refreshed key
      *
-     * @param Algorithm | null $algorithm the algorithm the message names,
-     *     resolved, or `null` when the key decides
+     * The same lookup goes to `resolve()` and then to `refresh()`. On success
+     * the outcome's `keyOwner` is the owner of the key that verified, which
+     * is the refreshed key's when the refresh is what verified.
+     *
+     * @param KeyLookup $lookup what the resolver is given, whose `algorithm`
+     *     is the one the message names, resolved, or `null` when the key
+     *     decides
      * @param non-empty-list<string> $bases the signature base, and under the
      *     draft the one without the query string
      * @param string $signatureName what the detail calls the signature
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool}
+     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: string | null}
      */
     private function checkWithKey(
-        string $keyId,
-        ?Algorithm $algorithm,
-        Form $form,
+        KeyLookup $lookup,
         string $signature,
         array $bases,
         string $signatureName,
     ): array {
-        $key = $this->resolver->resolve($keyId);
+        $key = $this->resolver->resolve($lookup);
 
         if ($key === null) {
             return [
                 'reason' => FailureReason::KeyNotFound,
-                'detail' => sprintf('the resolver has no key "%s"', $keyId),
+                'detail' => sprintf('the resolver has no key "%s"', $lookup->keyId),
                 'algorithm' => null,
                 'keyRefreshed' => false,
                 'withoutQuery' => false,
+                'keyOwner' => null,
             ];
         }
 
-        $outcome = self::check($key, $algorithm, $form, $signature, $bases, $signatureName);
+        $outcome = self::check($key, $lookup->algorithm, $lookup->form, $signature, $bases, $signatureName);
 
         if (
             $outcome['reason'] === null
@@ -615,10 +640,10 @@ final class Verifier
             return $outcome;
         }
 
-        $refreshed = $this->resolver->refresh($keyId);
+        $refreshed = $this->resolver->refresh($lookup);
         $outcome = $refreshed === null
             ? $outcome
-            : self::check($refreshed, $algorithm, $form, $signature, $bases, $signatureName);
+            : self::check($refreshed, $lookup->algorithm, $lookup->form, $signature, $bases, $signatureName);
         $outcome['keyRefreshed'] = true;
 
         return $outcome;
@@ -632,7 +657,7 @@ final class Verifier
      *     resolved, or `null` when the key decides
      * @param non-empty-list<string> $bases
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool}
+     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: string | null}
      */
     private static function check(
         VerificationKey $key,
@@ -648,6 +673,7 @@ final class Verifier
             'algorithm' => $algorithm ?? self::firstAlgorithmInTheForm($key, $form),
             'keyRefreshed' => false,
             'withoutQuery' => false,
+            'keyOwner' => null,
         ];
 
         if ($outcome['algorithm'] === null) {
@@ -667,6 +693,7 @@ final class Verifier
         foreach ($bases as $index => $base) {
             if ($key->verify($outcome['algorithm'], $base, $signature)) {
                 $outcome['withoutQuery'] = $index > 0;
+                $outcome['keyOwner'] = $key->owner;
 
                 return $outcome;
             }

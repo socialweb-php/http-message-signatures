@@ -12,6 +12,7 @@ use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Form;
+use SocialWeb\Http\MessageSignatures\KeyLookup;
 use SocialWeb\Http\MessageSignatures\KeyResolver;
 use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
@@ -265,12 +266,12 @@ class ExamplesTest extends TestCase
             {
             }
 
-            public function resolve(string $keyId): VerificationKey
+            public function resolve(KeyLookup $lookup): VerificationKey
             {
                 return $this->key;
             }
 
-            public function refresh(string $keyId): ?VerificationKey
+            public function refresh(KeyLookup $lookup): ?VerificationKey
             {
                 return null;
             }

@@ -18,6 +18,7 @@ use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Form;
+use SocialWeb\Http\MessageSignatures\KeyLookup;
 use SocialWeb\Http\MessageSignatures\KeyResolver;
 use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
@@ -66,10 +67,11 @@ class VerifierTest extends TestCase
     private static function verificationKey(
         string $name = 'test-key-ed25519',
         ?array $permitted = null,
+        ?string $owner = null,
     ): VerificationKey {
         return $name === 'test-shared-secret'
-            ? VerificationKey::fromSharedSecret(self::rfc9421SharedSecret(), $permitted)
-            : VerificationKey::fromPem(self::rfc9421Key($name . '.public.pem'), $permitted);
+            ? VerificationKey::fromSharedSecret(self::rfc9421SharedSecret(), $permitted, $owner)
+            : VerificationKey::fromPem(self::rfc9421Key($name . '.public.pem'), $permitted, $owner);
     }
 
     private static function resolver(): ArrayKeyResolver
@@ -111,6 +113,7 @@ class VerifierTest extends TestCase
         ?string $nonce = null,
         string $label = 'sig1',
         ?Request $relatedRequest = null,
+        ?string $tag = null,
     ): MessageInterface {
         return (new Signer(self::clock($clockOffset)))->sign(
             $message,
@@ -123,6 +126,7 @@ class VerifierTest extends TestCase
                 created: $created,
                 expires: $expires,
                 nonce: $nonce,
+                tag: $tag,
             ),
             $relatedRequest,
         );
@@ -328,7 +332,7 @@ class VerifierTest extends TestCase
         $this->assertSame('the algorithm "rsa-sha256" is not one the package knows', $result->detail);
         $this->assertSame('sig1', $result->label);
         $this->assertSame('test-key-rsa', $result->keyId);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     /**
@@ -521,7 +525,7 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::MissingComponent, $result->reason);
         $this->assertSame('the field "x-custom" is not in the message', $result->detail);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testADigestMismatchIsReportedBeforeTheKeyIsLookedUp(): void
@@ -533,7 +537,7 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::DigestMismatch, $result->reason);
         $this->assertSame('the sha-256 digest in content-digest does not match the content', $result->detail);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testACoveredDigestFieldWithALineBreakIsAResult(): void
@@ -551,7 +555,7 @@ class VerifierTest extends TestCase
             $result->detail,
         );
         $this->assertSame('sig1', $result->label);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testAKeyTheResolverDoesNotHaveIsNotFound(): void
@@ -562,20 +566,20 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::KeyNotFound, $result->reason);
         $this->assertSame('the resolver has no key "test-key-ed25519"', $result->detail);
-        $this->assertSame(['test-key-ed25519'], $resolver->resolved);
-        $this->assertSame([], $resolver->refreshed);
+        $this->assertSame(['test-key-ed25519'], $resolver->resolvedKeyIds());
+        $this->assertSame([], $resolver->refreshedKeyIds());
         $this->assertFalse($result->keyRefreshed);
     }
 
     public function testWhatTheResolverThrowsPassesThrough(): void
     {
         $resolver = new class implements KeyResolver {
-            public function resolve(string $keyId): ?VerificationKey
+            public function resolve(KeyLookup $lookup): ?VerificationKey
             {
                 throw new RuntimeException('the key server is down');
             }
 
-            public function refresh(string $keyId): ?VerificationKey
+            public function refresh(KeyLookup $lookup): ?VerificationKey
             {
                 return null;
             }
@@ -599,7 +603,7 @@ class VerifierTest extends TestCase
         $this->assertSame(FailureReason::AlgorithmNotPermitted, $result->reason);
         $this->assertSame('the key does not permit rsa-v1_5-sha256', $result->detail);
         $this->assertSame(Algorithm::RsaV15Sha256, $result->algorithm);
-        $this->assertSame([], $resolver->refreshed);
+        $this->assertSame([], $resolver->refreshedKeyIds());
     }
 
     public function testARefreshedKeyThatPermitsTheAlgorithmVerifies(): void
@@ -614,7 +618,7 @@ class VerifierTest extends TestCase
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertTrue($result->keyRefreshed);
-        $this->assertSame(['test-key-rsa'], $resolver->refreshed);
+        $this->assertSame(['test-key-rsa'], $resolver->refreshedKeyIds());
     }
 
     public function testAWrongKeyOfTheSameTypeIsSignatureInvalid(): void
@@ -629,7 +633,7 @@ class VerifierTest extends TestCase
         $this->assertSame('the signature "sig1" does not verify under ecdsa-p256-sha256', $result->detail);
         $this->assertSame(Algorithm::EcdsaP256Sha256, $result->algorithm);
         $this->assertFalse($result->keyRefreshed);
-        $this->assertSame([], $resolver->refreshed);
+        $this->assertSame([], $resolver->refreshedKeyIds());
     }
 
     public function testARefreshThatReturnsTheRightKeyVerifies(): void
@@ -644,8 +648,8 @@ class VerifierTest extends TestCase
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertTrue($result->keyRefreshed);
-        $this->assertSame(['test-key-ecc-p256'], $resolver->resolved);
-        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshed);
+        $this->assertSame(['test-key-ecc-p256'], $resolver->resolvedKeyIds());
+        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshedKeyIds());
     }
 
     public function testARefreshThatReturnsNullLeavesTheReasonStanding(): void
@@ -656,12 +660,12 @@ class VerifierTest extends TestCase
             {
             }
 
-            public function resolve(string $keyId): VerificationKey
+            public function resolve(KeyLookup $lookup): VerificationKey
             {
                 return $this->key;
             }
 
-            public function refresh(string $keyId): ?VerificationKey
+            public function refresh(KeyLookup $lookup): ?VerificationKey
             {
                 return null;
             }
@@ -671,6 +675,143 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
         $this->assertTrue($result->keyRefreshed);
+    }
+
+    public function testTheResolverReceivesEverythingTheVerifierKnowsAboutTheSignature(): void
+    {
+        $message = self::signed(
+            self::request('{"hello": "world"}'),
+            expires: new DateInterval('PT5M'),
+            nonce: 'n1',
+            tag: 'example',
+        );
+        $resolver = self::resolver();
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertCount(1, $resolver->resolved);
+        $lookup = $resolver->resolved[0];
+        $this->assertSame($message, $lookup->message);
+        $this->assertSame(Form::Rfc9421, $lookup->form);
+        $this->assertSame('test-key-ed25519', $lookup->keyId);
+        $this->assertNull($lookup->relatedRequest);
+        $this->assertSame('sig1', $lookup->label);
+        $this->assertSame(Algorithm::Ed25519, $lookup->algorithm);
+        $this->assertSame(self::NOW, $lookup->created?->getTimestamp());
+        $this->assertSame(self::NOW + 300, $lookup->expires?->getTimestamp());
+        $this->assertSame('n1', $lookup->nonce);
+        $this->assertSame('example', $lookup->tag);
+        $this->assertSame(['@method', '@target-uri', 'host', 'date', 'content-digest'], $lookup->coveredComponents);
+    }
+
+    public function testTheResolverSeesNoAlgorithmWhenAlgIsAbsent(): void
+    {
+        // The covered components, parameters, and signature of appendix B.2.5.
+        $message = self::request()
+            ->withHeader(
+                'Signature-Input',
+                'sig1=("date" "@authority" "content-type");created=1618884473;keyid="test-shared-secret"',
+            )
+            ->withHeader('Signature', 'sig1=:pxcQw6G3AjtMBQjwo8XzkZf/bws5LelbaMk5rGIGtE8=:');
+        $resolver = self::resolver();
+
+        $result = self::verify($message, new VerifierOptions(requireTarget: false), $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame(Algorithm::HmacSha256, $result->algorithm);
+        $lookup = $resolver->resolved[0];
+        $this->assertNull($lookup->algorithm);
+        $this->assertNull($lookup->expires);
+        $this->assertNull($lookup->nonce);
+        $this->assertNull($lookup->tag);
+        $this->assertSame(['date', '@authority', 'content-type'], $lookup->coveredComponents);
+    }
+
+    public function testTheResolverSeesTheRelatedRequestWhenOneWasGiven(): void
+    {
+        $request = self::request('{"hello": "world"}');
+        $response = self::signed(
+            new Response(200, ['Date' => 'Tue, 20 Apr 2021 02:07:56 GMT'], '{"message": "good dog"}'),
+            ['@status', '@method;req', '@target-uri;req', 'content-digest'],
+            relatedRequest: $request,
+        );
+        $resolver = self::resolver();
+
+        $result = self::verify($response, resolver: $resolver, relatedRequest: $request);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $lookup = $resolver->resolved[0];
+        $this->assertSame($response, $lookup->message);
+        $this->assertSame($request, $lookup->relatedRequest);
+        $this->assertSame(['@status', '@method;req', '@target-uri;req', 'content-digest'], $lookup->coveredComponents);
+    }
+
+    public function testAVerifiedResultReportsTheOwnerOfTheKey(): void
+    {
+        $resolver = new ArrayKeyResolver([
+            'test-key-ed25519' => self::verificationKey(owner: 'https://example.com/users/alice'),
+        ]);
+
+        $result = self::verify(self::signed(self::request()), resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame('https://example.com/users/alice', $result->keyOwner);
+    }
+
+    public function testAVerifiedResultUnderAKeyWithNoOwnerReportsNone(): void
+    {
+        $result = self::verify(self::signed(self::request()));
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertNull($result->keyOwner);
+    }
+
+    public function testAFailedResultReportsNoOwnerEvenWhenTheKeyHadOne(): void
+    {
+        $message = self::signed(self::request(), keyName: 'test-key-ecc-p256');
+        $resolver = new ArrayKeyResolver([
+            'test-key-ecc-p256' => VerificationKey::fromPem(
+                self::rfc9421Key('test-key-ecc-p256.public.pem'),
+                owner: 'https://example.com/users/alice',
+            ),
+        ]);
+
+        $result = self::verify($message->withHeader('Host', 'example.org'), resolver: $resolver);
+
+        $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
+        $this->assertNull($result->keyOwner);
+    }
+
+    public function testTheRefreshReceivesTheSameLookupTheResolveDid(): void
+    {
+        $message = self::signed(self::request(), keyName: 'test-key-ecc-p256');
+        $resolver = new ArrayKeyResolver(
+            ['test-key-ecc-p256' => self::generatedP256Key()],
+            ['test-key-ecc-p256' => self::verificationKey('test-key-ecc-p256')],
+        );
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertCount(1, $resolver->resolved);
+        $this->assertCount(1, $resolver->refreshed);
+        $this->assertSame($resolver->resolved[0], $resolver->refreshed[0]);
+    }
+
+    public function testASuccessOnTheRefreshedKeyReportsThatKeysOwner(): void
+    {
+        $message = self::signed(self::request(), keyName: 'test-key-ecc-p256');
+        $resolver = new ArrayKeyResolver(
+            ['test-key-ecc-p256' => self::generatedP256Key('https://example.com/users/old')],
+            ['test-key-ecc-p256' => self::verificationKey('test-key-ecc-p256', owner: 'https://example.com/users/new')],
+        );
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertTrue($result->keyRefreshed);
+        $this->assertSame('https://example.com/users/new', $result->keyOwner);
     }
 
     public function testARefreshThatReturnsAnotherWrongKeyFailsOnce(): void
@@ -685,7 +826,7 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
         $this->assertTrue($result->keyRefreshed);
-        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshed);
+        $this->assertSame(['test-key-ecc-p256'], $resolver->refreshedKeyIds());
     }
 
     public function testTriesTheLabelsInOrderUntilOneVerifies(): void
@@ -700,7 +841,7 @@ class VerifierTest extends TestCase
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame('second', $result->label);
-        $this->assertSame(['test-key-rsa', 'test-key-ed25519'], $resolver->resolved);
+        $this->assertSame(['test-key-rsa', 'test-key-ed25519'], $resolver->resolvedKeyIds());
     }
 
     public function testReportsTheLastLabelTriedWhenNoneVerifies(): void
@@ -730,7 +871,7 @@ class VerifierTest extends TestCase
 
         $this->assertSame(FailureReason::KeyNotFound, $result->reason);
         $this->assertSame('first', $result->label);
-        $this->assertSame(['test-key-rsa'], $resolver->resolved);
+        $this->assertSame(['test-key-rsa'], $resolver->resolvedKeyIds());
     }
 
     public function testStopsAtTheFirstLabelThatVerifies(): void
@@ -746,7 +887,7 @@ class VerifierTest extends TestCase
 
         $this->assertTrue($result->verified);
         $this->assertSame('first', $result->label);
-        $this->assertSame(['test-key-ed25519'], $resolver->resolved);
+        $this->assertSame(['test-key-ed25519'], $resolver->resolvedKeyIds());
     }
 
     public function testTheKeyDecidesTheAlgorithmWhenAlgIsAbsent(): void
@@ -797,7 +938,7 @@ class VerifierTest extends TestCase
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
             $this->assertStringStartsWith('The message body must be seekable', $exception->getMessage());
-            $this->assertSame([], $resolver->resolved);
+            $this->assertSame([], $resolver->resolvedKeyIds());
         }
     }
 
@@ -829,7 +970,7 @@ class VerifierTest extends TestCase
         return $message;
     }
 
-    private static function generatedP256Key(): VerificationKey
+    private static function generatedP256Key(?string $owner = null): VerificationKey
     {
         $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
         self::assertNotFalse($key);
@@ -837,6 +978,6 @@ class VerifierTest extends TestCase
         self::assertIsArray($details);
         self::assertIsString($details['key']);
 
-        return VerificationKey::fromPem($details['key']);
+        return VerificationKey::fromPem($details['key'], owner: $owner);
     }
 }

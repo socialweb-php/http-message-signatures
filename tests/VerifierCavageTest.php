@@ -185,6 +185,115 @@ class VerifierCavageTest extends TestCase
         $this->assertSame(Algorithm::RsaV15Sha256, $result->algorithm);
     }
 
+    public function testTheResolverReceivesTheDraftSignatureAsTheVerifierReadIt(): void
+    {
+        $message = self::signed(self::request('{"hello": "world"}'));
+        $resolver = self::resolver();
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertCount(1, $resolver->resolved);
+        $lookup = $resolver->resolved[0];
+        $this->assertSame($message, $lookup->message);
+        $this->assertSame(Form::Cavage, $lookup->form);
+        $this->assertSame('test-key-rsa', $lookup->keyId);
+        $this->assertNull($lookup->relatedRequest);
+        $this->assertNull($lookup->label);
+        $this->assertSame(Algorithm::RsaV15Sha256, $lookup->algorithm);
+        $this->assertSame(self::NOW + 2, $lookup->created?->getTimestamp());
+        $this->assertNull($lookup->expires);
+        $this->assertNull($lookup->nonce);
+        $this->assertNull($lookup->tag);
+        $this->assertSame(['(request-target)', 'host', 'date', 'digest'], $lookup->coveredComponents);
+    }
+
+    public function testTheResolverSeesTheTimesThePolicyJudgedUnderHs2019(): void
+    {
+        $message = self::signed(
+            self::request(),
+            ['(request-target)', '(created)', '(expires)', 'host'],
+            'test-key-ed25519',
+            new DateInterval('PT5M'),
+        );
+        $resolver = self::resolver();
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $lookup = $resolver->resolved[0];
+        $this->assertNull($lookup->algorithm);
+        $this->assertSame(self::NOW, $lookup->created?->getTimestamp());
+        $this->assertSame(self::NOW + 300, $lookup->expires?->getTimestamp());
+        $this->assertSame(['(request-target)', '(created)', '(expires)', 'host'], $lookup->coveredComponents);
+    }
+
+    public function testTheResolverSeesNoAlgorithmUnderHs2019FromAnRsaKey(): void
+    {
+        $message = self::signedByHand(
+            self::request(),
+            'keyId="test-key-rsa",algorithm="hs2019",headers="(request-target) host date"',
+            self::BASE,
+        );
+        $resolver = self::resolver();
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame(Algorithm::RsaV15Sha256, $result->algorithm);
+        $this->assertNull($resolver->resolved[0]->algorithm);
+    }
+
+    public function testTheResolverSeesNoAlgorithmWhenTheParameterIsAbsent(): void
+    {
+        $message = self::signedByHand(
+            self::request(),
+            'keyId="test-key-rsa",headers="(request-target) host date"',
+            self::BASE,
+        );
+        $resolver = self::resolver();
+
+        $result = self::verify($message, resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame(Algorithm::RsaV15Sha256, $result->algorithm);
+        $this->assertNull($resolver->resolved[0]->algorithm);
+    }
+
+    public function testAVerifiedResultReportsTheOwnerOfTheKey(): void
+    {
+        $resolver = new ArrayKeyResolver([
+            'test-key-rsa' => VerificationKey::fromPem(
+                self::rfc9421Key('test-key-rsa.public.pem'),
+                owner: 'https://example.com/users/alice',
+            ),
+        ]);
+
+        $result = self::verify(self::signed(self::request()), resolver: $resolver);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame('https://example.com/users/alice', $result->keyOwner);
+    }
+
+    public function testAFailedResultReportsNoOwnerEvenWhenTheKeyHadOne(): void
+    {
+        $resolver = new ArrayKeyResolver([
+            'test-key-rsa' => VerificationKey::fromPem(
+                self::rfc9421Key('test-key-rsa.public.pem'),
+                owner: 'https://example.com/users/alice',
+            ),
+        ]);
+
+        $result = self::verify(
+            self::signed(self::request())->withHeader('Host', 'example.org'),
+            new VerifierOptions(retryWithRefreshedKey: false),
+            $resolver,
+        );
+
+        $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
+        $this->assertNull($result->keyOwner);
+    }
+
     public function testVerifiesASignedResponse(): void
     {
         $message = self::signed(new Response(200, ['Date' => 'Tue, 20 Apr 2021 02:07:55 GMT'], '{"ok": true}'));
@@ -397,7 +506,7 @@ class VerifierCavageTest extends TestCase
         $result = self::verify($signed->withBody(self::request('Hello world!')->getBody()), resolver: $resolver);
 
         $this->assertSame(FailureReason::DigestMismatch, $result->reason);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testTheRequiredComponentsThatApplyToTheDraft(): void
@@ -455,7 +564,7 @@ class VerifierCavageTest extends TestCase
         $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
         $this->assertSame('the algorithm "rsa-sha1" is not one the package knows', $result->detail);
         $this->assertSame('test-key-rsa', $result->keyId);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testAComponentTheMessageLacksIsMissingBeforeTheKeyIsLookedUp(): void
@@ -471,7 +580,7 @@ class VerifierCavageTest extends TestCase
 
         $this->assertSame(FailureReason::MissingComponent, $result->reason);
         $this->assertSame('the field "x-absent" is not in the message', $result->detail);
-        $this->assertSame([], $resolver->resolved);
+        $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
     public function testTheTimesUnderANamedAlgorithmAreMalformed(): void
@@ -591,17 +700,25 @@ class VerifierCavageTest extends TestCase
     public function testARefreshThatReturnsTheRightKeyVerifies(): void
     {
         $resolver = new ArrayKeyResolver(
-            ['test-key-rsa' => VerificationKey::fromPem(self::rfc9421Key('test-key-rsa-pss.public.pem'), [
-                Algorithm::RsaV15Sha256,
-            ]),
+            ['test-key-rsa' => VerificationKey::fromPem(
+                self::rfc9421Key('test-key-rsa-pss.public.pem'),
+                [Algorithm::RsaV15Sha256],
+                'https://example.com/users/old',
+            ),
             ],
-            ['test-key-rsa' => VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))],
+            ['test-key-rsa' => VerificationKey::fromPem(
+                self::rfc9421Key('test-key-rsa.public.pem'),
+                owner: 'https://example.com/users/new',
+            ),
+            ],
         );
 
         $result = self::verify(self::signed(self::request()), resolver: $resolver);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertTrue($result->keyRefreshed);
-        $this->assertSame(['test-key-rsa'], $resolver->refreshed);
+        $this->assertSame(['test-key-rsa'], $resolver->refreshedKeyIds());
+        $this->assertSame($resolver->resolved[0], $resolver->refreshed[0]);
+        $this->assertSame('https://example.com/users/new', $result->keyOwner);
     }
 }

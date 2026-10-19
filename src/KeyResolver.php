@@ -27,6 +27,22 @@ namespace SocialWeb\Http\MessageSignatures;
 /**
  * Finds the key a signature names
  *
+ * The verifier calls the resolver once per signature, with a `KeyLookup` that
+ * holds the message, the form, and every parameter of the signature, after
+ * every check that needs no key has passed. By then the verifier has
+ * established that the form is one the options accept and the fields parse;
+ * that the algorithm named, if any, is one the package implements; that the
+ * policy that needs no key is met, that is, the target, the creation time,
+ * the digest, the nonce, and the required components; that the time policy
+ * is met; that the signature base was built, so every covered component is
+ * present in the message or the related request and has a value; and that
+ * every covered digest field of the message matches its content. It has not
+ * verified the signature bytes. Everything the resolver reads from the
+ * message is therefore a claim until `Verifier::verify()` returns a verified
+ * result: the resolver may use it to find a key, and nothing else, and a
+ * resolver that fetches applies its own limits to what the message makes it
+ * fetch.
+ *
  * The key identifier is the parameter value as the message gave it, an opaque
  * string: the package never parses it as a URL, never fetches, and never
  * caches. Anything a resolver throws passes through `Verifier::verify()`
@@ -34,7 +50,8 @@ namespace SocialWeb\Http\MessageSignatures;
  * could not be fetched. The resolver is the one place for key policy: a
  * resolver that refuses keys below a size, keys from a blocked origin, or
  * revoked keys returns `null` or throws, and the package does not second-guess
- * it.
+ * it. The `owner` of the key it returns is its claim about whose key that is,
+ * which the verifier reports only on a verified result.
  */
 interface KeyResolver
 {
@@ -42,15 +59,18 @@ interface KeyResolver
      * Returns the key, or `null` when there is no such key, which the
      * verifier reports as `KeyNotFound`
      */
-    public function resolve(string $keyId): ?VerificationKey;
+    public function resolve(KeyLookup $lookup): ?VerificationKey;
 
     /**
      * Returns the key again after a failure a rotated key could explain,
      * fetching it afresh when the resolver caches; a resolver with no cache
      * returns what `resolve()` returns
      *
-     * The verifier calls this once per signature, and only when its option
-     * `retryWithRefreshedKey` is on.
+     * The verifier calls this once per signature, with the same `KeyLookup`
+     * it passed to `resolve()`, and only when its option
+     * `retryWithRefreshedKey` is on. A fetch that fails here must not discard
+     * a cached key: the resolver returns `null`, and the original failure
+     * reason stands.
      */
-    public function refresh(string $keyId): ?VerificationKey;
+    public function refresh(KeyLookup $lookup): ?VerificationKey;
 }
