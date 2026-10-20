@@ -199,7 +199,8 @@ Build the verifier with the options that state your policy, and act on the
 result. `keyOwner` is the owner the resolver gave the key that verified the
 signature, and `null` when that key had none or the signature did not verify.
 Compare it with whoever the message claims to be from before you trust the
-message; the package does not know who that is.
+message; the package does not know who that is. `$claimedSender` is the
+identity the message claims to be from, read from the message itself.
 
 ``` php
 use SocialWeb\Http\MessageSignatures\Verifier;
@@ -210,7 +211,7 @@ $result = $verifier->verify($incomingRequest);
 
 if (!$result->verified) {
     echo "Not verified: {$result->reason?->name}, {$result->detail}\n";
-} elseif ($result->keyOwner !== $claimedSender) {
+} elseif ($result->keyOwner === null || $result->keyOwner !== $claimedSender) {
     echo "Signed by {$result->keyId}, which is not a key of {$claimedSender}\n";
 } else {
     echo "Signed by {$result->keyOwner} in the form {$result->form?->value}\n";
