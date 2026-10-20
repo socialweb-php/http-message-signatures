@@ -178,8 +178,8 @@ $resolver = new ArrayKeyResolver([
 
 The resolver receives a `KeyLookup`: the message, the form, the key
 identifier as the message gave it, the related request when a response is
-verified, and every parameter of the signature, that is, the label, the
-algorithm, the creation and expiry times, the nonce, the tag, and the covered
+verified, and these parameters of the signature: the label, the algorithm,
+the creation and expiry times, the nonce, the tag, and the covered
 components. The verifier calls it only after every check that needs no key
 has passed: the fields parse, the policy is met, the signature base was built,
 and every covered digest matches the content. The signature bytes have not

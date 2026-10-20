@@ -31,11 +31,12 @@ use Psr\Http\Message\RequestInterface;
 /**
  * What the verifier hands the resolver when it asks for a key
  *
- * It holds the message, the form, and every parameter of the signature, so
- * that a resolver reads what its protocol needs without the verifier deciding
- * for it. The verifier is the one producer, and a test of a resolver is the
- * other: the constructor takes the message, the form, and the key identifier
- * and defaults the rest, and it validates nothing beyond its types.
+ * It holds the message, the form, and the parameters of the signature that the
+ * verifier reads, so that a resolver reads what its protocol needs without the
+ * verifier deciding for it. The verifier is the one producer, and a test of a
+ * resolver is the other: the constructor takes the message, the form, and the
+ * key identifier and defaults the rest, and it validates nothing beyond its
+ * types.
  */
 final readonly class KeyLookup
 {
