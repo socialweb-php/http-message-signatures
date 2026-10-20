@@ -95,11 +95,11 @@ $request = new Request(
     '{"hello": "world"}',
 );
 
-$signed = $signer->sign($request, $key, new SigningOptions(form: Form::Rfc9421));
-$legacy = $signer->sign($request, $key, new SigningOptions(form: Form::Cavage));
+$signedRequest = $signer->sign($request, $key, new SigningOptions(form: Form::Rfc9421));
+$legacySignedRequest = $signer->sign($request, $key, new SigningOptions(form: Form::Cavage));
 
-echo $signed->getHeaderLine('Signature-Input'), "\n";
-echo $legacy->getHeaderLine('Signature'), "\n";
+echo $signedRequest->getHeaderLine('Signature-Input'), "\n";
+echo $legacySignedRequest->getHeaderLine('Signature'), "\n";
 ```
 
 With an RSA key, this prints a `Signature-Input` field and a draft-form
@@ -128,13 +128,16 @@ The response that comes back can be signed over the request it answers, as
 "Sending a response" below shows. The client is the one holding the request
 it sent, so it verifies the response with that request as the second
 argument, and with a resolver that holds the server's key; the next section
-says what a resolver is.
+says what a resolver is. `$httpClient` is any PSR-18 (PHP Standards
+Recommendation 18) HTTP client.
 
 ``` php
 use SocialWeb\Http\MessageSignatures\Verifier;
 
+$signedResponse = $httpClient->sendRequest($signedRequest);
+
 $verifier = new Verifier($resolver, $clock);
-$result = $verifier->verify($response, $signed);
+$result = $verifier->verify($signedResponse, $signedRequest);
 ```
 
 ### Receiving a request
