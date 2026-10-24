@@ -50,7 +50,7 @@ final readonly class VerificationKey
 
     /**
      * Whose key this is, as the resolver that built the key claims it, in
-     * whatever form its protocol gives: an actor's identifier, a URL, an
+     * whatever form its protocol gives: a user identifier, a URL, an
      * account name; `null` when the resolver has no identity to report
      *
      * The package never computes it and never compares it with anything. The
