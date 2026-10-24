@@ -73,10 +73,13 @@ $clock = new class implements ClockInterface {
 ### Sending a request
 
 `Signer::sign()` returns the message it was given, with the signature fields
-of the chosen form added. When the signature covers `date` and the message has
-no `Date` field, one is added; when it covers a digest field, that field is
-computed and set. The default components cover `date` and cover the digest
-field when the message has content.
+of the chosen form added. A signature covers the parts of the message it signs,
+its components, such as the method, the target URI, and chosen fields;
+changing a covered part breaks the signature, while any other part can change
+without it. When the signature covers `date` and the message has no `Date`
+field, one is added; when it covers a digest field, that field is computed and
+set. The default components cover `date` and cover the digest field when the
+message has content.
 
 ``` php
 use Nyholm\Psr7\Request;
