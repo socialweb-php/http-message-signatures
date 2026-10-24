@@ -88,6 +88,9 @@ use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
 use SocialWeb\Http\MessageSignatures\SigningOptions;
 
+use function file_get_contents;
+
+$privateKeyPem = file_get_contents('/path/to/private-key.pem');
 $key = SigningKey::fromPem('https://example.com/keys/1', $privateKeyPem);
 $signer = new Signer($clock);
 
