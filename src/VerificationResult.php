@@ -47,9 +47,9 @@ final readonly class VerificationResult
      *     `NoSignature`
      * @param Algorithm | null $algorithm set once the algorithm is resolved
      * @param string | null $keyId set once the fields are parsed
-     * @param string | null $keyOwner the `owner` of the key that verified
-     *     the signature; `null` when that key had none, and always on a
-     *     failure, since an identity is never read off a signature that did
+     * @param non-empty-string | null $keyOwner the `owner` of the key that
+     *     verified the signature; `null` when that key had none, and always on
+     *     a failure, since an identity is never read off a signature that did
      *     not verify under the key
      * @param string | null $label the signature label; RFC 9421 only
      * @param list<string> $coveredComponents as the signature named them
@@ -63,9 +63,9 @@ final readonly class VerificationResult
      *     retry without the query string is what verified
      *
      * @throws InvalidArgument when a verified result has a reason or a
-     *     detail, when a failed result has no reason or has a key owner, or
-     *     when the form is absent for a reason other than `NoSignature` or
-     *     present for it
+     *     detail, when a failed result has no reason or has a key owner, when
+     *     the key owner is an empty string, or when the form is absent for a
+     *     reason other than `NoSignature` or present for it
      */
     public function __construct(
         public bool $verified,
@@ -98,6 +98,10 @@ final readonly class VerificationResult
 
         if (!$verified && $keyOwner !== null) {
             throw new InvalidArgument('A failed result cannot have a key owner');
+        }
+
+        if ($keyOwner === '') {
+            throw new InvalidArgument('The key owner must not be empty');
         }
 
         if (($form === null) !== ($reason === FailureReason::NoSignature)) {

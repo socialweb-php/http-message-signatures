@@ -37,6 +37,7 @@ use SocialWeb\Http\MessageSignatures\Rfc9421\FieldParser;
 use SocialWeb\Http\MessageSignatures\Rfc9421\ParsedSignature;
 use SocialWeb\Http\MessageSignatures\Rfc9421\SignatureBase;
 
+use function assert;
 use function in_array;
 use function preg_match;
 use function sprintf;
@@ -202,28 +203,36 @@ final class Verifier
             $created = Cavage\HttpDate::parse(trim($context->message()->getHeaderLine('Date'), " \t"), $now);
         }
 
-        $result = fn (
+        $result = function (
             ?FailureReason $reason,
             string $detail = '',
             ?Algorithm $algorithm = null,
             bool $keyRefreshed = false,
             bool $withoutQuery = false,
             ?string $keyOwner = null,
-        ): VerificationResult => new VerificationResult(
-            verified: $reason === null,
-            reason: $reason,
-            detail: $detail,
-            form: Form::Cavage,
-            algorithm: $algorithm,
-            keyId: $signature->keyId,
-            keyOwner: $keyOwner,
-            coveredComponents: $signature->coveredComponentNames(),
-            created: $created,
-            expires: $expires,
-            signature: $signature->signature,
-            keyRefreshed: $keyRefreshed,
-            requestTargetVerifiedWithoutQuery: $withoutQuery,
-        );
+        ) use (
+            $signature,
+            $created,
+            $expires,
+        ): VerificationResult {
+            assert($keyOwner !== '');
+
+            return new VerificationResult(
+                verified: $reason === null,
+                reason: $reason,
+                detail: $detail,
+                form: Form::Cavage,
+                algorithm: $algorithm,
+                keyId: $signature->keyId,
+                keyOwner: $keyOwner,
+                coveredComponents: $signature->coveredComponentNames(),
+                created: $created,
+                expires: $expires,
+                signature: $signature->signature,
+                keyRefreshed: $keyRefreshed,
+                requestTargetVerifiedWithoutQuery: $withoutQuery,
+            );
+        };
 
         $named = $signature->keyDecidesAlgorithm() ? null : $signature->algorithm;
         $algorithm = $named === null ? null : Algorithm::tryFromName($named, Form::Cavage);
@@ -307,30 +316,39 @@ final class Verifier
         $created = $signature->created === null ? null : new DateTimeImmutable('@' . $signature->created);
         $expires = $signature->expires === null ? null : new DateTimeImmutable('@' . $signature->expires);
 
-        $result = fn (
-            ?FailureReason $reason,
-            string $detail = '',
-            ?Algorithm $algorithm = null,
-            bool $keyRefreshed = false,
-            bool $withoutQuery = false,
-            ?string $keyOwner = null,
-        ): VerificationResult => new VerificationResult(
-            verified: $reason === null,
-            reason: $reason,
-            detail: $detail,
-            form: Form::Rfc9421,
-            algorithm: $algorithm,
-            keyId: $signature->keyId,
-            keyOwner: $keyOwner,
-            label: $signature->label,
-            coveredComponents: $signature->coveredComponentNames(),
-            created: $created,
-            expires: $expires,
-            nonce: $signature->nonce,
-            signature: $signature->signature,
-            keyRefreshed: $keyRefreshed,
-            requestTargetVerifiedWithoutQuery: $withoutQuery,
-        );
+        $result =
+            function (
+                ?FailureReason $reason,
+                string $detail = '',
+                ?Algorithm $algorithm = null,
+                bool $keyRefreshed = false,
+                bool $withoutQuery = false,
+                ?string $keyOwner = null,
+            ) use (
+                $signature,
+                $created,
+                $expires,
+            ): VerificationResult {
+                assert($keyOwner !== '');
+
+                return new VerificationResult(
+                    verified: $reason === null,
+                    reason: $reason,
+                    detail: $detail,
+                    form: Form::Rfc9421,
+                    algorithm: $algorithm,
+                    keyId: $signature->keyId,
+                    keyOwner: $keyOwner,
+                    label: $signature->label,
+                    coveredComponents: $signature->coveredComponentNames(),
+                    created: $created,
+                    expires: $expires,
+                    nonce: $signature->nonce,
+                    signature: $signature->signature,
+                    keyRefreshed: $keyRefreshed,
+                    requestTargetVerifiedWithoutQuery: $withoutQuery,
+                );
+            };
 
         $algorithm = $signature->algorithm === null
             ? null
@@ -609,7 +627,7 @@ final class Verifier
      *     draft the one without the query string
      * @param string $signatureName what the detail calls the signature
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: string | null}
+     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: non-empty-string | null}
      */
     private function checkWithKey(
         KeyLookup $lookup,
@@ -657,7 +675,7 @@ final class Verifier
      *     resolved, or `null` when the key decides
      * @param non-empty-list<string> $bases
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: string | null}
+     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: non-empty-string | null}
      */
     private static function check(
         VerificationKey $key,

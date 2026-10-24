@@ -132,6 +132,14 @@ class VerificationResultTest extends TestCase
             ),
             'A failed result cannot have a key owner',
         ];
+        yield 'verified with an empty key owner' => [
+            static fn (): VerificationResult => new VerificationResult(
+                verified: true,
+                form: Form::Rfc9421,
+                keyOwner: '', /* @phpstan-ignore argument.type */
+            ),
+            'The key owner must not be empty',
+        ];
         yield 'verified without a form' => [
             static fn (): VerificationResult => new VerificationResult(verified: true),
             'The form is absent exactly when the reason is NoSignature',
