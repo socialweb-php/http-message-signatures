@@ -304,6 +304,23 @@ class VerifierCavageTest extends TestCase
         $this->assertSame(['date', 'digest'], $result->coveredComponents);
     }
 
+    public function testTheResolverSeesTheRelatedRequestOfADraftFormResponse(): void
+    {
+        $request = self::request('{"hello": "world"}');
+        $response = self::signed(
+            new Response(200, ['Date' => 'Tue, 20 Apr 2021 02:07:56 GMT'], '{"message": "good dog"}'),
+        );
+        $resolver = self::resolver();
+
+        $result = (new Verifier($resolver, self::clock(), new VerifierOptions()))->verify($response, $request);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame(Form::Cavage, $result->form);
+        $lookup = $resolver->resolved[0];
+        $this->assertSame($response, $lookup->message);
+        $this->assertSame($request, $lookup->relatedRequest);
+    }
+
     public function testVerifiesTheAuthorizationField(): void
     {
         $signed = self::signed(self::request());
