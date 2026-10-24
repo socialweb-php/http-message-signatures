@@ -31,8 +31,8 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
  * What `Verifier::verify()` found
  *
  * Everything a replay store needs is here: the key identifier, the times, the
- * nonce, and the signature bytes. So is what an authorization check needs:
- * `keyOwner`, the identity the resolver gave the key that verified the
+ * nonce, and the signature bytes. It also has what an authorization check
+ * needs: `keyOwner`, the identity the resolver gave the key that verified the
  * signature, which the caller compares with whoever the message claims to be
  * from before it trusts the message.
  */
