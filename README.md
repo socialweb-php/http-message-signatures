@@ -172,7 +172,10 @@ final class ArrayKeyResolver implements KeyResolver
 }
 
 $resolver = new ArrayKeyResolver([
-    'https://example.com/keys/1' => VerificationKey::fromPem($publicKeyPem, owner: 'https://example.com/users/alice'),
+    'https://example.com/keys/1' => VerificationKey::fromPem(
+        $publicKeyPem,
+        owner: 'https://example.com/users/alice',
+    ),
 ]);
 ```
 
