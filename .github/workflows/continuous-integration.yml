@@ -99,6 +99,7 @@ jobs:
       matrix:
         php:
           - "8.5"
+          - "8.6"
         os:
           - "ubuntu-24.04"
         composer-deps:
