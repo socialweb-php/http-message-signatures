@@ -11,6 +11,10 @@
         "psr-7",
         "signature"
     ],
+    "support": {
+        "issues": "https://github.com/socialweb-php/http-message-signatures/issues",
+        "security": "https://github.com/socialweb-php/http-message-signatures/security/policy"
+    },
     "require": {
         "php": "^8.5",
         "ext-openssl": "*",
