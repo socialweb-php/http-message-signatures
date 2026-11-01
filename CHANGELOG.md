@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Nothing.
+- `VerificationKey::fromJwk()`, which builds a verification key from a JSON Web Key of RFC 7517 read by the `socialweb/jwk` package, now a suggested dependency. An `RSA`, `EC`, or `OKP` key becomes a public key and an `oct` key a shared secret; a key with `alg` permits that algorithm alone; a key with private members, or one whose `use` or `key_ops` excludes verifying, is refused.
 
 ### Changed
 

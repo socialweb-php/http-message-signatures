@@ -155,6 +155,8 @@ final readonly class VerificationKey
      * default list. The `kid` member is not read: the resolver that chose the
      * key has matched it already.
      *
+     * @link https://github.com/socialweb-php/jwk socialweb/jwk
+     *
      * @param list<Algorithm> | null $permittedAlgorithms the algorithms this
      *     key may verify, or `null` for the `alg` member or the type's
      *     default list

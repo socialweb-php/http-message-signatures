@@ -299,6 +299,27 @@ A `VerificationKey` is built the same way from the text of a PEM public key, and
 may name its owner, the identity the key belongs to, as "Resolvers" below shows.
 Both classes also have `fromSharedSecret()`, for HMAC.
 
+A `VerificationKey` may also be built from a JSON Web Key ([RFC 7517][rfc7517])
+with `fromJwk()`, which takes a key read by [socialweb/jwk][jwk]. That package
+is a suggested dependency; install it to use the method:
+
+```bash
+composer require socialweb/jwk
+```
+
+```php
+use SocialWeb\Http\MessageSignatures\VerificationKey;
+use SocialWeb\Jwk\Jwk;
+
+$jwk = Jwk::fromJson($jwkJson, publicOnly: true);
+$key = VerificationKey::fromJwk($jwk, owner: 'https://example.com/users/alice');
+```
+
+An `RSA`, `EC`, or `OKP` key becomes a public key, and an `oct` key becomes a
+shared secret. A key with `alg` permits that algorithm alone. A key with
+private members is refused, and so is a key meant for encryption by its `use`
+or `key_ops`.
+
 ### Resolvers
 
 `Verifier` asks a `KeyResolver` for the key that a signature names. Write the
@@ -396,4 +417,6 @@ Please see [COPYING.LESSER](COPYING.LESSER), [COPYING](COPYING), and
 [psr-7]: https://www.php-fig.org/psr/psr-7/
 [psr-18]: https://www.php-fig.org/psr/psr-18/
 [psr-20]: https://www.php-fig.org/psr/psr-20/
+[rfc7517]: https://www.rfc-editor.org/rfc/rfc7517
+[jwk]: https://github.com/socialweb-php/jwk
 [nyholm]: https://github.com/Nyholm/psr7
