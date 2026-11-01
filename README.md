@@ -311,14 +311,15 @@ composer require socialweb/jwk
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Jwk\Jwk;
 
+$jwkJson = file_get_contents('/path/to/public-key.json');
 $jwk = Jwk::fromJson($jwkJson, publicOnly: true);
 $key = VerificationKey::fromJwk($jwk, owner: 'https://example.com/users/alice');
 ```
 
 An `RSA`, `EC`, or `OKP` key becomes a public key, and an `oct` key becomes a
 shared secret. A key with `alg` permits that algorithm alone. A key with
-private members is refused, and so is a key meant for encryption by its `use`
-or `key_ops`.
+private members is refused, and so is a key whose `use` is not `sig` or whose
+`key_ops` lacks `verify`.
 
 ### Resolvers
 
