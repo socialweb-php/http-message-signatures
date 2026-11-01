@@ -7,8 +7,9 @@
         "http",
         "http-message-signatures",
         "http-signatures",
-        "rfc9421",
+        "jwk",
         "psr-7",
+        "rfc9421",
         "signature"
     ],
     "support": {
@@ -36,7 +37,11 @@
         "ramsey/coding-standard": "^2.4",
         "ramsey/composer-repl": "^1.5",
         "ramsey/conventional-commits": "^1.7",
-        "roave/security-advisories": "dev-latest"
+        "roave/security-advisories": "dev-latest",
+        "socialweb/jwk": "^0.1"
+    },
+    "suggest": {
+        "socialweb/jwk": "To build a VerificationKey from a JSON Web Key with VerificationKey::fromJwk()"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

@@ -27,7 +27,13 @@ namespace SocialWeb\Http\MessageSignatures;
 use LogicException;
 use SensitiveParameter;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Jwk\Jwk;
+use SocialWeb\Jwk\KeyOperation;
+use SocialWeb\Jwk\KeyUse;
+use SocialWeb\Jwk\OctKey;
 
+use function array_keys;
+use function implode;
 use function in_array;
 use function sprintf;
 
@@ -39,6 +45,20 @@ use function sprintf;
  */
 final readonly class VerificationKey
 {
+    /**
+     * The `alg` names of RFC 7518, RFC 8037, and RFC 9864 for the algorithms
+     * the package implements
+     */
+    private const array JWK_ALGORITHMS = [
+        'RS256' => Algorithm::RsaV15Sha256,
+        'PS512' => Algorithm::RsaPssSha512,
+        'ES256' => Algorithm::EcdsaP256Sha256,
+        'ES384' => Algorithm::EcdsaP384Sha384,
+        'EdDSA' => Algorithm::Ed25519,
+        'Ed25519' => Algorithm::Ed25519,
+        'HS256' => Algorithm::HmacSha256,
+    ];
+
     public KeyType $type;
 
     /**
@@ -119,6 +139,100 @@ final readonly class VerificationKey
         ?string $owner = null,
     ): self {
         return new self(KeyMaterial::fromSecret($secret), $permittedAlgorithms, $owner);
+    }
+
+    /**
+     * Builds a key from a JSON Web Key of RFC 7517, read by the socialweb/jwk
+     * package, which must be installed to call this method
+     *
+     * An `RSA`, `EC`, or `OKP` key is read from its SubjectPublicKeyInfo PEM,
+     * as `fromPem()` reads one, so a key on a curve the package does not
+     * implement is refused the same way. An `oct` key becomes a shared secret,
+     * as `fromSharedSecret()` builds one.
+     *
+     * A key with `alg` permits that algorithm alone, and the list, when given,
+     * may name nothing else. A key without `alg` takes the list, or the type's
+     * default list. The `kid` member is not read: the resolver that chose the
+     * key has matched it already.
+     *
+     * @param list<Algorithm> | null $permittedAlgorithms the algorithms this
+     *     key may verify, or `null` for the `alg` member or the type's
+     *     default list
+     * @param string | null $owner whose key this is, as the resolver claims
+     *     it, or `null` when it has no identity to report
+     *
+     * @throws InvalidArgument when the key holds private members, when its
+     *     `use` is not `sig`, when its `key_ops` is present and lacks
+     *     `verify`, when its `alg` names an algorithm the package does not
+     *     implement, when the list names an algorithm other than the `alg`,
+     *     when the key is of a type or on a curve the package does not
+     *     implement, when the list is empty, holds an algorithm the type
+     *     cannot run, or holds a duplicate, or when the owner is an empty
+     *     string
+     */
+    public static function fromJwk(
+        #[SensitiveParameter]
+        Jwk $jwk,
+        ?array $permittedAlgorithms = null,
+        ?string $owner = null,
+    ): self {
+        if (!$jwk instanceof OctKey && $jwk->isPrivate()) {
+            throw new InvalidArgument('A verification key cannot be built from a JWK with private members');
+        }
+
+        if ($jwk->use !== null && $jwk->use !== KeyUse::Signature->value) {
+            throw new InvalidArgument(
+                sprintf('A JWK with the use "%s" cannot verify signatures; it needs the use "sig"', $jwk->use),
+            );
+        }
+
+        if ($jwk->keyOperations !== [] && !in_array(KeyOperation::Verify->value, $jwk->keyOperations, true)) {
+            throw new InvalidArgument('A JWK whose key operations do not include "verify" cannot verify signatures');
+        }
+
+        $permittedAlgorithms = self::jwkAlgorithms($jwk, $permittedAlgorithms);
+        $material = $jwk instanceof OctKey
+            ? KeyMaterial::fromSecret($jwk->keyValue)
+            : KeyMaterial::fromPublicPem($jwk->toPem());
+
+        return new self($material, $permittedAlgorithms, $owner);
+    }
+
+    /**
+     * Returns the list a JWK permits: the one algorithm its `alg` names, or
+     * the given list when it has no `alg`
+     *
+     * @param list<Algorithm> | null $permittedAlgorithms
+     *
+     * @return list<Algorithm> | null
+     *
+     * @throws InvalidArgument when the `alg` names an algorithm the package
+     *     does not implement, or when the list names an algorithm other than
+     *     the `alg`
+     */
+    private static function jwkAlgorithms(Jwk $jwk, ?array $permittedAlgorithms): ?array
+    {
+        if ($jwk->algorithm === null) {
+            return $permittedAlgorithms;
+        }
+
+        $algorithm = self::JWK_ALGORITHMS[$jwk->algorithm] ?? throw new InvalidArgument(sprintf(
+            'The JWK algorithm "%s" is not implemented; the package implements %s',
+            $jwk->algorithm,
+            implode(', ', array_keys(self::JWK_ALGORITHMS)),
+        ));
+
+        foreach ($permittedAlgorithms ?? [] as $permitted) {
+            if ($permitted !== $algorithm) {
+                throw new InvalidArgument(sprintf(
+                    'Algorithm %s is not permitted by a JWK whose alg is "%s"',
+                    $permitted->name,
+                    $jwk->algorithm,
+                ));
+            }
+        }
+
+        return [$algorithm];
     }
 
     /**
