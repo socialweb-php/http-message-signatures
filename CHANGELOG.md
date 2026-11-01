@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Nothing.
+- `VerificationKey::fromJwk()` refuses an empty list of permitted algorithms, or a list that names the key's `alg` more than once, as `fromPem()` and `fromSharedSecret()` refuse them.
 
 ## 0.2.0 - 2026-11-01
 

@@ -302,6 +302,28 @@ class VerificationKeyTest extends TestCase
         VerificationKey::fromJwk($jwk, [Algorithm::RsaPssSha512, Algorithm::RsaV15Sha256]);
     }
 
+    public function testRejectsAnEmptyListBesideAJwkAlgorithm(): void
+    {
+        $jwk = Jwk::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->withAlgorithm('PS512');
+
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains('The list of permitted algorithms must not be empty');
+
+        VerificationKey::fromJwk($jwk, []);
+    }
+
+    public function testRejectsADuplicateOfTheJwkAlgorithmInTheList(): void
+    {
+        $jwk = Jwk::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->withAlgorithm('PS512');
+
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains(
+            'Algorithm RsaPssSha512 appears more than once in the permitted list',
+        );
+
+        VerificationKey::fromJwk($jwk, [Algorithm::RsaPssSha512, Algorithm::RsaPssSha512]);
+    }
+
     public function testTakesTheListWhenTheJwkNamesNoAlgorithm(): void
     {
         $key = VerificationKey::fromJwk(

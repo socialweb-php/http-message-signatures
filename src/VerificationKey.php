@@ -227,6 +227,12 @@ final readonly class VerificationKey
             implode(', ', array_keys(self::JWK_ALGORITHMS)),
         ));
 
+        if ($permittedAlgorithms === []) {
+            throw new InvalidArgument('The list of permitted algorithms must not be empty');
+        }
+
+        $seen = [];
+
         foreach ($permittedAlgorithms ?? [] as $permitted) {
             if ($permitted !== $algorithm) {
                 throw new InvalidArgument(sprintf(
@@ -235,6 +241,14 @@ final readonly class VerificationKey
                     $jwk->algorithm,
                 ));
             }
+
+            if (in_array($permitted, $seen, true)) {
+                throw new InvalidArgument(
+                    sprintf('Algorithm %s appears more than once in the permitted list', $permitted->name),
+                );
+            }
+
+            $seen[] = $permitted;
         }
 
         return [$algorithm];
