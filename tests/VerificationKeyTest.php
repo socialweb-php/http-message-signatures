@@ -410,4 +410,19 @@ class VerificationKeyTest extends TestCase
             ini_set('zend.exception_ignore_args', $previous);
         }
     }
+
+    public function testKeepsAnOctJwkOutOfTheTraceWhenItsAlgorithmDoesNotFitTheList(): void
+    {
+        $previous = ini_set('zend.exception_ignore_args', '0');
+        $this->assertNotFalse($previous);
+
+        try {
+            VerificationKey::fromJwk(new OctKey('the secret bytes', algorithm: 'HS256'), [Algorithm::RsaV15Sha256]);
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $this->assertTraceHidesSecrets($exception, 'the secret bytes');
+        } finally {
+            ini_set('zend.exception_ignore_args', $previous);
+        }
+    }
 }

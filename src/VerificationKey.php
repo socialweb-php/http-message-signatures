@@ -212,8 +212,11 @@ final readonly class VerificationKey
      *     does not implement, or when the list names an algorithm other than
      *     the `alg`
      */
-    private static function jwkAlgorithms(Jwk $jwk, ?array $permittedAlgorithms): ?array
-    {
+    private static function jwkAlgorithms(
+        #[SensitiveParameter]
+        Jwk $jwk,
+        ?array $permittedAlgorithms,
+    ): ?array {
         if ($jwk->algorithm === null) {
             return $permittedAlgorithms;
         }

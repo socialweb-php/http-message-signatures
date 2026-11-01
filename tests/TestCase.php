@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
 use RuntimeException;
 use SensitiveParameterValue;
 use SocialWeb\Http\MessageSignatures\KeyMaterial;
+use SocialWeb\Jwk\Jwk;
 use Throwable;
 
 use function array_filter;
@@ -111,6 +112,9 @@ class TestCase extends BaseTestCase
 
         $material = array_filter($arguments, static fn (mixed $argument): bool => $argument instanceof KeyMaterial);
         $this->assertEmpty($material, 'A KeyMaterial object is in the trace');
+
+        $jwks = array_filter($arguments, static fn (mixed $argument): bool => $argument instanceof Jwk);
+        $this->assertEmpty($jwks, 'A Jwk object is in the trace');
 
         foreach ($secrets as $secret) {
             $leaked = array_filter(
