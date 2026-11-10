@@ -41,7 +41,10 @@ use function min;
  * parameter when present and the creation time plus `defaultLifetime` when
  * not, clamped to the creation time plus `maximumLifetime` either way. The
  * defaults are what the largest implementation enforces; RFC 9421 section
- * 3.2.1 leaves the values to the application.
+ * 3.2.1 leaves the values to the application. `Verifier` builds the policy
+ * from its `clockSkew`, `defaultLifetime`, and `maximumLifetime` parameters.
+ *
+ * @internal
  */
 final readonly class TimePolicy
 {
@@ -80,7 +83,7 @@ final readonly class TimePolicy
      * A creation time after now plus the clock skew is `NotYetValid`. Now
      * after the effective expiry plus the clock skew is `Expired`. A
      * signature with no creation time, which the verifier allows only when
-     * its option `requireCreationTime` is off, is judged by `expires` alone,
+     * its `requireCreationTime` parameter is off, is judged by `expires` alone,
      * with no clamping, and passes when that is absent too.
      *
      * @param DateTimeInterface $now the injected clock's current time

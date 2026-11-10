@@ -29,10 +29,10 @@ namespace SocialWeb\Http\MessageSignatures\Exception;
 use InvalidArgumentException;
 
 /**
- * Thrown by the option, key, and policy constructors for a value they cannot
- * accept; by `Signer::sign()` for options that do not fit the form or a label
- * the message already has; and by either procedure for a body that cannot
- * be rewound
+ * Thrown by the constructors of the verifier, the signing options, the keys,
+ * and the result for a value they cannot accept; by `Signer::sign()` for
+ * options that do not fit the form or a label the message already has; and
+ * by either procedure for a body that cannot be rewound
  */
 final class InvalidArgument extends InvalidArgumentException implements MessageSignaturesException
 {

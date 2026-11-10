@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Test\Http\MessageSignatures;
 
+use Closure;
 use DateInterval;
 use DateTimeImmutable;
 use Ergebnis\Clock\FrozenClock;
@@ -23,11 +24,9 @@ use SocialWeb\Http\MessageSignatures\KeyResolver;
 use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
 use SocialWeb\Http\MessageSignatures\SigningOptions;
-use SocialWeb\Http\MessageSignatures\TimePolicy;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Http\MessageSignatures\VerificationResult;
 use SocialWeb\Http\MessageSignatures\Verifier;
-use SocialWeb\Http\MessageSignatures\VerifierOptions;
 
 use function fopen;
 use function openssl_pkey_get_details;
@@ -44,6 +43,8 @@ use const OPENSSL_KEYTYPE_EC;
  * The messages are signed by `Signer`, whose own tests pin what it writes;
  * `Rfc9421\ExamplesTest` proves the verifier against the RFC's own
  * signatures.
+ *
+ * @phpstan-import-type VerifierSettings from TestCase
  */
 final class VerifierTest extends TestCase
 {
@@ -132,20 +133,116 @@ final class VerifierTest extends TestCase
         );
     }
 
+    /**
+     * @param VerifierSettings $settings
+     */
     private static function verify(
         MessageInterface $message,
-        ?VerifierOptions $options = null,
+        array $settings = [],
         ?KeyResolver $resolver = null,
         int $clockOffset = 0,
         ?Request $relatedRequest = null,
     ): VerificationResult {
-        $verifier = new Verifier(
-            $resolver ?? self::resolver(),
-            self::clock($clockOffset),
-            $options ?? new VerifierOptions(),
-        );
+        $verifier = new Verifier($resolver ?? self::resolver(), self::clock($clockOffset), ...$settings);
 
         return $verifier->verify($message, $relatedRequest);
+    }
+
+    /**
+     * @return iterable<string, array{Closure(): Verifier, string}>
+     */
+    public static function refusedSettings(): iterable
+    {
+        $resolver = self::resolver();
+        $clock = self::clock();
+        $inverted = new DateInterval('PT5M');
+        $inverted->invert = 1;
+
+        yield 'no forms' => [
+            // @phpstan-ignore argument.type (the constructor must refuse the empty list its type forbids)
+            static fn (): Verifier => new Verifier($resolver, $clock, forms: []),
+            'The list of forms must not be empty',
+        ];
+        yield 'a duplicate form' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, forms: [Form::Rfc9421, Form::Rfc9421]),
+            'The form Rfc9421 appears more than once',
+        ];
+        yield 'an inverted clock skew' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, clockSkew: $inverted),
+            'clockSkew must not be negative',
+        ];
+        yield 'a negative default lifetime' => [
+            static fn (): Verifier => new Verifier(
+                $resolver,
+                $clock,
+                defaultLifetime: DateInterval::createFromDateString('-5 minutes'),
+            ),
+            'defaultLifetime must not be negative',
+        ];
+        yield 'a negative maximum lifetime' => [
+            static fn (): Verifier => new Verifier(
+                $resolver,
+                $clock,
+                maximumLifetime: DateInterval::createFromDateString('-1 day'),
+            ),
+            'maximumLifetime must not be negative',
+        ];
+        yield 'an empty required component' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, requiredComponents: ['date', '']),
+            'A component identifier must not be empty',
+        ];
+        yield 'a required component whose parameters do not parse' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, requiredComponents: ['content-digest;req=']),
+            'The parameters of the component identifier "content-digest;req=" do not parse',
+        ];
+        yield 'a required name in parentheses the draft does not define' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, requiredComponents: ['(foo)']),
+            '"(foo)" is not a component name of the draft form',
+        ];
+        yield 'zero signatures' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, maxSignatures: 0),
+            'maxSignatures must be at least 1; 0 given',
+        ];
+        yield 'negative signatures' => [
+            static fn (): Verifier => new Verifier($resolver, $clock, maxSignatures: -1),
+            'maxSignatures must be at least 1; -1 given',
+        ];
+    }
+
+    /**
+     * @param Closure(): Verifier $build
+     */
+    #[DataProvider('refusedSettings')]
+    public function testRefusesASettingItCannotAccept(Closure $build, string $message): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains($message);
+
+        $build();
+    }
+
+    public function testAcceptsEverySetting(): void
+    {
+        $verifier = new Verifier(
+            resolver: self::resolver(),
+            clock: self::clock(),
+            forms: [Form::Rfc9421],
+            clockSkew: new DateInterval('PT0S'),
+            defaultLifetime: new DateInterval('PT1M'),
+            maximumLifetime: new DateInterval('PT1H'),
+            requireTarget: false,
+            requireCreationTime: false,
+            requireContentDigest: false,
+            requiredComponents: ['@authority', 'date'],
+            requireNonce: true,
+            retryWithRefreshedKey: false,
+            acceptRequestTargetWithoutQuery: false,
+            maxSignatures: 1,
+        );
+
+        $result = $verifier->verify(self::signed(self::request('{}'), ['@authority', 'date'], nonce: 'n1'));
+
+        $this->assertTrue($result->verified, $result->detail);
     }
 
     public function testVerifiesASignedRequestAndReportsEverything(): void
@@ -169,6 +266,7 @@ final class VerifierTest extends TestCase
         $this->assertSame(self::NOW, $result->created?->getTimestamp());
         $this->assertSame(self::NOW + 300, $result->expires?->getTimestamp());
         $this->assertSame('n1', $result->nonce);
+        $this->assertFalse($result->maxSignaturesExceeded);
         $this->assertSame(64, strlen((string) $result->signature));
         $this->assertFalse($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
@@ -279,9 +377,9 @@ final class VerifierTest extends TestCase
         $this->assertSame(Form::Rfc9421, $result->form);
     }
 
-    public function testAFormTheOptionsExcludeIsUnsupported(): void
+    public function testAFormTheVerifierDoesNotAcceptIsUnsupported(): void
     {
-        $result = self::verify(self::signed(self::request()), new VerifierOptions(forms: [Form::Cavage]));
+        $result = self::verify(self::signed(self::request()), ['forms' => [Form::Cavage]]);
 
         $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
         $this->assertSame('the form Rfc9421 is not accepted', $result->detail);
@@ -289,7 +387,7 @@ final class VerifierTest extends TestCase
 
         $draft = self::verify(
             self::request()->withHeader('Signature', 'keyId="k"'),
-            new VerifierOptions(forms: [Form::Rfc9421]),
+            ['forms' => [Form::Rfc9421]],
         );
 
         $this->assertSame('the form Cavage is not accepted', $draft->detail);
@@ -379,7 +477,7 @@ final class VerifierTest extends TestCase
 
     public function testTheTargetRuleCanBeTurnedOff(): void
     {
-        $result = self::verify(self::signed(self::request(), ['date']), new VerifierOptions(requireTarget: false));
+        $result = self::verify(self::signed(self::request(), ['date']), ['requireTarget' => false]);
 
         $this->assertTrue($result->verified, $result->detail);
     }
@@ -392,7 +490,7 @@ final class VerifierTest extends TestCase
             relatedRequest: self::request(),
         );
 
-        $result = self::verify($response, new VerifierOptions(requireTarget: false), relatedRequest: self::request());
+        $result = self::verify($response, ['requireTarget' => false], relatedRequest: self::request());
         $this->assertTrue($result->verified, $result->detail);
 
         $result = self::verify($response, relatedRequest: self::request());
@@ -411,13 +509,13 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
 
-        $this->assertTrue(self::verify($message, new VerifierOptions(requireCreationTime: false))->verified);
+        $this->assertTrue(self::verify($message, ['requireCreationTime' => false])->verified);
     }
 
     public function testExpiresAloneIsJudgedWhenTheCreationTimeIsNotRequired(): void
     {
         $message = self::signed(self::request(), created: false, expires: new DateInterval('PT5M'));
-        $options = new VerifierOptions(requireCreationTime: false);
+        $options = ['requireCreationTime' => false];
 
         $this->assertTrue(self::verify($message, $options)->verified);
 
@@ -438,7 +536,7 @@ final class VerifierTest extends TestCase
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the message has content and the signature does not cover its digest field', $result->detail);
 
-        $this->assertTrue(self::verify($message, new VerifierOptions(requireContentDigest: false))->verified);
+        $this->assertTrue(self::verify($message, ['requireContentDigest' => false])->verified);
         $this->assertTrue(self::verify(self::signed(self::request(), ['@method', '@target-uri']))->verified);
     }
 
@@ -468,13 +566,13 @@ final class VerifierTest extends TestCase
 
     public function testTheNonceRule(): void
     {
-        $result = self::verify(self::signed(self::request()), new VerifierOptions(requireNonce: true));
+        $result = self::verify(self::signed(self::request()), ['requireNonce' => true]);
 
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the signature has no nonce parameter', $result->detail);
 
         $this->assertTrue(
-            self::verify(self::signed(self::request(), nonce: 'n'), new VerifierOptions(requireNonce: true))->verified,
+            self::verify(self::signed(self::request(), nonce: 'n'), ['requireNonce' => true])->verified,
         );
     }
 
@@ -482,17 +580,17 @@ final class VerifierTest extends TestCase
     {
         $message = self::signed(self::request(), ['@method', '@target-uri', '@query-param;name="Pet"']);
 
-        $result = self::verify($message, new VerifierOptions(requiredComponents: ['@method', 'date']));
+        $result = self::verify($message, ['requiredComponents' => ['@method', 'date']]);
 
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the required component date is not covered', $result->detail);
 
         $this->assertTrue(self::verify(
             $message,
-            new VerifierOptions(requiredComponents: ['@query-param;name="Pet"', '@method']),
+            ['requiredComponents' => ['@query-param;name="Pet"', '@method']],
         )->verified);
 
-        $result = self::verify($message, new VerifierOptions(requiredComponents: ['@query-param;name="pet"']));
+        $result = self::verify($message, ['requiredComponents' => ['@query-param;name="pet"']]);
 
         $this->assertSame('the required component @query-param;name="pet" is not covered', $result->detail);
     }
@@ -511,7 +609,7 @@ final class VerifierTest extends TestCase
         $this->assertSame(FailureReason::Expired, $expired->reason);
         $this->assertSame('the effective expiry has passed', $expired->detail);
 
-        $lenient = new VerifierOptions(timePolicy: new TimePolicy(defaultLifetime: new DateInterval('PT1H')));
+        $lenient = ['defaultLifetime' => new DateInterval('PT1H')];
 
         $this->assertTrue(self::verify($message, $lenient, clockOffset: 300 + 3600 + 1)->verified);
     }
@@ -598,7 +696,7 @@ final class VerifierTest extends TestCase
             'test-key-rsa' => self::verificationKey('test-key-rsa', [Algorithm::RsaPssSha512]),
         ]);
 
-        $result = self::verify($message, new VerifierOptions(retryWithRefreshedKey: false), $resolver);
+        $result = self::verify($message, ['retryWithRefreshedKey' => false], $resolver);
 
         $this->assertSame(FailureReason::AlgorithmNotPermitted, $result->reason);
         $this->assertSame('the key does not permit rsa-v1_5-sha256', $result->detail);
@@ -627,7 +725,7 @@ final class VerifierTest extends TestCase
         $other = self::generatedP256Key();
         $resolver = new ArrayKeyResolver(['test-key-ecc-p256' => $other]);
 
-        $result = self::verify($message, new VerifierOptions(retryWithRefreshedKey: false), $resolver);
+        $result = self::verify($message, ['retryWithRefreshedKey' => false], $resolver);
 
         $this->assertSame(FailureReason::SignatureInvalid, $result->reason);
         $this->assertSame('the signature "sig1" does not verify under ecdsa-p256-sha256', $result->detail);
@@ -716,7 +814,7 @@ final class VerifierTest extends TestCase
             ->withHeader('Signature', 'sig1=:pxcQw6G3AjtMBQjwo8XzkZf/bws5LelbaMk5rGIGtE8=:');
         $resolver = self::resolver();
 
-        $result = self::verify($message, new VerifierOptions(requireTarget: false), $resolver);
+        $result = self::verify($message, ['requireTarget' => false], $resolver);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame(Algorithm::HmacSha256, $result->algorithm);
@@ -867,11 +965,48 @@ final class VerifierTest extends TestCase
         );
         $resolver = new ArrayKeyResolver(['test-key-ed25519' => self::verificationKey()]);
 
-        $result = self::verify($message, new VerifierOptions(maxSignatures: 1), $resolver);
+        $result = self::verify($message, ['maxSignatures' => 1], $resolver);
 
         $this->assertSame(FailureReason::KeyNotFound, $result->reason);
         $this->assertSame('first', $result->label);
         $this->assertSame(['test-key-rsa'], $resolver->resolvedKeyIds());
+        $this->assertTrue($result->maxSignaturesExceeded);
+    }
+
+    public function testASuccessWithinTheLimitStillSaysThatLabelsWereLeftUntried(): void
+    {
+        $message = self::signed(
+            self::signed(self::request(), label: 'first'),
+            keyName: 'test-key-rsa',
+            label: 'second',
+        );
+
+        $result = self::verify($message, ['maxSignatures' => 1]);
+
+        $this->assertTrue($result->verified, $result->detail);
+        $this->assertSame('first', $result->label);
+        $this->assertTrue($result->maxSignaturesExceeded);
+    }
+
+    public function testAsManyLabelsAsTheLimitDoNotExceedIt(): void
+    {
+        $message = self::signed(
+            self::signed(self::request(), keyName: 'test-key-rsa', label: 'first'),
+            label: 'second',
+        );
+
+        $result = self::verify($message, ['maxSignatures' => 2], new ArrayKeyResolver([]));
+
+        $this->assertSame(FailureReason::KeyNotFound, $result->reason);
+        $this->assertSame('second', $result->label);
+        $this->assertFalse($result->maxSignaturesExceeded);
+    }
+
+    public function testARequiredComponentOfTheDraftFormDoesNotApplyUnderRfc9421(): void
+    {
+        $result = self::verify(self::signed(self::request()), ['requiredComponents' => ['(request-target)', 'Host']]);
+
+        $this->assertTrue($result->verified, $result->detail);
     }
 
     public function testStopsAtTheFirstLabelThatVerifies(): void
@@ -900,7 +1035,7 @@ final class VerifierTest extends TestCase
             )
             ->withHeader('Signature', 'sig1=:pxcQw6G3AjtMBQjwo8XzkZf/bws5LelbaMk5rGIGtE8=:');
 
-        $result = self::verify($message, new VerifierOptions(requireTarget: false));
+        $result = self::verify($message, ['requireTarget' => false]);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame(Algorithm::HmacSha256, $result->algorithm);
@@ -919,7 +1054,7 @@ final class VerifierTest extends TestCase
             ['test-shared-secret' => self::verificationKey('test-shared-secret')],
         );
 
-        $result = self::verify($message, new VerifierOptions(requireTarget: false), $resolver);
+        $result = self::verify($message, ['requireTarget' => false], $resolver);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame(Algorithm::HmacSha256, $result->algorithm);

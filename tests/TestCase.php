@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace SocialWeb\Test\Http\MessageSignatures;
 
+use DateInterval;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use RuntimeException;
 use SensitiveParameterValue;
+use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\KeyMaterial;
 use SocialWeb\Jwk\Jwk;
 use Throwable;
@@ -21,6 +23,21 @@ use function trim;
 
 /**
  * A base test case for common test functionality
+ *
+ * @phpstan-type VerifierSettings array{
+ *     forms?: non-empty-list<Form>,
+ *     clockSkew?: DateInterval,
+ *     defaultLifetime?: DateInterval,
+ *     maximumLifetime?: DateInterval,
+ *     requireTarget?: bool,
+ *     requireCreationTime?: bool,
+ *     requireContentDigest?: bool,
+ *     requiredComponents?: list<string>,
+ *     requireNonce?: bool,
+ *     retryWithRefreshedKey?: bool,
+ *     acceptRequestTargetWithoutQuery?: bool,
+ *     maxSignatures?: int,
+ * }
  */
 class TestCase extends BaseTestCase
 {

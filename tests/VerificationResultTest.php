@@ -37,6 +37,7 @@ final class VerificationResultTest extends TestCase
             signature: 'bytes',
             keyRefreshed: true,
             requestTargetVerifiedWithoutQuery: false,
+            maxSignaturesExceeded: true,
         );
 
         $this->assertTrue($result->verified);
@@ -54,6 +55,7 @@ final class VerificationResultTest extends TestCase
         $this->assertSame('bytes', $result->signature);
         $this->assertTrue($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
+        $this->assertTrue($result->maxSignaturesExceeded);
     }
 
     public function testKeepsItsOwnCopyOfADateItIsGiven(): void
@@ -97,6 +99,7 @@ final class VerificationResultTest extends TestCase
         $this->assertNull($result->signature);
         $this->assertFalse($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
+        $this->assertFalse($result->maxSignaturesExceeded);
     }
 
     public function testAFailureNamesWhatItConcerns(): void
@@ -165,6 +168,22 @@ final class VerificationResultTest extends TestCase
         yield 'failed without a form' => [
             static fn (): VerificationResult => new VerificationResult(verified: false, reason: FailureReason::Expired),
             'The form is absent exactly when the reason is NoSignature',
+        ];
+        yield 'more labels than the limit under the draft form' => [
+            static fn (): VerificationResult => new VerificationResult(
+                verified: true,
+                form: Form::Cavage,
+                maxSignaturesExceeded: true,
+            ),
+            'maxSignatures can be exceeded under RFC 9421 only',
+        ];
+        yield 'more labels than the limit without a signature' => [
+            static fn (): VerificationResult => new VerificationResult(
+                verified: false,
+                reason: FailureReason::NoSignature,
+                maxSignaturesExceeded: true,
+            ),
+            'maxSignatures can be exceeded under RFC 9421 only',
         ];
         yield 'no signature with a form' => [
             static fn (): VerificationResult => new VerificationResult(

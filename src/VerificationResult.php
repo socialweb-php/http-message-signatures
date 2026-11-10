@@ -74,11 +74,16 @@ final readonly class VerificationResult
      * @param bool $keyRefreshed whether the resolver's `refresh()` was called
      * @param bool $requestTargetVerifiedWithoutQuery whether the draft form's
      *     retry without the query string is what verified
+     * @param bool $maxSignaturesExceeded whether the message has more RFC
+     *     9421 labels than the verifier's `maxSignatures`, so that the labels
+     *     beyond the limit were not tried; the result is for the labels
+     *     within it
      *
      * @throws InvalidArgument when a verified result has a reason or a
      *     detail, when a failed result has no reason or has a key owner, when
-     *     the key owner is an empty string, or when the form is absent for a
-     *     reason other than `NoSignature` or present for it
+     *     the key owner is an empty string, when the form is absent for a
+     *     reason other than `NoSignature` or present for it, or when
+     *     `maxSignaturesExceeded` is set for a form other than RFC 9421
      */
     public function __construct(
         public bool $verified,
@@ -96,6 +101,7 @@ final readonly class VerificationResult
         public ?string $signature = null,
         public bool $keyRefreshed = false,
         public bool $requestTargetVerifiedWithoutQuery = false,
+        public bool $maxSignaturesExceeded = false,
     ) {
         if ($verified && $reason !== null) {
             throw new InvalidArgument('A verified result cannot have a failure reason');
@@ -119,6 +125,10 @@ final readonly class VerificationResult
 
         if (($form === null) !== ($reason === FailureReason::NoSignature)) {
             throw new InvalidArgument('The form is absent exactly when the reason is NoSignature');
+        }
+
+        if ($maxSignaturesExceeded && $form !== Form::Rfc9421) {
+            throw new InvalidArgument('maxSignatures can be exceeded under RFC 9421 only');
         }
 
         $this->created = $created === null ? null : DateTimeImmutable::createFromInterface($created);

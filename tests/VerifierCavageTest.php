@@ -21,7 +21,6 @@ use SocialWeb\Http\MessageSignatures\SigningOptions;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Http\MessageSignatures\VerificationResult;
 use SocialWeb\Http\MessageSignatures\Verifier;
-use SocialWeb\Http\MessageSignatures\VerifierOptions;
 
 use function base64_encode;
 use function str_replace;
@@ -36,6 +35,8 @@ use function strtolower;
  * keys: a query string left out of `(request-target)`, a changed query, path,
  * or method, a `Date` field that is not a date or is too old, a digest that is
  * not signed, and a changed body.
+ *
+ * @phpstan-import-type VerifierSettings from TestCase
  */
 final class VerifierCavageTest extends TestCase
 {
@@ -119,17 +120,16 @@ final class VerifierCavageTest extends TestCase
         return $message->withHeader('Signature', $parameters . ',signature="' . $signature . '"');
     }
 
+    /**
+     * @param VerifierSettings $settings
+     */
     private static function verify(
         MessageInterface $message,
-        ?VerifierOptions $options = null,
+        array $settings = [],
         ?ArrayKeyResolver $resolver = null,
         int $clockOffset = 0,
     ): VerificationResult {
-        $verifier = new Verifier(
-            $resolver ?? self::resolver(),
-            self::clock($clockOffset),
-            $options ?? new VerifierOptions(),
-        );
+        $verifier = new Verifier($resolver ?? self::resolver(), self::clock($clockOffset), ...$settings);
 
         return $verifier->verify($message);
     }
@@ -152,6 +152,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame(256, strlen((string) $result->signature));
         $this->assertFalse($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
+        $this->assertFalse($result->maxSignaturesExceeded);
     }
 
     public function testVerifiesHs2019WithItsTimes(): void
@@ -286,7 +287,7 @@ final class VerifierCavageTest extends TestCase
 
         $result = self::verify(
             self::signed(self::request())->withHeader('Host', 'example.org'),
-            new VerifierOptions(retryWithRefreshedKey: false),
+            ['retryWithRefreshedKey' => false],
             $resolver,
         );
 
@@ -312,7 +313,7 @@ final class VerifierCavageTest extends TestCase
         );
         $resolver = self::resolver();
 
-        $result = (new Verifier($resolver, self::clock(), new VerifierOptions()))->verify($response, $request);
+        $result = (new Verifier($resolver, self::clock()))->verify($response, $request);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame(Form::Cavage, $result->form);
@@ -343,7 +344,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertTrue($result->verified, $result->detail);
         $this->assertTrue($result->requestTargetVerifiedWithoutQuery);
 
-        $refused = self::verify($message, new VerifierOptions(acceptRequestTargetWithoutQuery: false));
+        $refused = self::verify($message, ['acceptRequestTargetWithoutQuery' => false]);
 
         $this->assertSame(FailureReason::SignatureInvalid, $refused->reason);
         $this->assertSame('the signature does not verify under rsa-sha256', $refused->detail);
@@ -419,7 +420,7 @@ final class VerifierCavageTest extends TestCase
 
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the signature covers neither (created) nor date', $result->detail);
-        $this->assertTrue(self::verify($message, new VerifierOptions(requireCreationTime: false))->verified);
+        $this->assertTrue(self::verify($message, ['requireCreationTime' => false])->verified);
     }
 
     public function testACreatedParameterCountsOnlyWhenCreatedIsCovered(): void
@@ -499,7 +500,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame('the signature does not cover (request-target)', $result->detail);
         $this->assertFalse($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
-        $this->assertTrue(self::verify($message, new VerifierOptions(requireTarget: false))->verified);
+        $this->assertTrue(self::verify($message, ['requireTarget' => false])->verified);
     }
 
     public function testTheContentDigestRule(): void
@@ -531,10 +532,10 @@ final class VerifierCavageTest extends TestCase
         $message = self::signed(self::request());
 
         $this->assertTrue(
-            self::verify($message, new VerifierOptions(requiredComponents: ['(request-target)', '@method']))->verified,
+            self::verify($message, ['requiredComponents' => ['(request-target)', '@method']])->verified,
         );
 
-        $result = self::verify($message, new VerifierOptions(requiredComponents: ['@method', 'content-type']));
+        $result = self::verify($message, ['requiredComponents' => ['@method', 'content-type']]);
 
         $this->assertSame(FailureReason::PolicyViolation, $result->reason);
         $this->assertSame('the required component content-type is not covered', $result->detail);
@@ -543,16 +544,30 @@ final class VerifierCavageTest extends TestCase
     public function testRequiredFieldNamesAreMetByTheFieldsADraftSignatureCovers(): void
     {
         $message = self::signed(self::request('{"hello": "world"}'));
-        $options = new VerifierOptions(requiredComponents: ['Host', 'date', '(request-target)', 'digest']);
+        $options = ['requiredComponents' => ['Host', 'date', '(request-target)', 'digest']];
 
         $result = self::verify($message, $options);
 
         $this->assertTrue($result->verified, $result->detail);
     }
 
+    public function testARequiredDraftNameIsReadInAnyCase(): void
+    {
+        $covering = self::signed(self::request());
+        $notCovering = self::signed(self::request(), ['host', 'date']);
+        $settings = ['requireTarget' => false, 'requiredComponents' => ['(Request-Target)']];
+
+        $this->assertTrue(self::verify($covering, $settings)->verified);
+
+        $result = self::verify($notCovering, $settings);
+
+        $this->assertSame(FailureReason::PolicyViolation, $result->reason);
+        $this->assertSame('the required component (request-target) is not covered', $result->detail);
+    }
+
     public function testTheNonceRuleDoesNotApplyToTheDraft(): void
     {
-        $result = self::verify(self::signed(self::request()), new VerifierOptions(requireNonce: true));
+        $result = self::verify(self::signed(self::request()), ['requireNonce' => true]);
 
         $this->assertTrue($result->verified);
     }
@@ -632,7 +647,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame('(created) is covered and the created parameter is absent', $result->detail);
         $this->assertSame(
             FailureReason::MalformedSignature,
-            self::verify($message, new VerifierOptions(requireCreationTime: false))->reason,
+            self::verify($message, ['requireCreationTime' => false])->reason,
         );
     }
 

@@ -32,8 +32,8 @@ namespace SocialWeb\Http\MessageSignatures;
  * The verifier calls the resolver once per signature, with a `KeyLookup` that
  * holds the message, the form, and the parameters of the signature that the
  * verifier reads, after every check that needs no key has passed. By then the
- * verifier has established that the form is one the options accept and the
- * fields parse; that the algorithm named, if any, is one the package
+ * verifier has established that the form is one it accepts and the fields
+ * parse; that the algorithm named, if any, is one the package
  * implements; that the policy that needs no key is met, that is, the target,
  * the creation time, the digest, the nonce, and the required components; that
  * the time policy is met; that the signature base was built, so every covered
@@ -69,10 +69,9 @@ interface KeyResolver
      * returns what `resolve()` returns
      *
      * The verifier calls this once per signature, with the same `KeyLookup`
-     * it passed to `resolve()`, and only when its option
-     * `retryWithRefreshedKey` is on. A fetch that fails here must not discard
-     * a cached key: the resolver returns `null`, and the original failure
-     * reason stands.
+     * it passed to `resolve()`, and only when its `retryWithRefreshedKey`
+     * parameter is on. A fetch that fails here must not discard a cached key:
+     * the resolver returns `null`, and the original failure reason stands.
      */
     public function refresh(KeyLookup $lookup): ?VerificationKey;
 }

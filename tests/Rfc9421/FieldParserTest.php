@@ -8,6 +8,7 @@ use Nyholm\Psr7\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
 use SocialWeb\Http\MessageSignatures\Exception\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Rfc9421\FieldParser;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
@@ -48,7 +49,7 @@ final class FieldParserTest extends TestCase
 
     public function testParsesTheSection43FieldsInOrder(): void
     {
-        $parsed = FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), 3);
+        $parsed = FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), 3)->signatures;
 
         $this->assertCount(2, $parsed);
 
@@ -83,12 +84,41 @@ final class FieldParserTest extends TestCase
         $this->assertSame('rsa-v1_5-sha256', $parsed[1]->algorithm);
     }
 
-    public function testReadsOnlyAsManyLabelsAsTheLimit(): void
+    public function testReadsOnlyAsManyLabelsAsTheLimitAndSaysThatLabelsWereLeftUnread(): void
     {
-        $parsed = FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), 1);
+        $fields = FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), 1);
 
-        $this->assertCount(1, $parsed);
-        $this->assertSame('sig1', $parsed[0]->label);
+        $this->assertCount(1, $fields->signatures);
+        $this->assertSame('sig1', $fields->signatures[0]->label);
+        $this->assertTrue($fields->labelsLeftUnread);
+    }
+
+    public function testALimitEqualToTheNumberOfLabelsLeavesNoneUnread(): void
+    {
+        $fields = FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), 2);
+
+        $this->assertCount(2, $fields->signatures);
+        $this->assertFalse($fields->labelsLeftUnread);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function limitsBelowOne(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'negative' => [-1];
+    }
+
+    #[DataProvider('limitsBelowOne')]
+    public function testRefusesALimitBelowOne(int $maxSignatures): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains(
+            'maxSignatures must be at least 1; ' . $maxSignatures . ' given',
+        );
+
+        FieldParser::parse(self::context(self::INPUT, self::SIGNATURE), $maxSignatures);
     }
 
     public function testReadsEveryParameterWithItsType(): void
@@ -96,7 +126,7 @@ final class FieldParserTest extends TestCase
         $parsed = FieldParser::parse(self::context(
             'sig1=("@method");created=1618884473;expires=1618884773;nonce="n";alg="ed25519";keyid="k";tag="t"',
             'sig1=:AQ==:',
-        ), 1);
+        ), 1)->signatures;
 
         $this->assertSame(1618884473, $parsed[0]->created);
         $this->assertSame(1618884773, $parsed[0]->expires);
@@ -112,7 +142,7 @@ final class FieldParserTest extends TestCase
         $parsed = FieldParser::parse(self::context(
             'sig1=("@method");created=1618884473;future=?1;keyid="k"',
             'sig1=:AQ==:',
-        ), 1);
+        ), 1)->signatures;
 
         $this->assertSame(
             '("@method");created=1618884473;future;keyid="k"',
@@ -125,7 +155,7 @@ final class FieldParserTest extends TestCase
         $parsed = FieldParser::parse(self::context(
             'sig1=("@query-param";name="Pet" "content-digest";req "example-dict";key="a");keyid="k"',
             'sig1=:AQ==:',
-        ), 1);
+        ), 1)->signatures;
 
         $this->assertSame(
             ['@query-param;name="Pet"', 'content-digest;req', 'example-dict;key="a"'],
@@ -255,7 +285,7 @@ final class FieldParserTest extends TestCase
         $parsed = FieldParser::parse(self::context(
             'sig1=("@method");keyid="k", sig2="not an inner list"',
             'sig1=:AQ==:, sig2=:AQ==:',
-        ), 1);
+        ), 1)->signatures;
 
         $this->assertCount(1, $parsed);
     }
@@ -272,12 +302,18 @@ final class FieldParserTest extends TestCase
 
     public function testTwoEmptyFieldsGiveNoSignatures(): void
     {
-        $this->assertSame([], FieldParser::parse(self::context('', ''), 3));
+        $fields = FieldParser::parse(self::context('', ''), 3);
+
+        $this->assertSame([], $fields->signatures);
+        $this->assertFalse($fields->labelsLeftUnread);
     }
 
     public function testACreatedParameterOfFifteenDigitsIsRead(): void
     {
-        $parsed = FieldParser::parse(self::context('sig1=();created=999999999999999;keyid="k"', 'sig1=:AQ==:'), 1);
+        $parsed = FieldParser::parse(
+            self::context('sig1=();created=999999999999999;keyid="k"', 'sig1=:AQ==:'),
+            1,
+        )->signatures;
 
         $this->assertSame(999999999999999, $parsed[0]->created);
     }

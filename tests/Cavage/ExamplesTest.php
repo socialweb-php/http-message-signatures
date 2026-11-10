@@ -21,7 +21,6 @@ use SocialWeb\Http\MessageSignatures\SigningOptions;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Http\MessageSignatures\VerificationResult;
 use SocialWeb\Http\MessageSignatures\Verifier;
-use SocialWeb\Http\MessageSignatures\VerifierOptions;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 use function file_get_contents;
@@ -40,6 +39,8 @@ use const JSON_THROW_ON_ERROR;
  * section 2.3 forbids, and its signature is over a string without them. The
  * other signatures are Fedify's, under `resources/fedify/`, each recording its
  * source; see `resources/README.md`.
+ *
+ * @phpstan-import-type VerifierSettings from TestCase
  */
 final class ExamplesTest extends TestCase
 {
@@ -119,13 +120,13 @@ final class ExamplesTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{RequestInterface, int, string, VerifierOptions, list<string>}>
+     * @return iterable<string, array{RequestInterface, int, string, VerifierSettings, list<string>}>
      */
     public static function signatures(): iterable
     {
         // C.1 and C.2 cover neither the request target nor the digest, and
         // C.1 signs `date` alone.
-        $appendixOptions = new VerifierOptions(requireTarget: false, requireContentDigest: false);
+        $appendixSettings = ['requireTarget' => false, 'requireContentDigest' => false];
         $appendixKey = self::copiedFile('cavage/test-key.public.pem');
 
         yield 'appendix C.1, the Signature field' => [
@@ -135,7 +136,7 @@ final class ExamplesTest extends TestCase
             ),
             self::APPENDIX_C_NOW,
             $appendixKey,
-            $appendixOptions,
+            $appendixSettings,
             ['date'],
         ];
         yield 'appendix C.1, the Authorization field' => [
@@ -145,7 +146,7 @@ final class ExamplesTest extends TestCase
             ),
             self::APPENDIX_C_NOW,
             $appendixKey,
-            $appendixOptions,
+            $appendixSettings,
             ['date'],
         ];
         yield 'appendix C.2, the Authorization field' => [
@@ -156,7 +157,7 @@ final class ExamplesTest extends TestCase
             ),
             self::APPENDIX_C_NOW,
             $appendixKey,
-            $appendixOptions,
+            $appendixSettings,
             ['(request-target)', 'host', 'date'],
         ];
 
@@ -178,11 +179,12 @@ final class ExamplesTest extends TestCase
         foreach ($fedify as $name => $covered) {
             [$request, $now, $key] = self::fedifyRequest($name);
 
-            yield 'Fedify, ' . $name => [$request, $now, $key, new VerifierOptions(), $covered];
+            yield 'Fedify, ' . $name => [$request, $now, $key, [], $covered];
         }
     }
 
     /**
+     * @param VerifierSettings $settings
      * @param list<string> $covered
      */
     #[DataProvider('signatures')]
@@ -190,10 +192,10 @@ final class ExamplesTest extends TestCase
         RequestInterface $request,
         int $now,
         string $key,
-        VerifierOptions $options,
+        array $settings,
         array $covered,
     ): void {
-        $result = self::verify($request, $now, $key, $options);
+        $result = self::verify($request, $now, $key, $settings);
 
         $this->assertTrue($result->verified, $result->detail);
         $this->assertSame(Form::Cavage, $result->form);
@@ -203,6 +205,7 @@ final class ExamplesTest extends TestCase
     }
 
     /**
+     * @param VerifierSettings $settings
      * @param list<string> $covered
      */
     #[DataProvider('signatures')]
@@ -210,7 +213,7 @@ final class ExamplesTest extends TestCase
         RequestInterface $request,
         int $now,
         string $key,
-        VerifierOptions $options,
+        array $settings,
         array $covered,
     ): void {
         foreach ($covered as $name) {
@@ -239,7 +242,7 @@ final class ExamplesTest extends TestCase
                 ],
             };
 
-            $result = self::verify($changed, $now, $key, $options);
+            $result = self::verify($changed, $now, $key, $settings);
 
             $this->assertFalse($result->verified, $name);
             $this->assertSame($reason, $result->reason, $name);
@@ -273,11 +276,14 @@ final class ExamplesTest extends TestCase
         );
     }
 
+    /**
+     * @param VerifierSettings $settings
+     */
     private static function verify(
         RequestInterface $request,
         int $now,
         string $key,
-        VerifierOptions $options,
+        array $settings,
     ): VerificationResult {
         $resolver = new class (VerificationKey::fromPem($key)) implements KeyResolver {
             public function __construct(private readonly VerificationKey $key)
@@ -295,7 +301,7 @@ final class ExamplesTest extends TestCase
             }
         };
 
-        return (new Verifier($resolver, new FrozenClock(new DateTimeImmutable('@' . $now)), $options))
+        return (new Verifier($resolver, new FrozenClock(new DateTimeImmutable('@' . $now)), ...$settings))
             ->verify($request);
     }
 

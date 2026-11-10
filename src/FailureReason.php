@@ -48,10 +48,10 @@ enum FailureReason
     case MalformedSignature;
 
     /**
-     * Parsed but outside what the package or the options accept: a form the
-     * options exclude, an algorithm name the package does not know, a derived
-     * component or field parameter the package does not implement, or a
-     * component asked of the wrong message type
+     * Parsed but outside what the package or the verifier accepts: a form
+     * that is not among the verifier's `forms`, an algorithm name the package
+     * does not know, a derived component or field parameter the package does
+     * not implement, or a component asked of the wrong message type
      */
     case UnsupportedSignature;
 
@@ -62,7 +62,7 @@ enum FailureReason
     case MissingComponent;
 
     /**
-     * A rule of the verifier options is not met: target, creation time,
+     * A rule the verifier was built with is not met: target, creation time,
      * digest, nonce, or a required component not covered
      */
     case PolicyViolation;

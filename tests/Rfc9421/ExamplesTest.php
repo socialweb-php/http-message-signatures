@@ -14,10 +14,8 @@ use Psr\Http\Message\MessageInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Form;
-use SocialWeb\Http\MessageSignatures\TimePolicy;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Http\MessageSignatures\Verifier;
-use SocialWeb\Http\MessageSignatures\VerifierOptions;
 use SocialWeb\Test\Http\MessageSignatures\ArrayKeyResolver;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
@@ -151,12 +149,10 @@ final class ExamplesTest extends TestCase
         return new Verifier(
             $resolver ?? self::resolver(),
             new FrozenClock(new DateTimeImmutable('@1618884480')),
-            new VerifierOptions(
-                timePolicy: new TimePolicy(defaultLifetime: new DateInterval('PT1M')),
-                requireTarget: false,
-                requireContentDigest: false,
-                maxSignatures: $maxSignatures,
-            ),
+            defaultLifetime: new DateInterval('PT1M'),
+            requireTarget: false,
+            requireContentDigest: false,
+            maxSignatures: $maxSignatures,
         );
     }
 

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures;
 
+use DateInterval;
 use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Message\MessageInterface;
@@ -58,18 +59,128 @@ use function trim;
  * RFC 9421 the labels are tried in the order of `Signature-Input` until one
  * verifies or the limit is reached, and the result reports the last label
  * tried. Under the draft, a signature that fails is tried once more with the
- * query string removed from `(request-target)` when the options allow it, and
- * the `created` and `expires` parameters count only when `(created)` and
- * `(expires)` are covered, since the draft signs a parameter only through its
- * pseudo-header.
+ * query string removed from `(request-target)` when
+ * `acceptRequestTargetWithoutQuery` is on, and the `created` and `expires`
+ * parameters count only when `(created)` and `(expires)` are covered, since
+ * the draft signs a parameter only through its pseudo-header.
+ *
+ * The target rule is a rule and not a literal list, so that the ways the
+ * specifications allow all satisfy it. Under the draft, a request satisfies it
+ * when `(request-target)` is covered. Under RFC 9421, a request satisfies it
+ * when `@method` is covered together with `@target-uri`, with `@authority` and
+ * `@path`, or with `@authority` and `@request-target`. A response satisfies it
+ * when `@status` is covered under RFC 9421, and always under the draft, which
+ * has no response target. The creation-time rule is satisfied by a `created`
+ * parameter in either form, or by a covered `date` field under the draft,
+ * which is where the implementations put it when `created` is absent.
+ *
+ * Each required component applies to the forms it can be written in: a field
+ * name with no parameters to both, a name in parentheses such as
+ * `(request-target)` to the draft only, and a derived component or a
+ * component with parameters to RFC 9421 only.
+ *
+ * The creation time is the `created` parameter, or in the draft form without
+ * one, the covered `Date` field. The effective expiry is the `expires`
+ * parameter when present and the creation time plus `defaultLifetime` when
+ * not, limited to the creation time plus `maximumLifetime` either way. The
+ * default intervals are what the largest implementation enforces; RFC 9421
+ * section 3.2.1 leaves the values to the application.
  */
 final class Verifier
 {
+    /**
+     * @var non-empty-list<Form>
+     */
+    private readonly array $forms;
+
+    private readonly TimePolicy $timePolicy;
+
+    /**
+     * @var list<ComponentIdentifier>
+     */
+    private readonly array $requiredComponents;
+
+    /**
+     * @param KeyResolver $resolver finds the key a signature names
+     * @param ClockInterface $clock gives the current time for the time checks
+     * @param non-empty-list<Form> $forms forms the verifier accepts; a
+     *     message in another form is `UnsupportedSignature`; must not be
+     *     empty
+     * @param DateInterval $clockSkew how far the signer's clock may differ
+     *     from the clock, in either direction
+     * @param DateInterval $defaultLifetime how long a signature without
+     *     `expires` is valid after its creation time
+     * @param DateInterval $maximumLifetime an `expires` further from the
+     *     creation time than this is limited to it
+     * @param bool $requireTarget the signature must cover the request target
+     * @param bool $requireCreationTime the signature must have a creation time
+     * @param bool $requireContentDigest a message with content must cover its
+     *     digest field
+     * @param list<string> $requiredComponents component identifiers that must
+     *     be covered, in addition to the rules above, each a component name
+     *     followed by its parameters in the syntax of RFC 8941, as in
+     *     `content-digest;req`, or one of the draft form's
+     *     `(request-target)`, `(created)`, and `(expires)`
+     * @param bool $requireNonce the `nonce` parameter must be present; RFC
+     *     9421 only
+     * @param bool $retryWithRefreshedKey call the resolver's `refresh()` once
+     *     after a failure a rotated key could explain
+     * @param bool $acceptRequestTargetWithoutQuery under the draft, try the
+     *     signature base once more with the query string removed from
+     *     `(request-target)` after a failure
+     * @param int $maxSignatures how many RFC 9421 labels are tried before
+     *     giving up; at least 1. A message with more labels gets a result
+     *     whose `maxSignaturesExceeded` is set
+     *
+     * @throws InvalidArgument when the list of forms is empty or holds a
+     *     duplicate, when an interval is negative, when a required component
+     *     identifier is empty or does not parse, or when `maxSignatures` is
+     *     below 1
+     */
     public function __construct(
         private readonly KeyResolver $resolver,
         private readonly ClockInterface $clock,
-        private readonly VerifierOptions $options = new VerifierOptions(),
+        array $forms = [Form::Cavage, Form::Rfc9421],
+        DateInterval $clockSkew = new DateInterval('PT1H'),
+        DateInterval $defaultLifetime = new DateInterval('PT5M'),
+        DateInterval $maximumLifetime = new DateInterval('PT12H'),
+        private readonly bool $requireTarget = true,
+        private readonly bool $requireCreationTime = true,
+        private readonly bool $requireContentDigest = true,
+        array $requiredComponents = [],
+        private readonly bool $requireNonce = false,
+        private readonly bool $retryWithRefreshedKey = true,
+        private readonly bool $acceptRequestTargetWithoutQuery = true,
+        private readonly int $maxSignatures = 3,
     ) {
+        if ($forms === []) {
+            throw new InvalidArgument('The list of forms must not be empty');
+        }
+
+        $seen = [];
+
+        foreach ($forms as $form) {
+            if (in_array($form, $seen, true)) {
+                throw new InvalidArgument(sprintf('The form %s appears more than once', $form->name));
+            }
+
+            $seen[] = $form;
+        }
+
+        $timePolicy = new TimePolicy($clockSkew, $defaultLifetime, $maximumLifetime);
+        $identifiers = [];
+
+        foreach ($requiredComponents as $component) {
+            $identifiers[] = ComponentIdentifier::fromEitherForm($component);
+        }
+
+        if ($maxSignatures < 1) {
+            throw new InvalidArgument(sprintf('maxSignatures must be at least 1; %d given', $maxSignatures));
+        }
+
+        $this->forms = $seen;
+        $this->timePolicy = $timePolicy;
+        $this->requiredComponents = $identifiers;
     }
 
     /**
@@ -98,7 +209,7 @@ final class Verifier
             );
         }
 
-        if (!$this->options->accepts($form)) {
+        if (!in_array($form, $this->forms, true)) {
             return new VerificationResult(
                 verified: false,
                 reason: FailureReason::UnsupportedSignature,
@@ -112,7 +223,7 @@ final class Verifier
         }
 
         try {
-            $signatures = FieldParser::parse($context, $this->options->maxSignatures);
+            $fields = FieldParser::parse($context, $this->maxSignatures);
         } catch (ComponentFailure | Failure $failure) {
             return new VerificationResult(
                 verified: false,
@@ -124,8 +235,8 @@ final class Verifier
 
         $result = null;
 
-        foreach ($signatures as $signature) {
-            $result = $this->verifyOne($signature, $context, $content);
+        foreach ($fields->signatures as $signature) {
+            $result = $this->verifyOne($signature, $context, $content, $fields->labelsLeftUnread);
 
             if ($result->verified) {
                 break;
@@ -254,7 +365,7 @@ final class Verifier
             return $result(FailureReason::PolicyViolation, $violation);
         }
 
-        $timing = $this->options->timePolicy->evaluate($now, $created, $expires);
+        $timing = $this->timePolicy->evaluate($now, $created, $expires);
 
         if ($timing !== null) {
             return $result($timing, self::timingDetail($timing));
@@ -270,7 +381,7 @@ final class Verifier
             );
             $bases = [$base];
 
-            if ($this->options->acceptRequestTargetWithoutQuery) {
+            if ($this->acceptRequestTargetWithoutQuery) {
                 $withoutQuery = Cavage\SignatureBase::build(
                     $context,
                     $covered,
@@ -311,11 +422,15 @@ final class Verifier
 
     /**
      * Steps 3 to 10 of the procedure for one RFC 9421 label
+     *
+     * @param bool $maxSignaturesExceeded whether the message has labels
+     *     beyond the limit, which the result reports
      */
     private function verifyOne(
         ParsedSignature $signature,
         MessageContext $context,
         Content $content,
+        bool $maxSignaturesExceeded,
     ): VerificationResult {
         $created = $signature->created === null ? null : new DateTimeImmutable('@' . $signature->created);
         $expires = $signature->expires === null ? null : new DateTimeImmutable('@' . $signature->expires);
@@ -332,6 +447,7 @@ final class Verifier
                 $signature,
                 $created,
                 $expires,
+                $maxSignaturesExceeded,
             ): VerificationResult {
                 assert($keyOwner !== '');
 
@@ -351,6 +467,7 @@ final class Verifier
                     signature: $signature->signature,
                     keyRefreshed: $keyRefreshed,
                     requestTargetVerifiedWithoutQuery: $withoutQuery,
+                    maxSignaturesExceeded: $maxSignaturesExceeded,
                 );
             };
 
@@ -371,7 +488,7 @@ final class Verifier
             return $result(FailureReason::PolicyViolation, $violation);
         }
 
-        $timing = $this->options->timePolicy->evaluate($this->clock->now(), $created, $expires);
+        $timing = $this->timePolicy->evaluate($this->clock->now(), $created, $expires);
 
         if ($timing !== null) {
             return $result($timing, self::timingDetail($timing));
@@ -423,28 +540,27 @@ final class Verifier
         Content $content,
         ?DateTimeImmutable $created,
     ): ?string {
-        $options = $this->options;
         $covered = $signature->coveredComponents;
 
-        if ($options->requireTarget && !self::coversTarget($covered, $context)) {
+        if ($this->requireTarget && !self::coversTarget($covered, $context)) {
             return $context->isRequest()
                 ? 'the signature does not cover the request target'
                 : 'the signature does not cover @status';
         }
 
-        if ($options->requireCreationTime && $created === null) {
+        if ($this->requireCreationTime && $created === null) {
             return 'the signature has no created parameter';
         }
 
-        if ($options->requireContentDigest && $content->hasContent() && !self::coversDigest($covered)) {
+        if ($this->requireContentDigest && $content->hasContent() && !self::coversDigest($covered)) {
             return 'the message has content and the signature does not cover its digest field';
         }
 
-        if ($options->requireNonce && $signature->nonce === null) {
+        if ($this->requireNonce && $signature->nonce === null) {
             return 'the signature has no nonce parameter';
         }
 
-        return self::uncoveredRequirement($options->requiredComponentIdentifiers(Form::Rfc9421), $covered);
+        return self::uncoveredRequirement($this->requiredComponentsFor(Form::Rfc9421), $covered);
     }
 
     /**
@@ -460,22 +576,48 @@ final class Verifier
         Content $content,
         ?DateTimeImmutable $created,
     ): ?string {
-        $options = $this->options;
         $covered = $signature->coveredComponents;
 
-        if ($options->requireTarget && $context->isRequest() && !self::coversPlain($covered, '(request-target)')) {
+        if ($this->requireTarget && $context->isRequest() && !self::coversPlain($covered, '(request-target)')) {
             return 'the signature does not cover (request-target)';
         }
 
-        if ($options->requireCreationTime && $created === null) {
+        if ($this->requireCreationTime && $created === null) {
             return self::missingCreationTime($covered, $context);
         }
 
-        if ($options->requireContentDigest && $content->hasContent() && !self::coversDigest($covered)) {
+        if ($this->requireContentDigest && $content->hasContent() && !self::coversDigest($covered)) {
             return 'the message has content and the signature does not cover its digest field';
         }
 
-        return self::uncoveredRequirement($options->requiredComponentIdentifiers(Form::Cavage), $covered);
+        return self::uncoveredRequirement($this->requiredComponentsFor(Form::Cavage), $covered);
+    }
+
+    /**
+     * The required components, as parsed, that apply to the form: a field
+     * name with no parameters to both forms, a name in parentheses to the
+     * draft only, and a derived component or a component with parameters to
+     * RFC 9421 only
+     *
+     * @return list<ComponentIdentifier>
+     */
+    private function requiredComponentsFor(Form $form): array
+    {
+        $applying = [];
+
+        foreach ($this->requiredComponents as $identifier) {
+            $applies = match ($form) {
+                Form::Cavage => $identifier->isPseudoHeader()
+                    || (!$identifier->isDerived() && $identifier->parameters->isEmpty()),
+                Form::Rfc9421 => !$identifier->isPseudoHeader(),
+            };
+
+            if ($applies) {
+                $applying[] = $identifier;
+            }
+        }
+
+        return $applying;
     }
 
     /**
@@ -658,7 +800,7 @@ final class Verifier
 
         if (
             $outcome['reason'] === null
-            || !$this->options->retryWithRefreshedKey
+            || !$this->retryWithRefreshedKey
             || !self::aRotatedKeyCouldExplain($outcome['reason'])
         ) {
             return $outcome;

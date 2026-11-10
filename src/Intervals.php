@@ -29,7 +29,8 @@ namespace SocialWeb\Http\MessageSignatures;
 use DateInterval;
 
 /**
- * Checks on `DateInterval` values shared by the options and the time policy
+ * Checks on `DateInterval` values shared by the signing options and the time
+ * policy
  *
  * @internal
  */

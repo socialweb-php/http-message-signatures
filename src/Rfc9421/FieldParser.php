@@ -36,10 +36,12 @@ use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
 use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\Exception\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
 use function array_slice;
+use function count;
 use function is_int;
 use function is_string;
 use function sprintf;
@@ -64,21 +66,24 @@ final class FieldParser
 
     /**
      * Returns the first signatures of the message, in the order of
-     * `Signature-Input`, up to the limit; an empty list when both fields are
-     * present and empty
+     * `Signature-Input`, up to the limit, and whether labels were left
+     * unread; no signatures when both fields are present and empty
      *
-     * @param int $maxSignatures how many labels to read
-     *
-     * @return list<ParsedSignature>
+     * @param int $maxSignatures how many labels to read; at least 1
      *
      * @throws ComponentFailure `MissingComponent` when the value of a field
      *     holds a line break
      * @throws Failure `MalformedSignature` when a field does not parse or has
      *     a label the other lacks, or when a signature does not have the
      *     shape section 4 gives it
+     * @throws InvalidArgument when `maxSignatures` is below 1
      */
-    public static function parse(MessageContext $context, int $maxSignatures): array
+    public static function parse(MessageContext $context, int $maxSignatures): ParsedFields
     {
+        if ($maxSignatures < 1) {
+            throw new InvalidArgument(sprintf('maxSignatures must be at least 1; %d given', $maxSignatures));
+        }
+
         $inputs = self::dictionary($context, self::SIGNATURE_INPUT);
         $signatures = self::dictionary($context, self::SIGNATURE);
 
@@ -100,13 +105,14 @@ final class FieldParser
             }
         }
 
+        $labels = $inputs->keys();
         $parsed = [];
 
-        foreach (array_slice($inputs->keys(), 0, $maxSignatures) as $label) {
+        foreach (array_slice($labels, 0, $maxSignatures) as $label) {
             $parsed[] = self::parseOne($label, $inputs->getByKey($label), $signatures->getByKey($label));
         }
 
-        return $parsed;
+        return new ParsedFields($parsed, count($labels) > $maxSignatures);
     }
 
     private static function parseOne(

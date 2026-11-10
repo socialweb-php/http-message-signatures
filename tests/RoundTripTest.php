@@ -20,7 +20,6 @@ use SocialWeb\Http\MessageSignatures\SigningOptions;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Http\MessageSignatures\VerificationResult;
 use SocialWeb\Http\MessageSignatures\Verifier;
-use SocialWeb\Http\MessageSignatures\VerifierOptions;
 
 use function openssl_pkey_export;
 use function openssl_pkey_get_details;
@@ -197,7 +196,7 @@ final class RoundTripTest extends TestCase
         $verifier = new Verifier(
             new ArrayKeyResolver([Algorithm::Ed25519->name => $key]),
             new FrozenClock(new DateTimeImmutable('@' . (self::NOW + $clockOffset))),
-            new VerifierOptions(retryWithRefreshedKey: false),
+            retryWithRefreshedKey: false,
         );
 
         return $verifier->verify($message);

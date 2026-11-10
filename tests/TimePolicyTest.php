@@ -106,8 +106,9 @@ final class TimePolicyTest extends TestCase
     }
 
     /**
-     * Without a creation time, which the verifier allows only when its option
-     * `requireCreationTime` is off, `expires` alone decides, with no clamping.
+     * Without a creation time, which the verifier allows only when its
+     * `requireCreationTime` parameter is off, `expires` alone decides, with no
+     * clamping.
      *
      * @return iterable<string, array{int, int | null, FailureReason | null}>
      */
