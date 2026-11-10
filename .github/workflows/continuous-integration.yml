@@ -62,7 +62,7 @@ jobs:
         uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # 4.0.0
 
       - name: "Run tests"
-        run: "composer coverage:ci"
+        run: "composer coverage-ci"
 
       - name: "Publish coverage report to Codecov"
         uses: "codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5" # v7.1.1
