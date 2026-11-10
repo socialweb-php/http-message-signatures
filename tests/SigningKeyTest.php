@@ -7,8 +7,8 @@ namespace SocialWeb\Test\Http\MessageSignatures;
 use LogicException;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
-use SocialWeb\Http\MessageSignatures\KeyType;
 use SocialWeb\Http\MessageSignatures\SigningKey;
+use SocialWeb\Http\MessageSignatures\SigningKeyType;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 
 use function ini_set;
@@ -30,7 +30,7 @@ final class SigningKeyTest extends TestCase
         $key = SigningKey::fromPem('https://example.com/keys/1', self::rfc9421Key('test-key-rsa.private.pem'));
 
         $this->assertSame('https://example.com/keys/1', $key->keyId);
-        $this->assertSame(KeyType::Rsa, $key->type);
+        $this->assertSame(SigningKeyType::Rsa, $key->type);
         $this->assertSame([Algorithm::RsaV15Sha256, Algorithm::RsaPssSha512], $key->permittedAlgorithms);
         $this->assertTrue($key->permits(Algorithm::RsaPssSha512));
         $this->assertFalse($key->permits(Algorithm::Ed25519));
@@ -46,7 +46,7 @@ final class SigningKeyTest extends TestCase
 
         $key = SigningKey::fromPem('k', $encrypted, 'pass', [Algorithm::EcdsaP256Sha256]);
 
-        $this->assertSame(KeyType::EcP256, $key->type);
+        $this->assertSame(SigningKeyType::EcP256, $key->type);
         $this->assertSame([Algorithm::EcdsaP256Sha256], $key->permittedAlgorithms);
     }
 
@@ -55,7 +55,7 @@ final class SigningKeyTest extends TestCase
         $key = SigningKey::fromSharedSecret('k', 'secret');
 
         $this->assertSame('k', $key->keyId);
-        $this->assertSame(KeyType::SharedSecret, $key->type);
+        $this->assertSame(SigningKeyType::SharedSecret, $key->type);
         $this->assertSame([Algorithm::HmacSha256], $key->permittedAlgorithms);
     }
 
@@ -141,7 +141,7 @@ final class SigningKeyTest extends TestCase
         $key = SigningKey::fromSharedSecret('k', 'the secret bytes');
 
         $this->assertSame(
-            ['keyId' => 'k', 'type' => KeyType::SharedSecret, 'permittedAlgorithms' => [Algorithm::HmacSha256]],
+            ['keyId' => 'k', 'type' => SigningKeyType::SharedSecret, 'permittedAlgorithms' => [Algorithm::HmacSha256]],
             $key->__debugInfo(),
         );
         $this->assertFalse(str_contains(print_r($key, true), 'the secret bytes'));

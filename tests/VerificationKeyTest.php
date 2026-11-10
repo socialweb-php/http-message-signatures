@@ -8,7 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
-use SocialWeb\Http\MessageSignatures\KeyType;
+use SocialWeb\Http\MessageSignatures\SigningKeyType;
 use SocialWeb\Http\MessageSignatures\VerificationKey;
 use SocialWeb\Jwk\Jwk;
 use SocialWeb\Jwk\KeyOperation;
@@ -36,7 +36,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromPem(self::rfc9421Key('test-key-ecc-p256.public.pem'));
 
-        $this->assertSame(KeyType::EcP256, $key->type);
+        $this->assertSame(SigningKeyType::EcP256, $key->type);
         $this->assertSame([Algorithm::EcdsaP256Sha256], $key->permittedAlgorithms);
         $this->assertTrue($key->permits(Algorithm::EcdsaP256Sha256));
         $this->assertFalse($key->permits(Algorithm::EcdsaP384Sha384));
@@ -46,7 +46,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromPem(self::rfc9421Key('test-key-rsa.public.pem'), [Algorithm::RsaPssSha512]);
 
-        $this->assertSame(KeyType::Rsa, $key->type);
+        $this->assertSame(SigningKeyType::Rsa, $key->type);
         $this->assertSame([Algorithm::RsaPssSha512], $key->permittedAlgorithms);
         $this->assertFalse($key->permits(Algorithm::RsaV15Sha256));
     }
@@ -55,7 +55,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromSharedSecret('secret');
 
-        $this->assertSame(KeyType::SharedSecret, $key->type);
+        $this->assertSame(SigningKeyType::SharedSecret, $key->type);
         $this->assertSame([Algorithm::HmacSha256], $key->permittedAlgorithms);
     }
 
@@ -164,7 +164,11 @@ final class VerificationKeyTest extends TestCase
         $key = VerificationKey::fromSharedSecret('the secret bytes', owner: 'alice');
 
         $this->assertSame(
-            ['type' => KeyType::SharedSecret, 'permittedAlgorithms' => [Algorithm::HmacSha256], 'owner' => 'alice'],
+            [
+                'type' => SigningKeyType::SharedSecret,
+                'permittedAlgorithms' => [Algorithm::HmacSha256],
+                'owner' => 'alice',
+            ],
             $key->__debugInfo(),
         );
         $this->assertFalse(str_contains(print_r($key, true), 'the secret bytes'));
@@ -185,7 +189,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromJwk(Jwk::fromPem(self::rfc9421Key('test-key-rsa.public.pem')));
 
-        $this->assertSame(KeyType::Rsa, $key->type);
+        $this->assertSame(SigningKeyType::Rsa, $key->type);
         $this->assertSame([Algorithm::RsaV15Sha256, Algorithm::RsaPssSha512], $key->permittedAlgorithms);
         $this->assertNull($key->owner);
     }
@@ -194,7 +198,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromJwk(Jwk::fromPem(self::rfc9421Key('test-key-ecc-p256.public.pem')));
 
-        $this->assertSame(KeyType::EcP256, $key->type);
+        $this->assertSame(SigningKeyType::EcP256, $key->type);
         $this->assertSame([Algorithm::EcdsaP256Sha256], $key->permittedAlgorithms);
     }
 
@@ -202,7 +206,7 @@ final class VerificationKeyTest extends TestCase
     {
         $key = VerificationKey::fromJwk(Jwk::fromPem(self::rfc9421Key('test-key-ed25519.public.pem')));
 
-        $this->assertSame(KeyType::Ed25519, $key->type);
+        $this->assertSame(SigningKeyType::Ed25519, $key->type);
         $this->assertSame([Algorithm::Ed25519], $key->permittedAlgorithms);
     }
 
@@ -215,7 +219,7 @@ final class VerificationKeyTest extends TestCase
             . '"@signature-params": ("date" "@authority" "content-type");created=1618884473'
             . ';keyid="test-shared-secret"';
 
-        $this->assertSame(KeyType::SharedSecret, $key->type);
+        $this->assertSame(SigningKeyType::SharedSecret, $key->type);
         $this->assertSame([Algorithm::HmacSha256], $key->permittedAlgorithms);
         $this->assertTrue($key->verify(Algorithm::HmacSha256, $base, $signature));
     }
@@ -268,7 +272,7 @@ final class VerificationKeyTest extends TestCase
 
         $key = VerificationKey::fromJwk(Jwk::fromOpenSslKey($generated)->toPublic()->withAlgorithm('ES384'));
 
-        $this->assertSame(KeyType::EcP384, $key->type);
+        $this->assertSame(SigningKeyType::EcP384, $key->type);
         $this->assertSame([Algorithm::EcdsaP384Sha384], $key->permittedAlgorithms);
     }
 
@@ -364,7 +368,7 @@ final class VerificationKeyTest extends TestCase
     {
         $jwk = Jwk::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))->withUse(KeyUse::Signature);
 
-        $this->assertSame(KeyType::Rsa, VerificationKey::fromJwk($jwk)->type);
+        $this->assertSame(SigningKeyType::Rsa, VerificationKey::fromJwk($jwk)->type);
     }
 
     public function testRejectsAJwkWhoseOperationsLackVerify(): void
@@ -385,7 +389,7 @@ final class VerificationKeyTest extends TestCase
         $jwk = Jwk::fromPem(self::rfc9421Key('test-key-rsa.public.pem'))
             ->withKeyOperations([KeyOperation::Verify]);
 
-        $this->assertSame(KeyType::Rsa, VerificationKey::fromJwk($jwk)->type);
+        $this->assertSame(SigningKeyType::Rsa, VerificationKey::fromJwk($jwk)->type);
     }
 
     public function testRejectsAJwkOnACurveThePackageDoesNotImplement(): void

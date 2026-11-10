@@ -43,7 +43,7 @@ use function sprintf;
  */
 final readonly class SigningKey
 {
-    public KeyType $type;
+    public SigningKeyType $type;
 
     /**
      * The algorithms this key may sign with, in order of preference
@@ -136,7 +136,7 @@ final readonly class SigningKey
     }
 
     /**
-     * @return array{keyId: string, type: KeyType, permittedAlgorithms: non-empty-list<Algorithm>}
+     * @return array{keyId: string, type: SigningKeyType, permittedAlgorithms: non-empty-list<Algorithm>}
      */
     public function __debugInfo(): array
     {

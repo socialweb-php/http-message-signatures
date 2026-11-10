@@ -122,16 +122,16 @@ enum Algorithm
 
     /**
      * Returns the key type this algorithm fits; `RsaPssSha512` also fits
-     * `KeyType::RsaPss`, which `KeyType::accepts()` knows
+     * `SigningKeyType::RsaPss`, which `SigningKeyType::accepts()` knows
      */
-    public function keyType(): KeyType
+    public function keyType(): SigningKeyType
     {
         return match ($this) {
-            self::RsaV15Sha256, self::RsaPssSha512 => KeyType::Rsa,
-            self::Ed25519 => KeyType::Ed25519,
-            self::EcdsaP256Sha256 => KeyType::EcP256,
-            self::EcdsaP384Sha384 => KeyType::EcP384,
-            self::HmacSha256 => KeyType::SharedSecret,
+            self::RsaV15Sha256, self::RsaPssSha512 => SigningKeyType::Rsa,
+            self::Ed25519 => SigningKeyType::Ed25519,
+            self::EcdsaP256Sha256 => SigningKeyType::EcP256,
+            self::EcdsaP384Sha384 => SigningKeyType::EcP384,
+            self::HmacSha256 => SigningKeyType::SharedSecret,
         };
     }
 }

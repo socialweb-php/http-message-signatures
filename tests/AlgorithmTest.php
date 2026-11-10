@@ -7,7 +7,7 @@ namespace SocialWeb\Test\Http\MessageSignatures;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Form;
-use SocialWeb\Http\MessageSignatures\KeyType;
+use SocialWeb\Http\MessageSignatures\SigningKeyType;
 
 /**
  * Checks the name each algorithm has in the two forms and the key type it fits
@@ -40,25 +40,25 @@ final class AlgorithmTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{Algorithm, KeyType}>
+     * @return iterable<string, array{Algorithm, SigningKeyType}>
      */
     public static function keyTypes(): iterable
     {
-        yield 'RSA v1.5' => [Algorithm::RsaV15Sha256, KeyType::Rsa];
-        yield 'RSA PSS' => [Algorithm::RsaPssSha512, KeyType::Rsa];
-        yield 'Ed25519' => [Algorithm::Ed25519, KeyType::Ed25519];
-        yield 'ECDSA P-256' => [Algorithm::EcdsaP256Sha256, KeyType::EcP256];
-        yield 'ECDSA P-384' => [Algorithm::EcdsaP384Sha384, KeyType::EcP384];
-        yield 'HMAC' => [Algorithm::HmacSha256, KeyType::SharedSecret];
+        yield 'RSA v1.5' => [Algorithm::RsaV15Sha256, SigningKeyType::Rsa];
+        yield 'RSA PSS' => [Algorithm::RsaPssSha512, SigningKeyType::Rsa];
+        yield 'Ed25519' => [Algorithm::Ed25519, SigningKeyType::Ed25519];
+        yield 'ECDSA P-256' => [Algorithm::EcdsaP256Sha256, SigningKeyType::EcP256];
+        yield 'ECDSA P-384' => [Algorithm::EcdsaP384Sha384, SigningKeyType::EcP384];
+        yield 'HMAC' => [Algorithm::HmacSha256, SigningKeyType::SharedSecret];
     }
 
     #[DataProvider('keyTypes')]
-    public function testFitsOneKeyTypeAndRsaPssFitsThePssKeyToo(Algorithm $algorithm, KeyType $expected): void
+    public function testFitsOneKeyTypeAndRsaPssFitsThePssKeyToo(Algorithm $algorithm, SigningKeyType $expected): void
     {
         $this->assertSame($expected, $algorithm->keyType());
 
-        foreach (KeyType::cases() as $type) {
-            $fits = $type === $expected || ($type === KeyType::RsaPss && $algorithm === Algorithm::RsaPssSha512);
+        foreach (SigningKeyType::cases() as $type) {
+            $fits = $type === $expected || ($type === SigningKeyType::RsaPss && $algorithm === Algorithm::RsaPssSha512);
             $this->assertSame($fits, $type->accepts($algorithm));
         }
     }

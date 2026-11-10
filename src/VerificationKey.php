@@ -61,7 +61,7 @@ final readonly class VerificationKey
         'HS256' => Algorithm::HmacSha256,
     ];
 
-    public KeyType $type;
+    public SigningKeyType $type;
 
     /**
      * The algorithms this key may verify, in order of preference
@@ -280,7 +280,7 @@ final readonly class VerificationKey
     }
 
     /**
-     * @return array{type: KeyType, permittedAlgorithms: non-empty-list<Algorithm>, owner: non-empty-string | null}
+     * @return array{type: SigningKeyType, permittedAlgorithms: non-empty-list<Algorithm>, owner: non-empty-string | null}
      */
     public function __debugInfo(): array
     {

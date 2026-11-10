@@ -29,7 +29,7 @@ namespace SocialWeb\Http\MessageSignatures;
 /**
  * The kind of key material a key holds, detected from the material
  */
-enum KeyType
+enum SigningKeyType
 {
     /**
      * An RSA key of any size, encoded with the rsaEncryption algorithm

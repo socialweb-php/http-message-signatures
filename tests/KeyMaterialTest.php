@@ -9,7 +9,7 @@ use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
 use SocialWeb\Http\MessageSignatures\KeyMaterial;
-use SocialWeb\Http\MessageSignatures\KeyType;
+use SocialWeb\Http\MessageSignatures\SigningKeyType;
 
 use function explode;
 use function ini_set;
@@ -37,35 +37,38 @@ use const OPENSSL_PKCS1_PSS_PADDING;
 final class KeyMaterialTest extends TestCase
 {
     /**
-     * @return iterable<string, array{string, KeyType}>
+     * @return iterable<string, array{string, SigningKeyType}>
      */
     public static function publicKeys(): iterable
     {
-        yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.public.pem', KeyType::Rsa];
-        yield 'RSA in SubjectPublicKeyInfo form (B.1.2)' => ['test-key-rsa-pss.public.pem', KeyType::Rsa];
-        yield 'P-256 (B.1.3)' => ['test-key-ecc-p256.public.pem', KeyType::EcP256];
-        yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.public.pem', KeyType::Ed25519];
+        yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.public.pem', SigningKeyType::Rsa];
+        yield 'RSA in SubjectPublicKeyInfo form (B.1.2)' => ['test-key-rsa-pss.public.pem', SigningKeyType::Rsa];
+        yield 'P-256 (B.1.3)' => ['test-key-ecc-p256.public.pem', SigningKeyType::EcP256];
+        yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.public.pem', SigningKeyType::Ed25519];
     }
 
     #[DataProvider('publicKeys')]
-    public function testDetectsThePublicKeyType(string $file, KeyType $expected): void
+    public function testDetectsThePublicKeyType(string $file, SigningKeyType $expected): void
     {
         $this->assertSame($expected, KeyMaterial::fromPublicPem(self::rfc9421Key($file))->type);
     }
 
     /**
-     * @return iterable<string, array{string, KeyType}>
+     * @return iterable<string, array{string, SigningKeyType}>
      */
     public static function privateKeys(): iterable
     {
-        yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.private.pem', KeyType::Rsa];
-        yield 'RSA in PKCS#8 form with the PSS identifier (B.1.2)' => ['test-key-rsa-pss.private.pem', KeyType::RsaPss];
-        yield 'P-256 (B.1.3)' => ['test-key-ecc-p256.private.pem', KeyType::EcP256];
-        yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.private.pem', KeyType::Ed25519];
+        yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.private.pem', SigningKeyType::Rsa];
+        yield 'RSA in PKCS#8 form with the PSS identifier (B.1.2)' => [
+            'test-key-rsa-pss.private.pem',
+            SigningKeyType::RsaPss,
+        ];
+        yield 'P-256 (B.1.3)' => ['test-key-ecc-p256.private.pem', SigningKeyType::EcP256];
+        yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.private.pem', SigningKeyType::Ed25519];
     }
 
     #[DataProvider('privateKeys')]
-    public function testDetectsThePrivateKeyType(string $file, KeyType $expected): void
+    public function testDetectsThePrivateKeyType(string $file, SigningKeyType $expected): void
     {
         $this->assertSame($expected, KeyMaterial::fromPrivatePem(self::rfc9421Key($file), null)->type);
     }
@@ -74,8 +77,8 @@ final class KeyMaterialTest extends TestCase
     {
         [$private, $public] = self::generate(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'secp384r1']);
 
-        $this->assertSame(KeyType::EcP384, KeyMaterial::fromPrivatePem($private, null)->type);
-        $this->assertSame(KeyType::EcP384, KeyMaterial::fromPublicPem($public)->type);
+        $this->assertSame(SigningKeyType::EcP384, KeyMaterial::fromPrivatePem($private, null)->type);
+        $this->assertSame(SigningKeyType::EcP384, KeyMaterial::fromPublicPem($public)->type);
     }
 
     public function testReadsAnEncryptedPrivateKey(): void
@@ -88,7 +91,7 @@ final class KeyMaterialTest extends TestCase
 
         $material = KeyMaterial::fromPrivatePem($encrypted, 'secret');
 
-        $this->assertSame(KeyType::RsaPss, $material->type);
+        $this->assertSame(SigningKeyType::RsaPss, $material->type);
 
         $signature = $material->sign(Algorithm::RsaPssSha512, 'base');
         $public = KeyMaterial::fromPublicPem(self::rfc9421Key('test-key-rsa-pss.public.pem'));
@@ -257,7 +260,7 @@ final class KeyMaterialTest extends TestCase
 
     public function testASecretIsASharedSecret(): void
     {
-        $this->assertSame(KeyType::SharedSecret, KeyMaterial::fromSecret('s')->type);
+        $this->assertSame(SigningKeyType::SharedSecret, KeyMaterial::fromSecret('s')->type);
     }
 
     public function testSuppliesTheDefaultAlgorithmsForNull(): void

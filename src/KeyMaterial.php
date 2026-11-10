@@ -68,7 +68,7 @@ use const OPENSSL_PKCS1_PSS_PADDING;
 final readonly class KeyMaterial
 {
     private function __construct(
-        public KeyType $type,
+        public SigningKeyType $type,
         #[SensitiveParameter]
         private OpenSSLAsymmetricKey | string $material,
     ) {
@@ -138,7 +138,7 @@ final readonly class KeyMaterial
             throw new InvalidArgument('The shared secret must not be empty');
         }
 
-        return new self(KeyType::SharedSecret, $secret);
+        return new self(SigningKeyType::SharedSecret, $secret);
     }
 
     /**
@@ -306,7 +306,7 @@ final readonly class KeyMaterial
      * The `$pem` must be what was loaded or, for an encrypted private key,
      * its unencrypted export, and the loaded key is replaced by the rewrapped
      * one so that signing takes the padding argument. The rewrapped key is
-     * `KeyType::RsaPss`, so that it stays restricted to RSASSA-PSS.
+     * `SigningKeyType::RsaPss`, so that it stays restricted to RSASSA-PSS.
      *
      * @throws InvalidArgument when the key is of a type the package does not
      *     implement
@@ -315,24 +315,24 @@ final readonly class KeyMaterial
         OpenSSLAsymmetricKey &$key,
         #[SensitiveParameter]
         string $pem,
-    ): KeyType {
+    ): SigningKeyType {
         /** @var array{type: int, ec?: array{curve_name?: string}} $details */
         $details = openssl_pkey_get_details($key);
 
         if ($details['type'] === OPENSSL_KEYTYPE_RSA) {
-            return KeyType::Rsa;
+            return SigningKeyType::Rsa;
         }
 
         if ($details['type'] === OPENSSL_KEYTYPE_ED25519) {
-            return KeyType::Ed25519;
+            return SigningKeyType::Ed25519;
         }
 
         if ($details['type'] === OPENSSL_KEYTYPE_EC) {
             $curve = $details['ec']['curve_name'] ?? '';
 
             return match ($curve) {
-                'prime256v1' => KeyType::EcP256,
-                'secp384r1' => KeyType::EcP384,
+                'prime256v1' => SigningKeyType::EcP256,
+                'secp384r1' => SigningKeyType::EcP384,
                 default => throw new InvalidArgument(
                     sprintf('EC keys on the curve %s are not implemented; use P-256 or P-384', $curve),
                 ),
@@ -349,7 +349,7 @@ final readonly class KeyMaterial
             if ($rewrapped !== false) {
                 $key = $rewrapped;
 
-                return KeyType::RsaPss;
+                return SigningKeyType::RsaPss;
             }
         }
 
