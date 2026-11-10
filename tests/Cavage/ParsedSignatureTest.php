@@ -23,8 +23,8 @@ final class ParsedSignatureTest extends TestCase
             created: $created,
             expires: $expires,
             coveredComponents: [
-                ComponentIdentifier::fromCavageName('(request-target)'),
-                ComponentIdentifier::fromCavageName('host'),
+                ComponentIdentifier::fromHeadersName('(request-target)'),
+                ComponentIdentifier::fromHeadersName('host'),
             ],
             signature: 'bytes',
         );

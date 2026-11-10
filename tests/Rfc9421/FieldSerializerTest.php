@@ -20,9 +20,9 @@ final class FieldSerializerTest extends TestCase
     {
         $params = FieldSerializer::signatureParams(
             [
-                ComponentIdentifier::parse('@method'),
-                ComponentIdentifier::parse('@query-param;name="Pet"'),
-                ComponentIdentifier::parse('content-digest;req'),
+                ComponentIdentifier::fromRfc9421('@method'),
+                ComponentIdentifier::fromRfc9421('@query-param;name="Pet"'),
+                ComponentIdentifier::fromRfc9421('content-digest;req'),
             ],
             [
                 'created' => 1618884473,
@@ -50,7 +50,7 @@ final class FieldSerializerTest extends TestCase
 
     public function testAddsBothFieldsToAMessageThatHasNeither(): void
     {
-        $params = FieldSerializer::signatureParams([ComponentIdentifier::parse('@method')], ['keyid' => 'k']);
+        $params = FieldSerializer::signatureParams([ComponentIdentifier::fromRfc9421('@method')], ['keyid' => 'k']);
 
         $signed = FieldSerializer::append(new Request('GET', 'https://example.com/'), 'sig1', $params, "\x01\x02");
 
@@ -64,7 +64,7 @@ final class FieldSerializerTest extends TestCase
             'Signature-Input' => 'sig1=("@method");keyid="k"',
             'Signature' => 'sig1=:AQI=:',
         ]);
-        $params = FieldSerializer::signatureParams([ComponentIdentifier::parse('@path')], ['keyid' => 'k2']);
+        $params = FieldSerializer::signatureParams([ComponentIdentifier::fromRfc9421('@path')], ['keyid' => 'k2']);
 
         $signed = FieldSerializer::append($message, 'sig2', $params, "\x03");
 

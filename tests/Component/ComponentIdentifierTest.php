@@ -45,9 +45,9 @@ final class ComponentIdentifierTest extends TestCase
     }
 
     #[DataProvider('identifiers')]
-    public function testParsesTheOptionsForm(string $given, string $name, string $serialized, string $string): void
+    public function testReadsTheOptionsForm(string $given, string $name, string $serialized, string $string): void
     {
-        $identifier = ComponentIdentifier::parse($given);
+        $identifier = ComponentIdentifier::fromRfc9421($given);
 
         $this->assertSame($name, $identifier->name);
         $this->assertSame($serialized, $identifier->serialize());
@@ -64,7 +64,7 @@ final class ComponentIdentifierTest extends TestCase
         $this->assertSame($name, $identifier->name);
         $this->assertSame($serialized, $identifier->serialize());
         $this->assertSame($string, $identifier->toString());
-        $this->assertTrue($identifier->equals(ComponentIdentifier::parse($given)));
+        $this->assertTrue($identifier->equals(ComponentIdentifier::fromRfc9421($given)));
     }
 
     /**
@@ -95,13 +95,13 @@ final class ComponentIdentifierTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains($message);
 
-        ComponentIdentifier::parse($given);
+        ComponentIdentifier::fromRfc9421($given);
     }
 
-    public function testParsingLeavesNoPhpWarningBehind(): void
+    public function testReadingLeavesNoPhpWarningBehind(): void
     {
         try {
-            ComponentIdentifier::parse('@method;req=');
+            ComponentIdentifier::fromRfc9421('@method;req=');
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
             $this->assertInstanceOf(SyntaxError::class, $exception->getPrevious());
@@ -147,9 +147,9 @@ final class ComponentIdentifierTest extends TestCase
 
     public function testKnowsADerivedComponentAndAPlainOne(): void
     {
-        $method = ComponentIdentifier::parse('@method');
-        $methodOfTheRequest = ComponentIdentifier::parse('@method;req');
-        $date = ComponentIdentifier::parse('date');
+        $method = ComponentIdentifier::fromRfc9421('@method');
+        $methodOfTheRequest = ComponentIdentifier::fromRfc9421('@method;req');
+        $date = ComponentIdentifier::fromRfc9421('date');
 
         $this->assertTrue($method->isDerived());
         $this->assertFalse($date->isDerived());
@@ -162,14 +162,16 @@ final class ComponentIdentifierTest extends TestCase
 
     public function testEqualityIsOnTheSerializedForm(): void
     {
-        $this->assertTrue(ComponentIdentifier::parse('Date')->equals(ComponentIdentifier::parse('date')));
+        $this->assertTrue(ComponentIdentifier::fromRfc9421('Date')->equals(ComponentIdentifier::fromRfc9421('date')));
         $this->assertTrue(
-            ComponentIdentifier::parse('@status;req=?1')->equals(ComponentIdentifier::parse('@status;req')),
+            ComponentIdentifier::fromRfc9421('@status;req=?1')->equals(ComponentIdentifier::fromRfc9421('@status;req')),
         );
-        $this->assertFalse(ComponentIdentifier::parse('@method')->equals(ComponentIdentifier::parse('@method;req')));
         $this->assertFalse(
-            ComponentIdentifier::parse('@query-param;name="Pet"')
-                ->equals(ComponentIdentifier::parse('@query-param;name="pet"')),
+            ComponentIdentifier::fromRfc9421('@method')->equals(ComponentIdentifier::fromRfc9421('@method;req')),
+        );
+        $this->assertFalse(
+            ComponentIdentifier::fromRfc9421('@query-param;name="Pet"')
+                ->equals(ComponentIdentifier::fromRfc9421('@query-param;name="pet"')),
         );
     }
 
@@ -185,9 +187,9 @@ final class ComponentIdentifierTest extends TestCase
     }
 
     #[DataProvider('cavageNames')]
-    public function testParsesADraftName(string $given, string $name, bool $isPseudoHeader): void
+    public function testReadsADraftName(string $given, string $name, bool $isPseudoHeader): void
     {
-        $identifier = ComponentIdentifier::parseCavage($given);
+        $identifier = ComponentIdentifier::fromCavage($given);
 
         $this->assertSame($name, $identifier->name);
         $this->assertSame($name, $identifier->toString());
@@ -223,9 +225,9 @@ final class ComponentIdentifierTest extends TestCase
     }
 
     #[DataProvider('identifiersInEitherForm')]
-    public function testParsesAnIdentifierInTheFormItIsWrittenIn(string $given, string $serialized): void
+    public function testReadsAnIdentifierInTheFormItIsWrittenIn(string $given, string $serialized): void
     {
-        $this->assertSame($serialized, ComponentIdentifier::parseInEitherForm($given)->toString());
+        $this->assertSame($serialized, ComponentIdentifier::fromEitherForm($given)->toString());
     }
 
     /**
@@ -250,7 +252,7 @@ final class ComponentIdentifierTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains($message);
 
-        ComponentIdentifier::parseInEitherForm($given);
+        ComponentIdentifier::fromEitherForm($given);
     }
 
     #[DataProvider('rejectedCavageNames')]
@@ -259,16 +261,16 @@ final class ComponentIdentifierTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains($message);
 
-        ComponentIdentifier::parseCavage($given);
+        ComponentIdentifier::fromCavage($given);
     }
 
     public function testBuildsFromANameOfTheHeadersParameter(): void
     {
-        $this->assertTrue(ComponentIdentifier::fromCavageName('(expires)')->isPseudoHeader());
-        $this->assertTrue(ComponentIdentifier::fromCavageName('digest')->isPlain('digest'));
+        $this->assertTrue(ComponentIdentifier::fromHeadersName('(expires)')->isPseudoHeader());
+        $this->assertTrue(ComponentIdentifier::fromHeadersName('digest')->isPlain('digest'));
         $this->assertTrue(
-            ComponentIdentifier::fromCavageName('(request-target)')
-                ->equals(ComponentIdentifier::parseCavage('(Request-Target)')),
+            ComponentIdentifier::fromHeadersName('(request-target)')
+                ->equals(ComponentIdentifier::fromCavage('(Request-Target)')),
         );
     }
 
@@ -299,7 +301,7 @@ final class ComponentIdentifierTest extends TestCase
         string $detail,
     ): void {
         try {
-            ComponentIdentifier::fromCavageName($name);
+            ComponentIdentifier::fromHeadersName($name);
             $this->fail('Expected a Failure');
         } catch (Failure $failure) {
             $this->assertSame($reason, $failure->reason);

@@ -249,7 +249,7 @@ final class FieldParser
         if ($headers === null) {
             $default = $algorithm === null || $algorithm === ParsedSignature::HS2019 ? '(created)' : 'date';
 
-            return [ComponentIdentifier::fromCavageName($default)];
+            return [ComponentIdentifier::fromHeadersName($default)];
         }
 
         if ($headers === '') {
@@ -263,7 +263,7 @@ final class FieldParser
                 throw new Failure(FailureReason::MalformedSignature, 'the headers parameter has an empty name');
             }
 
-            $identifiers[] = ComponentIdentifier::fromCavageName($name);
+            $identifiers[] = ComponentIdentifier::fromHeadersName($name);
         }
 
         return $identifiers;

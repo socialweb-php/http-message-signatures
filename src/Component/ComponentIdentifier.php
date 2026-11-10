@@ -58,7 +58,7 @@ use function substr;
  *
  * @internal
  */
-final class ComponentIdentifier
+final readonly class ComponentIdentifier
 {
     /**
      * The names of draft-cavage-http-signatures-12 section 2.3 that are not
@@ -77,18 +77,19 @@ final class ComponentIdentifier
     private const string FIELD_NAME_PATTERN = "/^[!#$%&'*+.^_`|~0-9a-z-]+\\z/i";
 
     private function __construct(
-        public readonly string $name,
-        public readonly Parameters $parameters,
+        public string $name,
+        public Parameters $parameters,
     ) {
     }
 
     /**
-     * Parses an identifier as the options write it
+     * Reads an identifier as the options write it under RFC 9421: a component
+     * name, then its parameters
      *
      * @throws InvalidArgument when the identifier has no name, a name that is
      *     not a component name, or parameters that do not parse
      */
-    public static function parse(string $identifier): self
+    public static function fromRfc9421(string $identifier): self
     {
         $semicolon = strpos($identifier, ';');
         $name = $semicolon === false ? $identifier : substr($identifier, 0, $semicolon);
@@ -117,12 +118,12 @@ final class ComponentIdentifier
     }
 
     /**
-     * Parses a name of the draft form as the options write it: a field name
-     * or one of the draft's three names in parentheses, in any case
+     * Reads a name of the draft form as the options write it: a field name or
+     * one of the draft's three names in parentheses, in any case
      *
      * @throws InvalidArgument when the name is empty or is neither
      */
-    public static function parseCavage(string $name): self
+    public static function fromCavage(string $name): self
     {
         if ($name === '') {
             throw new InvalidArgument('A component identifier must not be empty');
@@ -139,16 +140,16 @@ final class ComponentIdentifier
     }
 
     /**
-     * Parses an identifier that may be written in either form: a name in
+     * Reads an identifier that may be written in either form: a name in
      * parentheses as the draft form writes it, and anything else as RFC 9421
      * writes it
      *
      * @throws InvalidArgument when the identifier does not parse in the form
      *     it is written in
      */
-    public static function parseInEitherForm(string $identifier): self
+    public static function fromEitherForm(string $identifier): self
     {
-        return str_starts_with($identifier, '(') ? self::parseCavage($identifier) : self::parse($identifier);
+        return str_starts_with($identifier, '(') ? self::fromCavage($identifier) : self::fromRfc9421($identifier);
     }
 
     /**
@@ -159,7 +160,7 @@ final class ComponentIdentifier
      *     the draft does not define, and `MalformedSignature` for a name that
      *     is not a field name
      */
-    public static function fromCavageName(string $name): self
+    public static function fromHeadersName(string $name): self
     {
         if (in_array($name, self::CAVAGE_PSEUDO_HEADERS, true)) {
             return new self($name, Parameters::new());

@@ -210,8 +210,8 @@ final readonly class SigningOptions
 
         foreach ($components as $component) {
             $identifier = $form === Form::Cavage
-                ? ComponentIdentifier::parseCavage($component)
-                : ComponentIdentifier::parse($component);
+                ? ComponentIdentifier::fromCavage($component)
+                : ComponentIdentifier::fromRfc9421($component);
 
             if ($identifier->name === '@signature-params') {
                 throw new InvalidArgument('@signature-params cannot be a covered component');

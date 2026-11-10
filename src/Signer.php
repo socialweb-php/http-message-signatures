@@ -268,7 +268,7 @@ final class Signer
             }
 
             return array_map(
-                static fn (string $name): ComponentIdentifier => ComponentIdentifier::parseCavage($name),
+                static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromCavage($name),
                 $names,
             );
         }
@@ -279,7 +279,10 @@ final class Signer
             $names[] = DigestField::CONTENT_DIGEST;
         }
 
-        return array_map(static fn (string $name): ComponentIdentifier => ComponentIdentifier::parse($name), $names);
+        return array_map(
+            static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromRfc9421($name),
+            $names,
+        );
     }
 
     /**

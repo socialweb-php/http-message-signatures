@@ -36,7 +36,7 @@ final class FieldSerializerTest extends TestCase
     private static function identifiers(array $names): array
     {
         return array_map(
-            static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromCavageName($name),
+            static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromHeadersName($name),
             $names,
         );
     }

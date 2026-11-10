@@ -54,7 +54,7 @@ final class SignatureBaseTest extends TestCase
     ): string {
         return SignatureBase::build(
             new MessageContext($message, $related),
-            array_map(static fn (string $c): ComponentIdentifier => ComponentIdentifier::parse($c), $covered),
+            array_map(static fn (string $c): ComponentIdentifier => ComponentIdentifier::fromRfc9421($c), $covered),
             InnerList::fromHttpValue($params),
         );
     }

@@ -19,9 +19,9 @@ final class ParsedSignatureTest extends TestCase
         $signature = new ParsedSignature(
             label: 'sig1',
             coveredComponents: [
-                ComponentIdentifier::parse('@method'),
-                ComponentIdentifier::parse('@query-param;name="Pet"'),
-                ComponentIdentifier::parse('content-digest;req'),
+                ComponentIdentifier::fromRfc9421('@method'),
+                ComponentIdentifier::fromRfc9421('@query-param;name="Pet"'),
+                ComponentIdentifier::fromRfc9421('content-digest;req'),
             ],
             signatureParams: InnerList::fromHttpValue(
                 '("@method" "@query-param";name="Pet" "content-digest";req);keyid="k"',

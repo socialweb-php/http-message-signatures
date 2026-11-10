@@ -50,7 +50,7 @@ final class SignatureBaseTest extends TestCase
     private static function names(string $headers): array
     {
         return array_map(
-            static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromCavageName($name),
+            static fn (string $name): ComponentIdentifier => ComponentIdentifier::fromHeadersName($name),
             explode(' ', $headers),
         );
     }

@@ -128,7 +128,7 @@ final readonly class VerifierOptions
         $identifiers = [];
 
         foreach ($requiredComponents as $component) {
-            $identifiers[] = ComponentIdentifier::parseInEitherForm($component);
+            $identifiers[] = ComponentIdentifier::fromEitherForm($component);
         }
 
         if ($maxSignatures < 1) {
