@@ -75,9 +75,10 @@ final class FieldParser
      *
      * @throws ComponentFailure `MissingComponent` when the value of a field
      *     holds a line break
-     * @throws Failure `MalformedSignature` when a field does not parse or has
-     *     a label the other lacks, or when a signature does not have the
-     *     shape section 4 gives it
+     * @throws Failure `MalformedSignature` when a field does not parse or has a
+     *     label the other lacks, or when a signature does not have the shape
+     *     section 4 gives it; `labelsLeftUnread` is set when the fields have
+     *     more labels than the limit
      * @throws InvalidArgument when `maxSignatures` is below 1
      */
     public static function parse(MessageContext $context, int $maxSignatures): ParsedFields
@@ -108,13 +109,18 @@ final class FieldParser
         }
 
         $labels = $inputs->keys();
+        $labelsLeftUnread = count($labels) > $maxSignatures;
         $parsed = [];
 
         foreach (array_slice($labels, 0, $maxSignatures) as $label) {
-            $parsed[] = self::parseOne($label, $inputs->getByKey($label), $signatures->getByKey($label));
+            try {
+                $parsed[] = self::parseOne($label, $inputs->getByKey($label), $signatures->getByKey($label));
+            } catch (Failure $failure) {
+                throw new Failure($failure->reason, $failure->detail, $failure, $labelsLeftUnread);
+            }
         }
 
-        return new ParsedFields($parsed, count($labels) > $maxSignatures);
+        return new ParsedFields($parsed, $labelsLeftUnread);
     }
 
     private static function parseOne(

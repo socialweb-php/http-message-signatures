@@ -43,4 +43,23 @@ final class FailureTest extends TestCase
         $this->assertSame(0, $failure->getCode());
         $this->assertSame($previous, $failure->getPrevious());
     }
+
+    public function testLabelsLeftUnreadIsFalseByDefault(): void
+    {
+        $failure = new Failure(FailureReason::MalformedSignature, 'the signature "sig1" has no keyid parameter');
+
+        $this->assertFalse($failure->labelsLeftUnread);
+    }
+
+    public function testHoldsThatLabelsWereLeftUnread(): void
+    {
+        $failure = new Failure(
+            FailureReason::MalformedSignature,
+            'the signature "sig1" has no keyid parameter',
+            null,
+            true,
+        );
+
+        $this->assertTrue($failure->labelsLeftUnread);
+    }
 }

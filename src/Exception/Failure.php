@@ -39,10 +39,16 @@ use Throwable;
  */
 final class Failure extends RuntimeException implements MessageSignaturesException
 {
+    /**
+     * @param bool $labelsLeftUnread whether the message has more RFC 9421
+     *     labels than the verifier's limit; `Rfc9421\FieldParser::parse()`
+     *     sets it when a label within the limit does not parse
+     */
     public function __construct(
         public readonly FailureReason $reason,
         public readonly string $detail,
         ?Throwable $previous = null,
+        public readonly bool $labelsLeftUnread = false,
     ) {
         parent::__construct($reason->name . ': ' . $detail, 0, $previous);
     }

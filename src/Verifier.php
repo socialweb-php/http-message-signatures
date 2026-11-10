@@ -232,6 +232,7 @@ final class Verifier
                 reason: $failure->reason,
                 detail: $failure->detail,
                 form: $form,
+                maxSignaturesExceeded: $failure instanceof Failure && $failure->labelsLeftUnread,
             );
         }
 

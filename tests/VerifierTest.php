@@ -1002,6 +1002,22 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->maxSignaturesExceeded);
     }
 
+    public function testAMalformedLabelWithinTheLimitStillSaysThatLabelsWereLeftUntried(): void
+    {
+        $message = self::request()
+            ->withHeader(
+                'Signature-Input',
+                'sig1=("@method");created=1618884473, sig2=("@method");keyid="test-key-ed25519"',
+            )
+            ->withHeader('Signature', 'sig1=:AQ==:, sig2=:AQ==:');
+
+        $result = self::verify($message, ['maxSignatures' => 1]);
+
+        $this->assertFalse($result->verified);
+        $this->assertSame(FailureReason::MalformedSignature, $result->reason);
+        $this->assertTrue($result->maxSignaturesExceeded);
+    }
+
     public function testARequiredComponentOfTheDraftFormDoesNotApplyUnderRfc9421(): void
     {
         $result = self::verify(self::signed(self::request()), ['requiredComponents' => ['(request-target)', 'Host']]);

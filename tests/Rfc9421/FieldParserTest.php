@@ -290,6 +290,35 @@ final class FieldParserTest extends TestCase
         $this->assertCount(1, $parsed);
     }
 
+    public function testAMalformedLabelSaysThatLabelsBeyondTheLimitWereLeftUnread(): void
+    {
+        try {
+            FieldParser::parse(self::context(
+                'sig1=("@method");created=1618884473, sig2=("@method");keyid="k"',
+                'sig1=:AQ==:, sig2=:AQ==:',
+            ), 1);
+            $this->fail('Expected a Failure');
+        } catch (Failure $failure) {
+            $this->assertSame(FailureReason::MalformedSignature, $failure->reason);
+            $this->assertSame('the signature "sig1" has no keyid parameter', $failure->detail);
+            $this->assertTrue($failure->labelsLeftUnread);
+        }
+    }
+
+    public function testAMalformedLabelWithNoLabelsBeyondTheLimitLeavesNoneUnread(): void
+    {
+        try {
+            FieldParser::parse(self::context(
+                'sig1=("@method");created=1618884473, sig2=("@method");keyid="k"',
+                'sig1=:AQ==:, sig2=:AQ==:',
+            ), 2);
+            $this->fail('Expected a Failure');
+        } catch (Failure $failure) {
+            $this->assertSame(FailureReason::MalformedSignature, $failure->reason);
+            $this->assertFalse($failure->labelsLeftUnread);
+        }
+    }
+
     public function testTheLabelsOfBothFieldsMustMatchEvenBeyondTheLimit(): void
     {
         $this->expectException(Failure::class);
