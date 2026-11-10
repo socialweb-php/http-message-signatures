@@ -76,16 +76,15 @@ final class ExamplesTest extends TestCase
     }
 
     /**
-     * Returns the contents of a file copied for the draft form: the draft's
-     * key pair under `resources/cavage/`, or a Fedify request under
-     * `resources/fedify/`
+     * Returns the contents of a file under `resources/`: the draft's key pair
+     * under `resources/cavage/`, or a Fedify request under `resources/fedify/`
      */
     private static function copiedFile(string $file): string
     {
         $contents = file_get_contents(__DIR__ . '/../../resources/' . $file);
 
         if ($contents === false) {
-            throw new RuntimeException('Cannot read the copied file ' . $file);
+            throw new RuntimeException('Cannot read the file ' . $file);
         }
 
         return $contents;

@@ -40,10 +40,11 @@ use function strtolower;
  * which is the `Content-Digest` Dictionary key: they are the two entries the
  * RFC 9530 registry marks Active, and the two RFC 5843 registers for the
  * `Digest` field of RFC 3230. `Sha384` is in neither registry, so the package
- * refuses it where a digest field is written and does not read a `sha-384`
- * entry of a digest field. The deprecated entries of the RFC 9530 registry,
- * and the MD5 and SHA-1 of RFC 3230, are refused on both sides, because RFC
- * 9530 section 5 forbids a deprecated algorithm where the digest is signed.
+ * refuses it where a digest field is written, `rfc3230Token()` throws for it,
+ * and the package does not read a `sha-384` entry of a digest field. The
+ * deprecated entries of the RFC 9530 registry, and the MD5 and SHA-1 of RFC
+ * 3230, are refused on both sides, because RFC 9530 section 5 forbids a
+ * deprecated algorithm where the digest is signed.
  *
  * @link https://www.rfc-editor.org/rfc/rfc9530#section-5 Hash Algorithm Considerations and Registration
  */

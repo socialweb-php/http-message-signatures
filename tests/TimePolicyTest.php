@@ -144,13 +144,15 @@ final class TimePolicyTest extends TestCase
     {
         $policy = new TimePolicy();
         $created = new DateTime('@1618884473');
+        $expires = new DateTime('@1618884773');
 
-        $this->assertNull($policy->evaluate(new DateTime('@1618884473'), $created, new DateTime('@1618884773')));
+        $this->assertNull($policy->evaluate(new DateTime('@1618884473'), $created, $expires));
         $this->assertSame(
             FailureReason::Expired,
-            $policy->evaluate(new DateTime('@1618892000'), $created, new DateTime('@1618884773')),
+            $policy->evaluate(new DateTime('@1618892000'), $created, $expires),
         );
         $this->assertSame(1618884473, $created->getTimestamp());
+        $this->assertSame(1618884773, $expires->getTimestamp());
     }
 
     public function testAZeroSkewAcceptsACreationTimeEqualToNow(): void

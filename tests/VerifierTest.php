@@ -515,11 +515,11 @@ final class VerifierTest extends TestCase
     public function testExpiresAloneIsJudgedWhenTheCreationTimeIsNotRequired(): void
     {
         $message = self::signed(self::request(), created: false, expires: new DateInterval('PT5M'));
-        $options = ['requireCreationTime' => false];
+        $settings = ['requireCreationTime' => false];
 
-        $this->assertTrue(self::verify($message, $options)->verified);
+        $this->assertTrue(self::verify($message, $settings)->verified);
 
-        $result = self::verify($message, $options, clockOffset: 300 + 3600 + 1);
+        $result = self::verify($message, $settings, clockOffset: 300 + 3600 + 1);
 
         $this->assertSame(FailureReason::Expired, $result->reason);
         $this->assertSame('the effective expiry has passed', $result->detail);

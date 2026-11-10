@@ -277,7 +277,7 @@ final class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, FailureReason, string}>
      */
-    public static function rejectedHeadersNames(): iterable
+    public static function rejectedHeadersParameterNames(): iterable
     {
         yield 'a name in parentheses the draft does not define' => [
             '(foo)',
@@ -294,7 +294,7 @@ final class ComponentIdentifierTest extends TestCase
         yield 'an empty name' => ['', FailureReason::MalformedSignature, '"" is not a field name'];
     }
 
-    #[DataProvider('rejectedHeadersNames')]
+    #[DataProvider('rejectedHeadersParameterNames')]
     public function testRejectsANameOfTheHeadersParameterItCannotUse(
         string $name,
         FailureReason $reason,

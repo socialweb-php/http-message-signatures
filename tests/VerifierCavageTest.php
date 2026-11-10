@@ -544,9 +544,9 @@ final class VerifierCavageTest extends TestCase
     public function testRequiredFieldNamesAreMetByTheFieldsADraftSignatureCovers(): void
     {
         $message = self::signed(self::request('{"hello": "world"}'));
-        $options = ['requiredComponents' => ['Host', 'date', '(request-target)', 'digest']];
+        $settings = ['requiredComponents' => ['Host', 'date', '(request-target)', 'digest']];
 
-        $result = self::verify($message, $options);
+        $result = self::verify($message, $settings);
 
         $this->assertTrue($result->verified, $result->detail);
     }

@@ -33,17 +33,16 @@ namespace SocialWeb\Http\MessageSignatures;
  * holds the message, the form, and the parameters of the signature that the
  * verifier reads, after every check that needs no key has passed. By then the
  * verifier has established that the form is one it accepts and the fields
- * parse; that the algorithm named, if any, is one the package
- * implements; that the policy that needs no key is met, that is, the target,
- * the creation time, the digest, the nonce, and the required components; that
- * the time policy is met; that the signature base was built, so every covered
- * component is present in the message or the related request and has a value;
- * and that every covered digest field of the message matches its content. It
- * has not verified the signature bytes. Everything the resolver reads from the
- * message is therefore a claim until `Verifier::verify()` returns a verified
- * result: the resolver may use it to find a key, and nothing else, and a
- * resolver that fetches applies its own limits to what the message makes it
- * fetch.
+ * parse; that the algorithm named, if any, is one the package implements; that
+ * the policy that needs no key is met, that is, the target, the creation time,
+ * the digest, the nonce, and the required components; that the time policy is
+ * met; that the signature base was built, so every covered component is present
+ * in the message or the related request and has a value; and that every covered
+ * digest field of the message matches its content. It has not verified the
+ * signature bytes. Everything the resolver reads from the message is therefore
+ * a claim until `Verifier::verify()` returns a verified result: the resolver
+ * may use it to find a key, and nothing else, and a resolver that fetches
+ * applies its own limits to what the message makes it fetch.
  *
  * The key identifier is the parameter value as the message gave it, an opaque
  * string: the package never parses it as a URL, never fetches, and never

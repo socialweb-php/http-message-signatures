@@ -101,8 +101,9 @@ final class SignatureBase
     }
 
     /**
-     * @throws Failure `MalformedSignature` when the algorithm is a named one,
-     *     or when the parameter is absent or is not an integer
+     * @throws Failure `MalformedSignature` when the parameter is covered under
+     *     a named algorithm, when the parameter is absent, or when it is not an
+     *     integer
      */
     private static function parameter(string $name, ?string $value, ?string $algorithm): string
     {
