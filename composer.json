@@ -75,6 +75,7 @@
     },
     "scripts": {
         "analyze": "vendor/bin/phpstan analyze --ansi -v --memory-limit=1G",
+        "check-fixtures": "@php bin/check-fixtures.php",
         "coverage": [
             "git clean -fx build/coverage/.",
             "XDEBUG_MODE=coverage phpunit --colors=always --coverage-html build/coverage/coverage-html",
@@ -96,6 +97,7 @@
     },
     "scripts-descriptions": {
         "analyze": "Runs static analysis.",
+        "check-fixtures": "Checks the keys and signed requests copied under resources/ against the checksums in their manifest.",
         "coverage": "Runs unit tests with code coverage analysis and opens the coverage report in a web browser.",
         "coverage-ci": "Runs unit tests with code coverage analysis and outputs a Clover XML file.",
         "fix": "Fixes coding standards violations and normalizes composer.json.",

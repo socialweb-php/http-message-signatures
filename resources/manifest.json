@@ -1,0 +1,61 @@
+{
+    "sets": [
+        {
+            "name": "rfc9421",
+            "url": "https://www.rfc-editor.org/rfc/rfc9421",
+            "retrieved": "2026-10-13",
+            "sha256": "59f74049b4a0b3da45da040da8ac3715521254101c86676a36870560434efeea",
+            "source": {
+                "title": "RFC 9421: HTTP Message Signatures",
+                "url": "https://www.rfc-editor.org/rfc/rfc9421",
+                "copyright": "Copyright (c) 2024 IETF Trust and the persons identified as the document authors. All rights reserved."
+            },
+            "license": {
+                "name": "IETF Trust Legal Provisions",
+                "url": "https://trustee.ietf.org/documents/trust-legal-provisions/"
+            },
+            "sections": [
+                "Appendix B.1.1",
+                "Appendix B.1.2",
+                "Appendix B.1.3",
+                "Appendix B.1.4",
+                "Appendix B.1.5"
+            ]
+        },
+        {
+            "name": "cavage",
+            "url": "https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12",
+            "retrieved": "2026-10-18",
+            "sha256": "e801db686525879736faa363e03d11a2f428e0a2f3263bfce69d50e60fec2b33",
+            "source": {
+                "title": "draft-cavage-http-signatures-12: Signing HTTP Messages",
+                "url": "https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12",
+                "copyright": "Copyright (c) 2019 IETF Trust and the persons identified as the document authors. All rights reserved."
+            },
+            "license": {
+                "name": "IETF Trust Legal Provisions",
+                "url": "https://trustee.ietf.org/documents/trust-legal-provisions/"
+            },
+            "sections": [
+                "Appendix C"
+            ]
+        },
+        {
+            "name": "fedify",
+            "url": "https://github.com/fedify-dev/fedify",
+            "commit": "f56118e197798465021d622a2177ec8c017df073",
+            "retrieved": "2026-10-18",
+            "sha256": "eed38bbf84875a87e6847ea32c2ca57c31168b2f1649240754bfba8fa02ac57c",
+            "source": {
+                "title": "Fedify test suite",
+                "url": "https://github.com/fedify-dev/fedify/tree/f56118e197798465021d622a2177ec8c017df073/packages/fedify",
+                "copyright": "Copyright 2024–2026 Hong Minhee"
+            },
+            "license": {
+                "name": "MIT License",
+                "url": "https://github.com/fedify-dev/fedify/blob/f56118e197798465021d622a2177ec8c017df073/LICENSE",
+                "file": "LICENSE"
+            }
+        }
+    ]
+}

@@ -30,7 +30,7 @@ class TestCase extends BaseTestCase
      */
     protected static function rfc9421Key(string $file): string
     {
-        $contents = file_get_contents(__DIR__ . '/fixtures/rfc9421/' . $file);
+        $contents = file_get_contents(__DIR__ . '/../resources/rfc9421/' . $file);
 
         if ($contents === false) {
             throw new RuntimeException('Cannot read the fixture ' . $file);
@@ -40,12 +40,13 @@ class TestCase extends BaseTestCase
     }
 
     /**
-     * Returns the contents of a fixture of the draft form, under
-     * `tests/fixtures/cavage/`
+     * Returns the contents of a file copied for the draft form: the draft's
+     * key pair under `resources/cavage/`, or a Fedify request under
+     * `resources/fedify/`
      */
     protected static function cavageFixture(string $file): string
     {
-        $contents = file_get_contents(__DIR__ . '/fixtures/cavage/' . $file);
+        $contents = file_get_contents(__DIR__ . '/../resources/' . $file);
 
         if ($contents === false) {
             throw new RuntimeException('Cannot read the fixture ' . $file);

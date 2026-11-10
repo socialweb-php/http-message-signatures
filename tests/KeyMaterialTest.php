@@ -111,7 +111,7 @@ class KeyMaterialTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains('A key must be given as PEM text, not as a file path');
 
-        KeyMaterial::fromPublicPem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.public.pem');
+        KeyMaterial::fromPublicPem('file://' . __DIR__ . '/../resources/rfc9421/test-key-rsa.public.pem');
     }
 
     public function testRejectsAPrivateKeyGivenAsAFilePath(): void
@@ -119,7 +119,7 @@ class KeyMaterialTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains('A key must be given as PEM text, not as a file path');
 
-        KeyMaterial::fromPrivatePem('file://' . __DIR__ . '/fixtures/rfc9421/test-key-rsa.private.pem', null);
+        KeyMaterial::fromPrivatePem('file://' . __DIR__ . '/../resources/rfc9421/test-key-rsa.private.pem', null);
     }
 
     public function testAKeyEncodedForRsassaPssDoesNotPermitPkcs1V15(): void

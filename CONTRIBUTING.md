@@ -130,6 +130,14 @@ You may run mutation tests manually with the following command:
 composer mutation
 ```
 
+### Checking the copied keys and signed requests
+
+The keys and signed requests the tests check the package against are copied under `resources/` from RFC 9421, from draft-cavage-http-signatures-12, and from the test suite of Fedify, and `resources/manifest.json` records a checksum for each set. `composer check-fixtures` computes the checksums again and compares them with the manifest, so a file that has changed since it was copied is found before the tests run. GitHub Actions runs the same check for pull requests.
+
+```bash
+composer check-fixtures
+```
+
 ## Releasing
 
 The changelog follows [Keep a Changelog]. As changes land, they go under the `## [Unreleased]` heading at the top of `CHANGELOG.md`. Before tagging a release, rename that heading to `## [X.Y.Z] - YYYY-MM-DD` and give it a link reference at the end of the file. The first release has no earlier tag to compare with, so it links to the commits up to its tag:

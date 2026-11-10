@@ -18,3 +18,7 @@
 /resources/                 export-ignore
 /SECURITY.md                export-ignore
 /tests/                     export-ignore
+
+# The copied keys and signed requests are kept byte for byte, so git must not
+# convert their line endings.
+/resources/**               -text

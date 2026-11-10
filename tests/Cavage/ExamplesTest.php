@@ -36,8 +36,8 @@ use const JSON_THROW_ON_ERROR;
  * the default `date` signing, and C.2, the basic signing string. Its C.3
  * lists `(created)` and `(expires)` under `rsa-sha256`, which the draft's
  * section 2.3 forbids, and its signature is over a string without them. The
- * other signatures are Fedify's, under `tests/fixtures/cavage/fedify/`, each
- * recording its source; see the README beside them.
+ * other signatures are Fedify's, under `resources/fedify/`, each recording its
+ * source; see `resources/README.md`.
  */
 class ExamplesTest extends TestCase
 {
@@ -108,7 +108,7 @@ class ExamplesTest extends TestCase
         // C.1 and C.2 cover neither the request target nor the digest, and
         // C.1 signs `date` alone.
         $appendixOptions = new VerifierOptions(requireTarget: false, requireContentDigest: false);
-        $appendixKey = self::cavageFixture('test-key.public.pem');
+        $appendixKey = self::cavageFixture('cavage/test-key.public.pem');
 
         yield 'appendix C.1, the Signature field' => [
             self::appendixCRequest()->withHeader(
@@ -231,7 +231,7 @@ class ExamplesTest extends TestCase
     public function testSignsTheStringsOfAppendixCToTheSameBytes(): void
     {
         $signer = new Signer(new FrozenClock(new DateTimeImmutable('@' . self::APPENDIX_C_NOW)));
-        $key = SigningKey::fromPem('Test', self::cavageFixture('test-key.private.pem'));
+        $key = SigningKey::fromPem('Test', self::cavageFixture('cavage/test-key.private.pem'));
 
         $c1 = $signer->sign(
             self::appendixCRequest(),

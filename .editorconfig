@@ -14,3 +14,8 @@ indent_size = 4
 
 [*.{yml,yaml}]
 indent_size = 2
+
+# The copied keys and signed requests are kept byte for byte.
+[resources/**]
+insert_final_newline = false
+trim_trailing_whitespace = false
