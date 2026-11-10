@@ -9,7 +9,10 @@ use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class SigningFailedTest extends TestCase
+/**
+ * Checks the exception raised when signing fails
+ */
+final class SigningFailedTest extends TestCase
 {
     public function testCanBeCaughtAsAMessageSignaturesException(): void
     {

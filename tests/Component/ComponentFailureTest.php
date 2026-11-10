@@ -10,7 +10,11 @@ use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class ComponentFailureTest extends TestCase
+/**
+ * Checks the exception raised for a component value that cannot be taken from
+ * the message
+ */
+final class ComponentFailureTest extends TestCase
 {
     public function testCanBeCaughtAsAMessageSignaturesException(): void
     {

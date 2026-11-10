@@ -40,7 +40,7 @@ use function trim;
  * The deterministic algorithms sign to known bytes at the primitive level in
  * `Rfc9421AppendixBTest`; here the signature is checked against the key.
  */
-class SignerTest extends TestCase
+final class SignerTest extends TestCase
 {
     private const int NOW = 1618884473;
     private const string SHA256 = 'X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=';
@@ -531,7 +531,7 @@ class SignerTest extends TestCase
     /**
      * @return iterable<string, array{string, SigningOptions, string}>
      */
-    public static function rejectedCavageProvider(): iterable
+    public static function rejectedDraftFormOptions(): iterable
     {
         yield '(created) under a named algorithm' => [
             'test-key-rsa',
@@ -560,7 +560,7 @@ class SignerTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedCavageProvider')]
+    #[DataProvider('rejectedDraftFormOptions')]
     public function testRefusesWhatTheDraftFormCannotSign(string $key, SigningOptions $options, string $message): void
     {
         $this->expectException(InvalidArgument::class);

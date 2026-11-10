@@ -15,7 +15,10 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 use function base64_encode;
 use function hash;
 
-class DigestFieldTest extends TestCase
+/**
+ * Writes and checks the `Content-Digest` and `Digest` fields
+ */
+final class DigestFieldTest extends TestCase
 {
     private const string BODY = '{"hello": "world"}';
     private const string SHA256 = 'X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=';
@@ -85,7 +88,7 @@ class DigestFieldTest extends TestCase
     /**
      * @return iterable<string, array{string, string, non-empty-string | null}>
      */
-    public static function checksProvider(): iterable
+    public static function checks(): iterable
     {
         yield 'content-digest with one matching digest' => ['content-digest', 'sha-512=:' . self::SHA512 . ':', null];
         yield 'content-digest with two matching digests' => [
@@ -187,7 +190,7 @@ class DigestFieldTest extends TestCase
     /**
      * @param non-empty-string | null $detail
      */
-    #[DataProvider('checksProvider')]
+    #[DataProvider('checks')]
     public function testChecksACoveredDigestAgainstTheContent(string $field, string $value, ?string $detail): void
     {
         $result = DigestField::check($field, $value, self::content());

@@ -11,7 +11,10 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Rfc9421\FieldSerializer;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class FieldSerializerTest extends TestCase
+/**
+ * Writes the `Signature-Input` and `Signature` fields
+ */
+final class FieldSerializerTest extends TestCase
 {
     public function testSerializesTheSignatureParamsAsAParameterizedInnerList(): void
     {

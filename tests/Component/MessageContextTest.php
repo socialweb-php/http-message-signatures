@@ -15,7 +15,11 @@ use SocialWeb\Http\MessageSignatures\Component\MessageContext;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class MessageContextTest extends TestCase
+/**
+ * Takes field values and derived components from a message as RFC 9421 section
+ * 2 defines them
+ */
+final class MessageContextTest extends TestCase
 {
     private const string SHA256 = 'X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=';
     private const string SHA512 = 'WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyeald'
@@ -166,7 +170,7 @@ class MessageContextTest extends TestCase
     /**
      * @return iterable<string, array{string, string, string, FailureReason, non-empty-string}>
      */
-    public static function structuredFailuresProvider(): iterable
+    public static function structuredFailures(): iterable
     {
         yield 'sf on a field the package does not know' => [
             'fieldStructured',
@@ -208,7 +212,7 @@ class MessageContextTest extends TestCase
     /**
      * @param non-empty-string $detail
      */
-    #[DataProvider('structuredFailuresProvider')]
+    #[DataProvider('structuredFailures')]
     public function testStructuredFieldFailures(
         string $method,
         string $field,
@@ -240,7 +244,7 @@ class MessageContextTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function derivedComponentsProvider(): iterable
+    public static function derivedComponents(): iterable
     {
         yield '@method' => ['@method', 'POST'];
         yield '@target-uri' => ['@target-uri', 'https://www.example.com/path?param=value'];
@@ -251,7 +255,7 @@ class MessageContextTest extends TestCase
         yield '@query' => ['@query', '?param=value'];
     }
 
-    #[DataProvider('derivedComponentsProvider')]
+    #[DataProvider('derivedComponents')]
     public function testDerivesTheRfc9421Section22Examples(string $name, string $expected): void
     {
         $request = new Request('POST', 'https://www.example.com/path?param=value', ['Host' => 'www.example.com']);
@@ -290,7 +294,7 @@ class MessageContextTest extends TestCase
      *
      * @return iterable<string, array{string, int | null, string, string}>
      */
-    public static function reportedPortsProvider(): iterable
+    public static function reportedPorts(): iterable
     {
         yield 'https with 443 reported' => ['https', 443, 'example.com', 'https://example.com/'];
         yield 'http with 80 reported' => ['http', 80, 'example.com', 'http://example.com/'];
@@ -301,7 +305,7 @@ class MessageContextTest extends TestCase
         yield 'no port reported' => ['https', null, 'example.com', 'https://example.com/'];
     }
 
-    #[DataProvider('reportedPortsProvider')]
+    #[DataProvider('reportedPorts')]
     public function testTheDefaultPortIsOmittedWhateverTheUriReports(
         string $scheme,
         ?int $port,
@@ -329,7 +333,7 @@ class MessageContextTest extends TestCase
      *
      * @return iterable<string, array{string, string}>
      */
-    public static function targetUrisProvider(): iterable
+    public static function targetUris(): iterable
     {
         yield 'an empty path' => ['https://example.com', 'https://example.com/'];
         yield 'an empty path with a query' => ['https://example.com?a=1', 'https://example.com/?a=1'];
@@ -340,7 +344,7 @@ class MessageContextTest extends TestCase
         yield 'percent-encoding left as is' => ['https://example.com/a%20b?c=%41', 'https://example.com/a%20b?c=%41'];
     }
 
-    #[DataProvider('targetUrisProvider')]
+    #[DataProvider('targetUris')]
     public function testTheTargetUriIsTheOneAServerReconstructs(string $uri, string $expected): void
     {
         $this->assertSame($expected, (new MessageContext(new Request('GET', $uri)))->derived('@target-uri'));
@@ -357,13 +361,13 @@ class MessageContextTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function lineBreaksProvider(): iterable
+    public static function lineBreaks(): iterable
     {
         yield 'a line feed' => ["\n"];
         yield 'a carriage return' => ["\r"];
     }
 
-    #[DataProvider('lineBreaksProvider')]
+    #[DataProvider('lineBreaks')]
     public function testAFieldLineWithALineBreakIsMissing(string $break): void
     {
         $message = $this->createStub(MessageInterface::class);
@@ -382,7 +386,7 @@ class MessageContextTest extends TestCase
         }
     }
 
-    #[DataProvider('lineBreaksProvider')]
+    #[DataProvider('lineBreaks')]
     public function testAMethodWithALineBreakIsMissing(string $break): void
     {
         $uri = $this->createStub(UriInterface::class);
@@ -414,7 +418,7 @@ class MessageContextTest extends TestCase
         }
     }
 
-    #[DataProvider('lineBreaksProvider')]
+    #[DataProvider('lineBreaks')]
     public function testARequestTargetWithALineBreakIsMissing(string $break): void
     {
         $uri = $this->createStub(UriInterface::class);
@@ -474,7 +478,7 @@ class MessageContextTest extends TestCase
     /**
      * @return iterable<string, array{MessageInterface, string, FailureReason, string}>
      */
-    public static function derivedFailuresProvider(): iterable
+    public static function derivedFailures(): iterable
     {
         $request = new Request('GET', 'https://example.com/');
         $response = new Response();
@@ -510,8 +514,8 @@ class MessageContextTest extends TestCase
         ];
     }
 
-    #[DataProvider('derivedFailuresProvider')]
-    public function testDerivedFailures(
+    #[DataProvider('derivedFailures')]
+    public function testReportsADerivedComponentThatCannotBeTaken(
         MessageInterface $message,
         string $name,
         FailureReason $reason,

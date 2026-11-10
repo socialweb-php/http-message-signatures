@@ -17,7 +17,10 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 use function array_map;
 use function base64_decode;
 
-class FieldSerializerTest extends TestCase
+/**
+ * Writes the value of the draft form's `Signature` field
+ */
+final class FieldSerializerTest extends TestCase
 {
     /**
      * The signature of draft-cavage-http-signatures-12 appendix C.2
@@ -95,7 +98,7 @@ class FieldSerializerTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function rejectedKeyIdsProvider(): iterable
+    public static function rejectedKeyIds(): iterable
     {
         yield 'a non-ASCII character' => ["caf\u{e9}"];
         yield 'a line feed' => ["a\nb"];
@@ -103,7 +106,7 @@ class FieldSerializerTest extends TestCase
         yield 'a delete character' => ["a\x7fb"];
     }
 
-    #[DataProvider('rejectedKeyIdsProvider')]
+    #[DataProvider('rejectedKeyIds')]
     public function testRejectsAKeyIdentifierAQuotedStringCannotHold(string $keyId): void
     {
         $this->expectException(InvalidArgument::class);

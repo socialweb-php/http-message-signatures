@@ -18,7 +18,11 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 use function array_map;
 use function explode;
 
-class SignatureBaseTest extends TestCase
+/**
+ * Builds the draft form's signing string from the draft's examples and refuses
+ * what the draft forbids
+ */
+final class SignatureBaseTest extends TestCase
 {
     /**
      * The request of draft-cavage-http-signatures-12 appendix C
@@ -118,9 +122,17 @@ class SignatureBaseTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{MessageInterface, string, string | null, string | null, string | null, FailureReason, string}>
+     * @return iterable<string, array{
+     *     MessageInterface,
+     *     string,
+     *     string | null,
+     *     string | null,
+     *     string | null,
+     *     FailureReason,
+     *     string,
+     * }>
      */
-    public static function rejectedProvider(): iterable
+    public static function rejectedHeaders(): iterable
     {
         $request = self::appendixCRequest();
 
@@ -216,7 +228,7 @@ class SignatureBaseTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedProvider')]
+    #[DataProvider('rejectedHeaders')]
     public function testRejectsWhatItCannotBuild(
         MessageInterface $message,
         string $headers,

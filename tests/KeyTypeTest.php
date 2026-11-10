@@ -8,12 +8,16 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\KeyType;
 
-class KeyTypeTest extends TestCase
+/**
+ * Checks the default algorithms of each key type and the algorithms a type
+ * accepts
+ */
+final class KeyTypeTest extends TestCase
 {
     /**
      * @return iterable<string, array{KeyType, non-empty-list<Algorithm>}>
      */
-    public static function defaultsProvider(): iterable
+    public static function defaults(): iterable
     {
         yield 'RSA' => [KeyType::Rsa, [Algorithm::RsaV15Sha256, Algorithm::RsaPssSha512]];
         yield 'RSA for RSASSA-PSS' => [KeyType::RsaPss, [Algorithm::RsaPssSha512]];
@@ -26,7 +30,7 @@ class KeyTypeTest extends TestCase
     /**
      * @param non-empty-list<Algorithm> $expected
      */
-    #[DataProvider('defaultsProvider')]
+    #[DataProvider('defaults')]
     public function testHasTheDocumentedDefaultAlgorithmsInOrder(KeyType $type, array $expected): void
     {
         $this->assertSame($expected, $type->defaultAlgorithms());

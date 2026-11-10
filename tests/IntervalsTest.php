@@ -8,12 +8,15 @@ use DateInterval;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Intervals;
 
-class IntervalsTest extends TestCase
+/**
+ * Detects a `DateInterval` that runs backward
+ */
+final class IntervalsTest extends TestCase
 {
     /**
      * @return iterable<string, array{DateInterval}>
      */
-    public static function negativeIntervalsProvider(): iterable
+    public static function negativeIntervals(): iterable
     {
         $inverted = new DateInterval('PT5M');
         $inverted->invert = 1;
@@ -29,7 +32,7 @@ class IntervalsTest extends TestCase
         yield 'one negative component among positive ones' => [self::withComponent('d', -1, 'P1Y2MT3H4M5S')];
     }
 
-    #[DataProvider('negativeIntervalsProvider')]
+    #[DataProvider('negativeIntervals')]
     public function testSeesANegativeInterval(DateInterval $interval): void
     {
         $this->assertTrue(Intervals::isNegative($interval));
@@ -38,7 +41,7 @@ class IntervalsTest extends TestCase
     /**
      * @return iterable<string, array{DateInterval}>
      */
-    public static function nonNegativeIntervalsProvider(): iterable
+    public static function nonNegativeIntervals(): iterable
     {
         yield 'zero' => [new DateInterval('PT0S')];
         yield 'every component set' => [new DateInterval('P1Y2M3DT4H5M6S')];
@@ -46,7 +49,7 @@ class IntervalsTest extends TestCase
         yield 'from a date string' => [DateInterval::createFromDateString('5 minutes')];
     }
 
-    #[DataProvider('nonNegativeIntervalsProvider')]
+    #[DataProvider('nonNegativeIntervals')]
     public function testAcceptsANonNegativeInterval(DateInterval $interval): void
     {
         $this->assertFalse(Intervals::isNegative($interval));

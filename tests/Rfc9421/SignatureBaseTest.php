@@ -20,7 +20,11 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 use function array_map;
 use function substr;
 
-class SignatureBaseTest extends TestCase
+/**
+ * Builds the signature base from the examples of RFC 9421 and reports each
+ * error case of section 2.5
+ */
+final class SignatureBaseTest extends TestCase
 {
     private const string REQUEST_DIGEST = 'sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNy'
         . 'ealdVLvRwEmTHWXvJwew==:';
@@ -204,7 +208,7 @@ class SignatureBaseTest extends TestCase
     /**
      * @return iterable<string, array{MessageInterface, list<string>, FailureReason, string}>
      */
-    public static function failuresProvider(): iterable
+    public static function failures(): iterable
     {
         $request = self::testRequest();
         $response = new Response(200, ['Content-Digest' => self::REQUEST_DIGEST]);
@@ -346,7 +350,7 @@ class SignatureBaseTest extends TestCase
     /**
      * @param list<string> $covered
      */
-    #[DataProvider('failuresProvider')]
+    #[DataProvider('failures')]
     public function testEachErrorCaseOfSection25HasAReason(
         MessageInterface $message,
         array $covered,

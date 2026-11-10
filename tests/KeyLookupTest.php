@@ -11,7 +11,10 @@ use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\KeyLookup;
 
-class KeyLookupTest extends TestCase
+/**
+ * Checks what a key lookup holds for the resolver
+ */
+final class KeyLookupTest extends TestCase
 {
     public function testNeedsOnlyTheMessageTheFormAndTheKeyIdentifier(): void
     {

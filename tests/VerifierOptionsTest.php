@@ -16,7 +16,10 @@ use SocialWeb\Http\MessageSignatures\VerifierOptions;
 
 use function array_map;
 
-class VerifierOptionsTest extends TestCase
+/**
+ * Checks the defaults of the verifier options and the values they refuse
+ */
+final class VerifierOptionsTest extends TestCase
 {
     public function testHasTheDocumentedDefaults(): void
     {
@@ -69,10 +72,10 @@ class VerifierOptionsTest extends TestCase
     /**
      * @return iterable<string, array{Closure(): VerifierOptions, string}>
      */
-    public static function rejectedOptionsProvider(): iterable
+    public static function rejectedOptions(): iterable
     {
         yield 'no forms' => [
-            /** @phpstan-ignore-next-line argument.type */
+            // @phpstan-ignore argument.type (the constructor must refuse the empty list its type forbids)
             static fn (): VerifierOptions => new VerifierOptions(forms: []),
             'The list of forms must not be empty',
         ];
@@ -105,7 +108,7 @@ class VerifierOptionsTest extends TestCase
     /**
      * @param Closure(): VerifierOptions $build
      */
-    #[DataProvider('rejectedOptionsProvider')]
+    #[DataProvider('rejectedOptions')]
     public function testRejectsAnOptionItCannotAccept(Closure $build, string $message): void
     {
         $this->expectException(InvalidArgument::class);

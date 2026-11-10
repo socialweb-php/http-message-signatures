@@ -16,7 +16,10 @@ use SocialWeb\Http\MessageSignatures\SigningOptions;
 
 use function array_map;
 
-class SigningOptionsTest extends TestCase
+/**
+ * Checks the defaults of the signing options and the values they refuse
+ */
+final class SigningOptionsTest extends TestCase
 {
     public function testHasTheDocumentedDefaults(): void
     {
@@ -81,7 +84,7 @@ class SigningOptionsTest extends TestCase
     /**
      * @return iterable<string, array{Closure(): SigningOptions, string}>
      */
-    public static function rejectedOptionsProvider(): iterable
+    public static function rejectedOptions(): iterable
     {
         yield 'a derived component under the draft' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['@method']),
@@ -213,7 +216,7 @@ class SigningOptionsTest extends TestCase
     /**
      * @param Closure(): SigningOptions $build
      */
-    #[DataProvider('rejectedOptionsProvider')]
+    #[DataProvider('rejectedOptions')]
     public function testRejectsAnOptionThatDoesNotFit(Closure $build, string $message): void
     {
         $this->expectException(InvalidArgument::class);

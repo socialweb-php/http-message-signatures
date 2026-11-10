@@ -6,7 +6,10 @@ namespace SocialWeb\Test\Http\MessageSignatures;
 
 use SocialWeb\Http\MessageSignatures\Form;
 
-class FormTest extends TestCase
+/**
+ * Checks the two signature forms
+ */
+final class FormTest extends TestCase
 {
     public function testNamesTheDraftByItsIdentifier(): void
     {

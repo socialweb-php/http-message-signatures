@@ -26,7 +26,11 @@ use function str_contains;
 
 use const OPENSSL_KEYTYPE_EC;
 
-class VerificationKeyTest extends TestCase
+/**
+ * Builds verification keys from a PEM, a shared secret, and a JSON Web Key, and
+ * verifies with them
+ */
+final class VerificationKeyTest extends TestCase
 {
     public function testBuildsFromAPemWithTheDefaultAlgorithms(): void
     {

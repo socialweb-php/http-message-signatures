@@ -8,7 +8,10 @@ use SocialWeb\Http\MessageSignatures\FailureReason;
 
 use function array_map;
 
-class FailureReasonTest extends TestCase
+/**
+ * Checks that the failure reasons are the documented ones
+ */
+final class FailureReasonTest extends TestCase
 {
     public function testHasOneCasePerDocumentedReason(): void
     {

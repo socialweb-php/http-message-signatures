@@ -9,7 +9,10 @@ use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\KeyType;
 
-class AlgorithmTest extends TestCase
+/**
+ * Checks the name each algorithm has in the two forms and the key type it fits
+ */
+final class AlgorithmTest extends TestCase
 {
     public function testHasTheSixAlgorithmsOfTheRegistry(): void
     {
@@ -19,7 +22,7 @@ class AlgorithmTest extends TestCase
     /**
      * @return iterable<string, array{Algorithm, string | null, string}>
      */
-    public static function namesProvider(): iterable
+    public static function names(): iterable
     {
         yield 'RSA v1.5' => [Algorithm::RsaV15Sha256, 'rsa-sha256', 'rsa-v1_5-sha256'];
         yield 'RSA PSS' => [Algorithm::RsaPssSha512, null, 'rsa-pss-sha512'];
@@ -29,7 +32,7 @@ class AlgorithmTest extends TestCase
         yield 'HMAC' => [Algorithm::HmacSha256, 'hmac-sha256', 'hmac-sha256'];
     }
 
-    #[DataProvider('namesProvider')]
+    #[DataProvider('names')]
     public function testNamesTheAlgorithmInEachForm(Algorithm $algorithm, ?string $cavage, string $rfc9421): void
     {
         $this->assertSame($cavage, $algorithm->name(Form::Cavage));
@@ -39,7 +42,7 @@ class AlgorithmTest extends TestCase
     /**
      * @return iterable<string, array{Algorithm, KeyType}>
      */
-    public static function keyTypesProvider(): iterable
+    public static function keyTypes(): iterable
     {
         yield 'RSA v1.5' => [Algorithm::RsaV15Sha256, KeyType::Rsa];
         yield 'RSA PSS' => [Algorithm::RsaPssSha512, KeyType::Rsa];
@@ -49,7 +52,7 @@ class AlgorithmTest extends TestCase
         yield 'HMAC' => [Algorithm::HmacSha256, KeyType::SharedSecret];
     }
 
-    #[DataProvider('keyTypesProvider')]
+    #[DataProvider('keyTypes')]
     public function testFitsOneKeyTypeAndRsaPssFitsThePssKeyToo(Algorithm $algorithm, KeyType $expected): void
     {
         $this->assertSame($expected, $algorithm->keyType());
@@ -60,7 +63,7 @@ class AlgorithmTest extends TestCase
         }
     }
 
-    #[DataProvider('namesProvider')]
+    #[DataProvider('names')]
     public function testHasAnRfc9421Name(Algorithm $algorithm, ?string $cavage, string $rfc9421): void
     {
         $this->assertSame($rfc9421, $algorithm->rfc9421Name());

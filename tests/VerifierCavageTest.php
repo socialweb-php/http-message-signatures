@@ -37,7 +37,7 @@ use function strtolower;
  * or method, a `Date` field that is not a date or is too old, a digest that is
  * not signed, and a changed body.
  */
-class VerifierCavageTest extends TestCase
+final class VerifierCavageTest extends TestCase
 {
     private const int NOW = 1618884473;
 
@@ -353,14 +353,14 @@ class VerifierCavageTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function changedTargetProvider(): iterable
+    public static function changedTargets(): iterable
     {
         yield 'another query' => ['POST', '/foo?param=Value&Pet=cat'];
         yield 'another path' => ['POST', '/bar?param=Value&Pet=dog'];
         yield 'another method' => ['PUT', '/foo?param=Value&Pet=dog'];
     }
 
-    #[DataProvider('changedTargetProvider')]
+    #[DataProvider('changedTargets')]
     public function testAChangedRequestTargetIsSignatureInvalid(string $method, string $target): void
     {
         $signed = self::signed(self::request());

@@ -31,12 +31,15 @@ use const OPENSSL_KEYTYPE_ED448;
 use const OPENSSL_KEYTYPE_X25519;
 use const OPENSSL_PKCS1_PSS_PADDING;
 
-class KeyMaterialTest extends TestCase
+/**
+ * Loads keys, detects their types, and signs and verifies under each algorithm
+ */
+final class KeyMaterialTest extends TestCase
 {
     /**
      * @return iterable<string, array{string, KeyType}>
      */
-    public static function publicKeysProvider(): iterable
+    public static function publicKeys(): iterable
     {
         yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.public.pem', KeyType::Rsa];
         yield 'RSA in SubjectPublicKeyInfo form (B.1.2)' => ['test-key-rsa-pss.public.pem', KeyType::Rsa];
@@ -44,7 +47,7 @@ class KeyMaterialTest extends TestCase
         yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.public.pem', KeyType::Ed25519];
     }
 
-    #[DataProvider('publicKeysProvider')]
+    #[DataProvider('publicKeys')]
     public function testDetectsThePublicKeyType(string $file, KeyType $expected): void
     {
         $this->assertSame($expected, KeyMaterial::fromPublicPem(self::rfc9421Key($file))->type);
@@ -53,7 +56,7 @@ class KeyMaterialTest extends TestCase
     /**
      * @return iterable<string, array{string, KeyType}>
      */
-    public static function privateKeysProvider(): iterable
+    public static function privateKeys(): iterable
     {
         yield 'RSA in PKCS#1 form (B.1.1)' => ['test-key-rsa.private.pem', KeyType::Rsa];
         yield 'RSA in PKCS#8 form with the PSS identifier (B.1.2)' => ['test-key-rsa-pss.private.pem', KeyType::RsaPss];
@@ -61,7 +64,7 @@ class KeyMaterialTest extends TestCase
         yield 'Ed25519 (B.1.4)' => ['test-key-ed25519.private.pem', KeyType::Ed25519];
     }
 
-    #[DataProvider('privateKeysProvider')]
+    #[DataProvider('privateKeys')]
     public function testDetectsThePrivateKeyType(string $file, KeyType $expected): void
     {
         $this->assertSame($expected, KeyMaterial::fromPrivatePem(self::rfc9421Key($file), null)->type);

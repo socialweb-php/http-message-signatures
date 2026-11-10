@@ -35,7 +35,7 @@ use const OPENSSL_KEYTYPE_ED25519;
  * in, on requests and responses, with and without content, and proves the
  * negative cases
  */
-class RoundTripTest extends TestCase
+final class RoundTripTest extends TestCase
 {
     private const int NOW = 1618884473;
 
@@ -102,7 +102,7 @@ class RoundTripTest extends TestCase
     /**
      * @return iterable<string, array{Form, Algorithm, MessageInterface}>
      */
-    public static function casesProvider(): iterable
+    public static function roundTrips(): iterable
     {
         $messages = [
             'a request without content' => new Request('GET', 'https://example.com/foo?param=Value&Pet=dog', [
@@ -135,7 +135,7 @@ class RoundTripTest extends TestCase
         }
     }
 
-    #[DataProvider('casesProvider')]
+    #[DataProvider('roundTrips')]
     public function testWhatTheSignerProducesTheVerifierAccepts(
         Form $form,
         Algorithm $algorithm,

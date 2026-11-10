@@ -9,6 +9,7 @@ use Ergebnis\Clock\FrozenClock;
 use Nyholm\Psr7\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
+use RuntimeException;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Form;
@@ -23,6 +24,7 @@ use SocialWeb\Http\MessageSignatures\Verifier;
 use SocialWeb\Http\MessageSignatures\VerifierOptions;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
+use function file_get_contents;
 use function json_decode;
 use function preg_replace_callback;
 
@@ -39,7 +41,7 @@ use const JSON_THROW_ON_ERROR;
  * other signatures are Fedify's, under `resources/fedify/`, each recording its
  * source; see `resources/README.md`.
  */
-class ExamplesTest extends TestCase
+final class ExamplesTest extends TestCase
 {
     /**
      * The `Date` field of the appendix C request, Sun, 05 Jan 2014 21:31:40
@@ -73,6 +75,22 @@ class ExamplesTest extends TestCase
     }
 
     /**
+     * Returns the contents of a file copied for the draft form: the draft's
+     * key pair under `resources/cavage/`, or a Fedify request under
+     * `resources/fedify/`
+     */
+    private static function copiedFile(string $file): string
+    {
+        $contents = file_get_contents(__DIR__ . '/../../resources/' . $file);
+
+        if ($contents === false) {
+            throw new RuntimeException('Cannot read the copied file ' . $file);
+        }
+
+        return $contents;
+    }
+
+    /**
      * The request a Fedify fixture records, with its clock and key
      *
      * @return array{RequestInterface, int, string}
@@ -90,25 +108,25 @@ class ExamplesTest extends TestCase
          *     keyFile: string,
          * } $fixture
          */
-        $fixture = json_decode(self::cavageFixture('fedify/' . $name . '.json'), true, 4, JSON_THROW_ON_ERROR);
+        $fixture = json_decode(self::copiedFile('fedify/' . $name . '.json'), true, 4, JSON_THROW_ON_ERROR);
         $request = new Request($fixture['method'], $fixture['url'], [], $fixture['body']);
 
         foreach ($fixture['headers'] as [$field, $value]) {
             $request = $request->withHeader($field, $value);
         }
 
-        return [$request, $fixture['currentTime'], self::cavageFixture('fedify/' . $fixture['keyFile'])];
+        return [$request, $fixture['currentTime'], self::copiedFile('fedify/' . $fixture['keyFile'])];
     }
 
     /**
      * @return iterable<string, array{RequestInterface, int, string, VerifierOptions, list<string>}>
      */
-    public static function signaturesProvider(): iterable
+    public static function signatures(): iterable
     {
         // C.1 and C.2 cover neither the request target nor the digest, and
         // C.1 signs `date` alone.
         $appendixOptions = new VerifierOptions(requireTarget: false, requireContentDigest: false);
-        $appendixKey = self::cavageFixture('cavage/test-key.public.pem');
+        $appendixKey = self::copiedFile('cavage/test-key.public.pem');
 
         yield 'appendix C.1, the Signature field' => [
             self::appendixCRequest()->withHeader(
@@ -167,7 +185,7 @@ class ExamplesTest extends TestCase
     /**
      * @param list<string> $covered
      */
-    #[DataProvider('signaturesProvider')]
+    #[DataProvider('signatures')]
     public function testVerifies(
         RequestInterface $request,
         int $now,
@@ -187,7 +205,7 @@ class ExamplesTest extends TestCase
     /**
      * @param list<string> $covered
      */
-    #[DataProvider('signaturesProvider')]
+    #[DataProvider('signatures')]
     public function testChangingAnyCoveredComponentFails(
         RequestInterface $request,
         int $now,
@@ -231,7 +249,7 @@ class ExamplesTest extends TestCase
     public function testSignsTheStringsOfAppendixCToTheSameBytes(): void
     {
         $signer = new Signer(new FrozenClock(new DateTimeImmutable('@' . self::APPENDIX_C_NOW)));
-        $key = SigningKey::fromPem('Test', self::cavageFixture('cavage/test-key.private.pem'));
+        $key = SigningKey::fromPem('Test', self::copiedFile('cavage/test-key.private.pem'));
 
         $c1 = $signer->sign(
             self::appendixCRequest(),

@@ -14,7 +14,11 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 use function base64_decode;
 
-class FieldParserTest extends TestCase
+/**
+ * Reads the `Signature-Input` and `Signature` fields and refuses what is
+ * malformed
+ */
+final class FieldParserTest extends TestCase
 {
     private const string INPUT = 'sig1=("@method" "@authority" "@path" "content-digest" "content-type"'
         . ' "content-length");created=1618884475;keyid="test-key-ecc-p256", proxy_sig=("@method" "@authority" "@path"'
@@ -132,7 +136,7 @@ class FieldParserTest extends TestCase
     /**
      * @return iterable<string, array{string | null, string | null, string}>
      */
-    public static function malformedProvider(): iterable
+    public static function malformedFields(): iterable
     {
         yield 'no Signature field' => [
             'sig1=("@method");keyid="k"',
@@ -231,7 +235,7 @@ class FieldParserTest extends TestCase
         ];
     }
 
-    #[DataProvider('malformedProvider')]
+    #[DataProvider('malformedFields')]
     public function testAFieldThatDoesNotHaveTheShapeOfSection4IsMalformed(
         ?string $input,
         ?string $signature,

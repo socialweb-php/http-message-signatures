@@ -11,12 +11,15 @@ use function hex2bin;
 use function str_repeat;
 use function strlen;
 
-class EcdsaSignatureTest extends TestCase
+/**
+ * Converts ECDSA signatures between DER and the fixed-length form
+ */
+final class EcdsaSignatureTest extends TestCase
 {
     /**
      * @return iterable<string, array{string, string, int<1, max>}>
      */
-    public static function conversionsProvider(): iterable
+    public static function conversions(): iterable
     {
         // Two one-byte integers on a four-byte curve.
         yield 'short integers are left-padded' => [
@@ -57,7 +60,7 @@ class EcdsaSignatureTest extends TestCase
     /**
      * @param int<1, max> $integerLength
      */
-    #[DataProvider('conversionsProvider')]
+    #[DataProvider('conversions')]
     public function testConvertsBetweenDerAndRaw(string $derHex, string $rawHex, int $integerLength): void
     {
         $der = (string) hex2bin($derHex);
@@ -70,7 +73,7 @@ class EcdsaSignatureTest extends TestCase
     /**
      * @return iterable<string, array{string, int<1, max>}>
      */
-    public static function malformedDerProvider(): iterable
+    public static function malformedDerEncodings(): iterable
     {
         yield 'empty' => ['', 4];
         yield 'too short to hold two integers' => ['3004020101', 4];
@@ -93,7 +96,7 @@ class EcdsaSignatureTest extends TestCase
     /**
      * @param int<1, max> $integerLength
      */
-    #[DataProvider('malformedDerProvider')]
+    #[DataProvider('malformedDerEncodings')]
     public function testRefusesMalformedDer(string $derHex, int $integerLength): void
     {
         $this->assertNull(EcdsaSignature::derToRaw((string) hex2bin($derHex), $integerLength));

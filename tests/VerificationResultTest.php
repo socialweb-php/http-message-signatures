@@ -13,7 +13,10 @@ use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\VerificationResult;
 
-class VerificationResultTest extends TestCase
+/**
+ * Checks what a verification result holds and the combinations it refuses
+ */
+final class VerificationResultTest extends TestCase
 {
     public function testASuccessHasWhatAReplayStoreNeeds(): void
     {
@@ -100,7 +103,7 @@ class VerificationResultTest extends TestCase
     /**
      * @return iterable<string, array{Closure(): VerificationResult, string}>
      */
-    public static function inconsistentResultsProvider(): iterable
+    public static function inconsistentResults(): iterable
     {
         yield 'verified with a reason' => [
             static fn (): VerificationResult => new VerificationResult(
@@ -136,7 +139,8 @@ class VerificationResultTest extends TestCase
             static fn (): VerificationResult => new VerificationResult(
                 verified: true,
                 form: Form::Rfc9421,
-                keyOwner: '', /* @phpstan-ignore argument.type */
+                // @phpstan-ignore argument.type (the constructor must refuse the empty owner its type forbids)
+                keyOwner: '',
             ),
             'The key owner must not be empty',
         ];
@@ -161,7 +165,7 @@ class VerificationResultTest extends TestCase
     /**
      * @param Closure(): VerificationResult $build
      */
-    #[DataProvider('inconsistentResultsProvider')]
+    #[DataProvider('inconsistentResults')]
     public function testRejectsAnInconsistentResult(Closure $build, string $message): void
     {
         $this->expectException(InvalidArgument::class);

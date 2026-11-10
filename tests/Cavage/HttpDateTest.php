@@ -9,12 +9,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Cavage\HttpDate;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class HttpDateTest extends TestCase
+/**
+ * Reads the three formats of an HTTP date and refuses anything else
+ */
+final class HttpDateTest extends TestCase
 {
     /**
      * @return iterable<string, array{string, string, string}>
      */
-    public static function datesProvider(): iterable
+    public static function dates(): iterable
     {
         // The three examples of RFC 9110 section 5.6.7.
         yield 'an IMF-fixdate' => ['Sun, 06 Nov 1994 08:49:37 GMT', '2026-10-16', '1994-11-06T08:49:37+00:00'];
@@ -63,7 +66,7 @@ class HttpDateTest extends TestCase
         ];
     }
 
-    #[DataProvider('datesProvider')]
+    #[DataProvider('dates')]
     public function testReadsAnHttpDate(string $value, string $now, string $expected): void
     {
         $this->assertSame($expected, HttpDate::parse($value, new DateTimeImmutable($now))?->format('c'));
@@ -72,7 +75,7 @@ class HttpDateTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function rejectedProvider(): iterable
+    public static function rejectedDates(): iterable
     {
         yield 'not a date' => ['wrong date'];
         yield 'the year 0' => ['Sun, 06 Nov 0000 08:49:37 GMT'];
@@ -88,7 +91,7 @@ class HttpDateTest extends TestCase
         yield 'two dates joined' => ['Sun, 06 Nov 1994 08:49:37 GMT, Sun, 06 Nov 1994 08:49:38 GMT'];
     }
 
-    #[DataProvider('rejectedProvider')]
+    #[DataProvider('rejectedDates')]
     public function testRefusesWhatIsNotAnHttpDate(string $value): void
     {
         $this->assertNull(HttpDate::parse($value, new DateTimeImmutable('2026-10-16')));

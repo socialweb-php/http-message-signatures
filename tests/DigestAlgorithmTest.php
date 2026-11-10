@@ -10,7 +10,10 @@ use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use function hash;
 use function strlen;
 
-class DigestAlgorithmTest extends TestCase
+/**
+ * Checks the keys, the tokens, and the hash names of the digest algorithms
+ */
+final class DigestAlgorithmTest extends TestCase
 {
     public function testUsesTheRfc9530AlgorithmKeysAsValues(): void
     {
@@ -22,13 +25,13 @@ class DigestAlgorithmTest extends TestCase
     /**
      * @return iterable<string, array{DigestAlgorithm, string, int, string}>
      */
-    public static function algorithmsProvider(): iterable
+    public static function algorithms(): iterable
     {
         yield 'SHA-256' => [DigestAlgorithm::Sha256, 'sha256', 32, 'SHA-256'];
         yield 'SHA-512' => [DigestAlgorithm::Sha512, 'sha512', 64, 'SHA-512'];
     }
 
-    #[DataProvider('algorithmsProvider')]
+    #[DataProvider('algorithms')]
     public function testDescribesTheHash(DigestAlgorithm $algorithm, string $hashName, int $length, string $token): void
     {
         $this->assertSame($hashName, $algorithm->hashName());
@@ -40,7 +43,7 @@ class DigestAlgorithmTest extends TestCase
     /**
      * @return iterable<string, array{string, DigestAlgorithm | null}>
      */
-    public static function tokensProvider(): iterable
+    public static function tokens(): iterable
     {
         yield 'RFC 5843 spelling' => ['SHA-256', DigestAlgorithm::Sha256];
         yield 'lowercase' => ['sha-512', DigestAlgorithm::Sha512];
@@ -52,7 +55,7 @@ class DigestAlgorithmTest extends TestCase
         yield 'empty' => ['', null];
     }
 
-    #[DataProvider('tokensProvider')]
+    #[DataProvider('tokens')]
     public function testReadsTheRfc3230TokenCaseInsensitively(string $token, ?DigestAlgorithm $expected): void
     {
         $this->assertSame($expected, DigestAlgorithm::tryFromRfc3230Token($token));

@@ -19,7 +19,11 @@ use function serialize;
 use function str_contains;
 use function strlen;
 
-class SigningKeyTest extends TestCase
+/**
+ * Builds signing keys, signs with them, and keeps their material out of traces
+ * and dumps
+ */
+final class SigningKeyTest extends TestCase
 {
     public function testBuildsFromAPemWithTheDefaultAlgorithms(): void
     {

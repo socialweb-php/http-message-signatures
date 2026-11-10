@@ -8,7 +8,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Component\QueryParameters;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class QueryParametersTest extends TestCase
+/**
+ * Parses and encodes query parameters as RFC 9421 section 2.2.8 asks
+ */
+final class QueryParametersTest extends TestCase
 {
     public function testParsesTheRfc9421Section228Examples(): void
     {
@@ -32,7 +35,7 @@ class QueryParametersTest extends TestCase
     /**
      * @return iterable<string, array{string, list<array{string, string}>}>
      */
-    public static function queriesProvider(): iterable
+    public static function queries(): iterable
     {
         yield 'empty' => ['', []];
         yield 'empty sequences are skipped' => ['&a=1&&b=2&', [['a', '1'], ['b', '2']]];
@@ -48,7 +51,7 @@ class QueryParametersTest extends TestCase
     /**
      * @param list<array{string, string}> $expected
      */
-    #[DataProvider('queriesProvider')]
+    #[DataProvider('queries')]
     public function testParsesAQueryString(string $query, array $expected): void
     {
         $this->assertSame($expected, QueryParameters::parse($query));
@@ -57,7 +60,7 @@ class QueryParametersTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function encodingsProvider(): iterable
+    public static function encodings(): iterable
     {
         yield 'unreserved characters stay' => ['AZaz09*-._', 'AZaz09*-._'];
         yield 'a space is %20, not a plus' => ['a b', 'a%20b'];
@@ -69,7 +72,7 @@ class QueryParametersTest extends TestCase
         yield 'a percent sign is encoded' => ['100%', '100%25'];
     }
 
-    #[DataProvider('encodingsProvider')]
+    #[DataProvider('encodings')]
     public function testEncodesWithTheFormUrlencodedSet(string $decoded, string $expected): void
     {
         $this->assertSame($expected, QueryParameters::encode($decoded));

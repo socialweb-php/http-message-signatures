@@ -23,7 +23,10 @@ use function substr;
 
 use const SEEK_SET;
 
-class ContentTest extends TestCase
+/**
+ * Hashes a message body in chunks and leaves the stream where it started
+ */
+final class ContentTest extends TestCase
 {
     public function testRejectsABodyThatCannotBeRewound(): void
     {

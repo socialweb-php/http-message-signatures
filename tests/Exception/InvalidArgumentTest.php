@@ -10,7 +10,10 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class InvalidArgumentTest extends TestCase
+/**
+ * Checks the exception raised for a mistake in the calling code
+ */
+final class InvalidArgumentTest extends TestCase
 {
     public function testCanBeCaughtAsAMessageSignaturesException(): void
     {

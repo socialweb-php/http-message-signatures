@@ -9,7 +9,11 @@ use SocialWeb\Http\MessageSignatures\Cavage\ParsedSignature;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class ParsedSignatureTest extends TestCase
+/**
+ * Checks what a parsed draft signature reports about its algorithm, its times,
+ * and its covered names
+ */
+final class ParsedSignatureTest extends TestCase
 {
     private static function signature(?string $algorithm, ?string $created, ?string $expires): ParsedSignature
     {
@@ -29,7 +33,7 @@ class ParsedSignatureTest extends TestCase
     /**
      * @return iterable<string, array{string | null, bool}>
      */
-    public static function algorithmsProvider(): iterable
+    public static function algorithms(): iterable
     {
         yield 'absent' => [null, true];
         yield 'hs2019' => ['hs2019', true];
@@ -37,7 +41,7 @@ class ParsedSignatureTest extends TestCase
         yield 'rsa-sha256' => ['rsa-sha256', false];
     }
 
-    #[DataProvider('algorithmsProvider')]
+    #[DataProvider('algorithms')]
     public function testTheKeyDecidesUnderHs2019OrNoAlgorithm(?string $algorithm, bool $keyDecides): void
     {
         $this->assertSame($keyDecides, self::signature($algorithm, null, null)->keyDecidesAlgorithm());

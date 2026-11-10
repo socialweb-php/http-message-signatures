@@ -22,7 +22,10 @@ use function substr;
 
 use const OPENSSL_KEYTYPE_RSA;
 
-class RsaPssKeyTest extends TestCase
+/**
+ * Rewraps an RSASSA-PSS key as PKCS#1 and leaves every other key alone
+ */
+final class RsaPssKeyTest extends TestCase
 {
     public function testRewrapsThePssPrivateKeyOfAppendixB12AsPkcs1(): void
     {
@@ -79,7 +82,7 @@ class RsaPssKeyTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function otherKeysProvider(): iterable
+    public static function otherKeys(): iterable
     {
         yield 'a PKCS#1 RSA private key' => [self::rfc9421Key('test-key-rsa.private.pem')];
         yield 'a PKCS#1 RSA public key' => [self::rfc9421Key('test-key-rsa.public.pem')];
@@ -92,7 +95,7 @@ class RsaPssKeyTest extends TestCase
         yield 'a PEM that is not Base64' => ["-----BEGIN PRIVATE KEY-----\n!!!!\n-----END PRIVATE KEY-----\n"];
     }
 
-    #[DataProvider('otherKeysProvider')]
+    #[DataProvider('otherKeys')]
     public function testLeavesEveryOtherKeyAlone(string $pem): void
     {
         $this->assertNull(RsaPssKey::toPkcs1Pem($pem));
@@ -101,7 +104,7 @@ class RsaPssKeyTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function malformedDerProvider(): iterable
+    public static function malformedDerEncodings(): iterable
     {
         $oid = '06092a864886f70d01010a';
 
@@ -136,7 +139,7 @@ class RsaPssKeyTest extends TestCase
         yield 'public: bit string with unused bits' => ['PUBLIC KEY', '30' . '11' . '300b' . $oid . '030201ff'];
     }
 
-    #[DataProvider('malformedDerProvider')]
+    #[DataProvider('malformedDerEncodings')]
     public function testRefusesMalformedDer(string $label, string $derHex): void
     {
         $pem = "-----BEGIN $label-----\n" . chunk_split(base64_encode((string) hex2bin($derHex)), 64, "\n")
@@ -148,7 +151,7 @@ class RsaPssKeyTest extends TestCase
     /**
      * @return iterable<string, array{string, string, string}>
      */
-    public static function wellFormedDerProvider(): iterable
+    public static function wellFormedDerEncodings(): iterable
     {
         $oid = '06092a864886f70d01010a';
 
@@ -185,7 +188,7 @@ class RsaPssKeyTest extends TestCase
         ];
     }
 
-    #[DataProvider('wellFormedDerProvider')]
+    #[DataProvider('wellFormedDerEncodings')]
     public function testReadsTheMaterialOutOfTheWrapper(string $label, string $derHex, string $materialHex): void
     {
         $pem = "-----BEGIN $label-----\n" . chunk_split(base64_encode((string) hex2bin($derHex)), 64, "\n")

@@ -23,7 +23,7 @@ use function substr;
  * every run, so for them the appendix's signature verifies and a fresh
  * signature verifies, which is the test section 7.3.5 allows.
  */
-class Rfc9421AppendixBTest extends TestCase
+final class Rfc9421AppendixBTest extends TestCase
 {
     private const string CONTENT_DIGEST = 'sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu'
         . '7BNNyealdVLvRwEmTHWXvJwew==:';
@@ -31,7 +31,7 @@ class Rfc9421AppendixBTest extends TestCase
     /**
      * @return iterable<string, array{Algorithm, string, string, string, string}>
      */
-    public static function examplesProvider(): iterable
+    public static function examples(): iterable
     {
         yield 'B.2.1 minimal signature using rsa-pss-sha512' => [
             Algorithm::RsaPssSha512,
@@ -120,7 +120,7 @@ class Rfc9421AppendixBTest extends TestCase
         ];
     }
 
-    #[DataProvider('examplesProvider')]
+    #[DataProvider('examples')]
     public function testTheExampleSignatureVerifies(
         Algorithm $algorithm,
         string $keyName,
@@ -138,7 +138,7 @@ class Rfc9421AppendixBTest extends TestCase
         $this->assertFalse($key->verify($algorithm, $signatureBase, "\x00" . substr($signature, 1)));
     }
 
-    #[DataProvider('examplesProvider')]
+    #[DataProvider('examples')]
     public function testAFreshSignatureVerifies(
         Algorithm $algorithm,
         string $keyName,

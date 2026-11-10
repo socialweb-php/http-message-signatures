@@ -16,7 +16,11 @@ use SocialWeb\Test\Http\MessageSignatures\TestCase;
 use function base64_decode;
 use function strtolower;
 
-class FieldParserTest extends TestCase
+/**
+ * Reads the draft form's `Signature` and `Authorization` fields and refuses
+ * what is malformed
+ */
+final class FieldParserTest extends TestCase
 {
     /**
      * The signature of draft-cavage-http-signatures-12 appendix C.2
@@ -113,7 +117,7 @@ class FieldParserTest extends TestCase
     /**
      * @return iterable<string, array{string, list<string>}>
      */
-    public static function defaultHeadersProvider(): iterable
+    public static function defaultHeaders(): iterable
     {
         yield 'no algorithm' => ['', ['(created)']];
         yield 'hs2019' => [',algorithm="hs2019"', ['(created)']];
@@ -125,7 +129,7 @@ class FieldParserTest extends TestCase
     /**
      * @param list<string> $names
      */
-    #[DataProvider('defaultHeadersProvider')]
+    #[DataProvider('defaultHeaders')]
     public function testTheDefaultHeadersDependOnTheAlgorithm(string $algorithm, array $names): void
     {
         $parsed = FieldParser::parse(self::context([
@@ -138,7 +142,7 @@ class FieldParserTest extends TestCase
     /**
      * @return iterable<string, array{string, FailureReason, string}>
      */
-    public static function rejectedProvider(): iterable
+    public static function rejectedFields(): iterable
     {
         yield 'parameters with no comma between them' => [
             'keyId="a" signature="c2lnbmF0dXJl"',
@@ -242,7 +246,7 @@ class FieldParserTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedProvider')]
+    #[DataProvider('rejectedFields')]
     public function testRejectsASignatureFieldItCannotParse(string $value, FailureReason $reason, string $detail): void
     {
         $this->assertFailure(self::context(['Signature' => $value]), $reason, $detail);
@@ -251,7 +255,7 @@ class FieldParserTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function otherSchemesProvider(): iterable
+    public static function otherSchemes(): iterable
     {
         yield 'another scheme' => ['Bearer abc'];
         yield 'the Signature scheme after another' => ['Bearer Signature keyId="a",signature="c2lnbmF0dXJl"'];
@@ -266,7 +270,7 @@ class FieldParserTest extends TestCase
         );
     }
 
-    #[DataProvider('otherSchemesProvider')]
+    #[DataProvider('otherSchemes')]
     public function testRejectsAnAuthorizationFieldWithAnotherScheme(string $value): void
     {
         $this->assertFailure(

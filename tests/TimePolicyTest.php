@@ -14,7 +14,10 @@ use SocialWeb\Http\MessageSignatures\TimePolicy;
 
 use function sprintf;
 
-class TimePolicyTest extends TestCase
+/**
+ * Applies the time policy to the creation and expiry times of a signature
+ */
+final class TimePolicyTest extends TestCase
 {
     public function testHasTheDocumentedDefaults(): void
     {
@@ -43,7 +46,7 @@ class TimePolicyTest extends TestCase
     /**
      * @return iterable<string, array{string, DateInterval}>
      */
-    public static function negativeIntervalsProvider(): iterable
+    public static function negativeIntervals(): iterable
     {
         $inverted = new DateInterval('PT5M');
         $inverted->invert = 1;
@@ -53,7 +56,7 @@ class TimePolicyTest extends TestCase
         yield 'a negative maximum lifetime' => ['maximumLifetime', DateInterval::createFromDateString('-1 day')];
     }
 
-    #[DataProvider('negativeIntervalsProvider')]
+    #[DataProvider('negativeIntervals')]
     public function testRejectsANegativeInterval(string $name, DateInterval $interval): void
     {
         $this->expectException(InvalidArgument::class);
@@ -69,7 +72,7 @@ class TimePolicyTest extends TestCase
      *
      * @return iterable<string, array{int, int | null, FailureReason | null}>
      */
-    public static function evaluationsProvider(): iterable
+    public static function evaluations(): iterable
     {
         yield 'created now' => [0, null, null];
         yield 'created in the future within the skew' => [-60, null, null];
@@ -86,7 +89,7 @@ class TimePolicyTest extends TestCase
         yield 'an explicit expiry before the creation time, past it and the skew' => [60, -1, FailureReason::Expired];
     }
 
-    #[DataProvider('evaluationsProvider')]
+    #[DataProvider('evaluations')]
     public function testEvaluatesAtEachBoundary(int $nowOffset, ?int $expiresOffset, ?FailureReason $expected): void
     {
         $policy = new TimePolicy(
@@ -107,7 +110,7 @@ class TimePolicyTest extends TestCase
      *
      * @return iterable<string, array{int, int | null, FailureReason | null}>
      */
-    public static function evaluationsWithoutACreationTimeProvider(): iterable
+    public static function evaluationsWithoutACreationTime(): iterable
     {
         yield 'no expiry either' => [0, null, null];
         yield 'far in the future with no expiry' => [-864000, null, null];
@@ -117,7 +120,7 @@ class TimePolicyTest extends TestCase
         yield 'an expiry beyond the maximum lifetime is not clamped' => [3600, 7200, null];
     }
 
-    #[DataProvider('evaluationsWithoutACreationTimeProvider')]
+    #[DataProvider('evaluationsWithoutACreationTime')]
     public function testEvaluatesExpiresAloneWithoutACreationTime(
         int $nowOffset,
         ?int $expiresOffset,

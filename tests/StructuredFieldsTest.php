@@ -19,7 +19,10 @@ use function error_get_last;
 use function restore_error_handler;
 use function set_error_handler;
 
-class StructuredFieldsTest extends TestCase
+/**
+ * Parses and serializes Structured Fields in the edition of RFC 8941
+ */
+final class StructuredFieldsTest extends TestCase
 {
     public function testParsesADictionaryInRfc8941Mode(): void
     {
@@ -38,7 +41,7 @@ class StructuredFieldsTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function malformedProvider(): iterable
+    public static function malformedDictionaries(): iterable
     {
         yield 'an empty member value' => ['a='];
         yield 'an empty parameter value' => ['a=1;b='];
@@ -47,7 +50,7 @@ class StructuredFieldsTest extends TestCase
         yield 'an unterminated string' => ['a="x'];
     }
 
-    #[DataProvider('malformedProvider')]
+    #[DataProvider('malformedDictionaries')]
     public function testThrowsSyntaxErrorWithoutAPhpWarning(string $value): void
     {
         $warnings = [];
@@ -89,7 +92,7 @@ class StructuredFieldsTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
-    public static function malformedParametersProvider(): iterable
+    public static function malformedParameters(): iterable
     {
         yield 'an empty parameter value' => [';b='];
         yield 'an uppercase key' => [';B=1'];
@@ -97,7 +100,7 @@ class StructuredFieldsTest extends TestCase
         yield 'an unterminated string' => [';a="x'];
     }
 
-    #[DataProvider('malformedParametersProvider')]
+    #[DataProvider('malformedParameters')]
     public function testParametersThrowSyntaxErrorWithoutAPhpWarning(string $value): void
     {
         $warnings = [];

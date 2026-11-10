@@ -14,12 +14,16 @@ use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class ComponentIdentifierTest extends TestCase
+/**
+ * Reads component identifiers as the options, the draft's `headers` parameter,
+ * and `Signature-Input` write them
+ */
+final class ComponentIdentifierTest extends TestCase
 {
     /**
      * @return iterable<string, array{string, string, string, string}>
      */
-    public static function identifiersProvider(): iterable
+    public static function identifiers(): iterable
     {
         yield 'a derived component' => ['@method', '@method', '"@method"', '@method'];
         yield 'a field' => ['content-digest', 'content-digest', '"content-digest"', 'content-digest'];
@@ -40,7 +44,7 @@ class ComponentIdentifierTest extends TestCase
         yield 'a flag written out' => ['@status;req=?1', '@status', '"@status";req', '@status;req'];
     }
 
-    #[DataProvider('identifiersProvider')]
+    #[DataProvider('identifiers')]
     public function testParsesTheOptionsForm(string $given, string $name, string $serialized, string $string): void
     {
         $identifier = ComponentIdentifier::parse($given);
@@ -51,7 +55,7 @@ class ComponentIdentifierTest extends TestCase
         $this->assertSame($serialized, $identifier->toItem()->toHttpValue());
     }
 
-    #[DataProvider('identifiersProvider')]
+    #[DataProvider('identifiers')]
     public function testBuildsFromAParsedItem(string $given, string $name, string $serialized, string $string): void
     {
         $item = InnerList::fromHttpValue('(' . $serialized . ')')->getByIndex(0);
@@ -66,7 +70,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function rejectedProvider(): iterable
+    public static function rejectedIdentifiers(): iterable
     {
         yield 'empty' => ['', 'A component identifier must not be empty'];
         yield 'only parameters' => [';req', 'A component identifier must not be empty'];
@@ -85,7 +89,7 @@ class ComponentIdentifierTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedProvider')]
+    #[DataProvider('rejectedIdentifiers')]
     public function testRejectsWhatIsNotAnIdentifier(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
@@ -108,7 +112,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{Item, string}>
      */
-    public static function rejectedItemsProvider(): iterable
+    public static function rejectedItems(): iterable
     {
         yield 'a Token' => [
             InnerList::fromHttpValue('(method)')->getByIndex(0),
@@ -129,7 +133,7 @@ class ComponentIdentifierTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedItemsProvider')]
+    #[DataProvider('rejectedItems')]
     public function testRejectsAnItemThatIsNotAnIdentifier(Item $item, string $detail): void
     {
         try {
@@ -172,7 +176,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, string, bool}>
      */
-    public static function cavageNamesProvider(): iterable
+    public static function cavageNames(): iterable
     {
         yield 'the request target' => ['(request-target)', '(request-target)', true];
         yield 'the creation time in another case' => ['(Created)', '(created)', true];
@@ -180,7 +184,7 @@ class ComponentIdentifierTest extends TestCase
         yield 'a field in another case' => ['Content-Type', 'content-type', false];
     }
 
-    #[DataProvider('cavageNamesProvider')]
+    #[DataProvider('cavageNames')]
     public function testParsesADraftName(string $given, string $name, bool $isPseudoHeader): void
     {
         $identifier = ComponentIdentifier::parseCavage($given);
@@ -195,7 +199,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function rejectedCavageNamesProvider(): iterable
+    public static function rejectedCavageNames(): iterable
     {
         yield 'empty' => ['', 'A component identifier must not be empty'];
         yield 'a derived component' => ['@method', '"@method" is not a component name of the draft form'];
@@ -210,7 +214,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function eitherFormProvider(): iterable
+    public static function identifiersInEitherForm(): iterable
     {
         yield 'a draft name in another case' => ['(Request-Target)', '(request-target)'];
         yield 'a derived component' => ['@method', '@method'];
@@ -218,7 +222,7 @@ class ComponentIdentifierTest extends TestCase
         yield 'a field in another case' => ['Host', 'host'];
     }
 
-    #[DataProvider('eitherFormProvider')]
+    #[DataProvider('identifiersInEitherForm')]
     public function testParsesAnIdentifierInTheFormItIsWrittenIn(string $given, string $serialized): void
     {
         $this->assertSame($serialized, ComponentIdentifier::parseInEitherForm($given)->toString());
@@ -227,7 +231,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, string}>
      */
-    public static function rejectedEitherFormProvider(): iterable
+    public static function rejectedIdentifiersInEitherForm(): iterable
     {
         yield 'a name in parentheses the draft does not define' => [
             '(foo)',
@@ -240,7 +244,7 @@ class ComponentIdentifierTest extends TestCase
         yield 'a name that is neither' => ['content type', '"content type" is not a component name'];
     }
 
-    #[DataProvider('rejectedEitherFormProvider')]
+    #[DataProvider('rejectedIdentifiersInEitherForm')]
     public function testRejectsAnIdentifierThatDoesNotParseInItsForm(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
@@ -249,7 +253,7 @@ class ComponentIdentifierTest extends TestCase
         ComponentIdentifier::parseInEitherForm($given);
     }
 
-    #[DataProvider('rejectedCavageNamesProvider')]
+    #[DataProvider('rejectedCavageNames')]
     public function testRejectsWhatIsNotADraftName(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
@@ -271,7 +275,7 @@ class ComponentIdentifierTest extends TestCase
     /**
      * @return iterable<string, array{string, FailureReason, string}>
      */
-    public static function rejectedHeadersNamesProvider(): iterable
+    public static function rejectedHeadersNames(): iterable
     {
         yield 'a name in parentheses the draft does not define' => [
             '(foo)',
@@ -288,7 +292,7 @@ class ComponentIdentifierTest extends TestCase
         yield 'an empty name' => ['', FailureReason::MalformedSignature, '"" is not a field name'];
     }
 
-    #[DataProvider('rejectedHeadersNamesProvider')]
+    #[DataProvider('rejectedHeadersNames')]
     public function testRejectsANameOfTheHeadersParameterItCannotUse(
         string $name,
         FailureReason $reason,

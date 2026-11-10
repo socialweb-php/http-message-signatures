@@ -8,7 +8,11 @@ use RuntimeException;
 use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 
-class FailureTest extends TestCase
+/**
+ * Checks the exception raised inside the package when a message cannot be
+ * verified
+ */
+final class FailureTest extends TestCase
 {
     public function testHoldsTheReasonAndTheDetail(): void
     {

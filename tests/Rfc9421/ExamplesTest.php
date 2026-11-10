@@ -37,7 +37,7 @@ use function trim;
  * are off here, and the clock is set a few seconds after the signatures were
  * created.
  */
-class ExamplesTest extends TestCase
+final class ExamplesTest extends TestCase
 {
     private const string REQUEST_DIGEST = 'sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNy'
         . 'ealdVLvRwEmTHWXvJwew==:';
@@ -163,7 +163,7 @@ class ExamplesTest extends TestCase
     /**
      * @return iterable<string, array{MessageInterface, string, string, string, Algorithm}>
      */
-    public static function appendixB2Provider(): iterable
+    public static function appendixB2Signatures(): iterable
     {
         yield 'B.2.1 minimal signature using rsa-pss-sha512' => [
             self::testRequest(),
@@ -233,7 +233,7 @@ class ExamplesTest extends TestCase
         ];
     }
 
-    #[DataProvider('appendixB2Provider')]
+    #[DataProvider('appendixB2Signatures')]
     public function testTheExampleMessageVerifies(
         MessageInterface $message,
         string $label,
@@ -256,7 +256,7 @@ class ExamplesTest extends TestCase
         $this->assertFalse($result->keyRefreshed);
     }
 
-    #[DataProvider('appendixB2Provider')]
+    #[DataProvider('appendixB2Signatures')]
     public function testTheExampleMessageFailsWithAChangedSignature(
         MessageInterface $message,
         string $label,
@@ -431,7 +431,7 @@ class ExamplesTest extends TestCase
     /**
      * @return iterable<string, array{Request, bool}>
      */
-    public static function appendixB4Provider(): iterable
+    public static function appendixB4Requests(): iterable
     {
         $original = self::appendixB4Request();
 
@@ -472,7 +472,7 @@ class ExamplesTest extends TestCase
         ];
     }
 
-    #[DataProvider('appendixB4Provider')]
+    #[DataProvider('appendixB4Requests')]
     public function testTheSignatureSurvivesTheTransformationsOfAppendixB4(Request $request, bool $expected): void
     {
         $result = self::verifier()->verify($request);

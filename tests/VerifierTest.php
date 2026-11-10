@@ -45,7 +45,7 @@ use const OPENSSL_KEYTYPE_EC;
  * `Rfc9421\ExamplesTest` proves the verifier against the RFC's own
  * signatures.
  */
-class VerifierTest extends TestCase
+final class VerifierTest extends TestCase
 {
     private const int NOW = 1618884473;
 
@@ -251,7 +251,7 @@ class VerifierTest extends TestCase
     /**
      * @return iterable<string, array{Request}>
      */
-    public static function draftFormProvider(): iterable
+    public static function draftFormRequests(): iterable
     {
         yield 'a Signature field' => [self::request()->withHeader('Signature', 'keyId="k",signature="AQ=="')];
         yield 'an Authorization field with the Signature scheme' => [
@@ -262,7 +262,7 @@ class VerifierTest extends TestCase
         ];
     }
 
-    #[DataProvider('draftFormProvider')]
+    #[DataProvider('draftFormRequests')]
     public function testTheDraftFormIsDetected(Request $request): void
     {
         $result = self::verify($request);
@@ -338,7 +338,7 @@ class VerifierTest extends TestCase
     /**
      * @return iterable<string, array{list<string>, bool}>
      */
-    public static function targetRuleProvider(): iterable
+    public static function targetRuleCases(): iterable
     {
         yield '@method with @target-uri' => [['@method', '@target-uri'], true];
         yield '@method with @authority and @path' => [['@method', '@authority', '@path'], true];
@@ -352,7 +352,7 @@ class VerifierTest extends TestCase
     /**
      * @param list<string> $covered
      */
-    #[DataProvider('targetRuleProvider')]
+    #[DataProvider('targetRuleCases')]
     public function testTheTargetRuleForARequest(array $covered, bool $satisfied): void
     {
         $result = self::verify(self::signed(self::request(), $covered));

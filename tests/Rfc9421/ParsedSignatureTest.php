@@ -9,7 +9,10 @@ use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Rfc9421\ParsedSignature;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
-class ParsedSignatureTest extends TestCase
+/**
+ * Checks how a parsed RFC 9421 signature names its covered components
+ */
+final class ParsedSignatureTest extends TestCase
 {
     public function testNamesItsCoveredComponentsAsTheOptionsWriteThem(): void
     {
