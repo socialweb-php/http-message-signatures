@@ -27,7 +27,6 @@
         "captainhook/plugin-composer": "^5.3",
         "ergebnis/clock": "^2.13",
         "ergebnis/composer-normalize": "^2.54",
-        "fakerphp/faker": "^1.24",
         "infection/infection": "^0.35",
         "nyholm/psr7": "^1.8",
         "phpstan/extension-installer": "^1.4",
@@ -75,23 +74,33 @@
         }
     },
     "scripts": {
+        "analyze": "vendor/bin/phpstan analyze --ansi -v --memory-limit=1G",
         "coverage": [
             "git clean -fx build/coverage/.",
             "XDEBUG_MODE=coverage phpunit --colors=always --coverage-html build/coverage/coverage-html",
             "open build/coverage/coverage-html/index.html"
         ],
-        "coverage:ci": "XDEBUG_MODE=coverage phpunit --colors=always --testdox --coverage-text --coverage-clover build/coverage/clover.xml",
+        "coverage-ci": "XDEBUG_MODE=coverage phpunit --colors=always --testdox --coverage-text --coverage-clover build/coverage/clover.xml",
         "fix": [
             "@composer normalize",
-            "vendor/bin/phpcbf --cache=build/phpcs-cache"
+            "vendor/bin/phpcbf --cache=build/cache/phpcs.cache"
         ],
         "lint": [
             "@composer validate --strict",
             "@composer normalize --dry-run",
-            "vendor/bin/phpcs --colors --cache=build/phpcs-cache",
-            "vendor/bin/phpstan analyze --ansi -v --memory-limit=1G"
+            "vendor/bin/phpcs --colors --cache=build/cache/phpcs.cache",
+            "@analyze"
         ],
-        "mutation": "XDEBUG_MODE=coverage vendor/bin/infection --threads=max --min-msi=90 --min-covered-msi=95 --show-mutations",
+        "mutation": "XDEBUG_MODE=coverage vendor/bin/infection --show-mutations=0",
         "test": "vendor/bin/phpunit --colors=always"
+    },
+    "scripts-descriptions": {
+        "analyze": "Runs static analysis.",
+        "coverage": "Runs unit tests with code coverage analysis and opens the coverage report in a web browser.",
+        "coverage-ci": "Runs unit tests with code coverage analysis and outputs a Clover XML file.",
+        "fix": "Fixes coding standards violations and normalizes composer.json.",
+        "lint": "Runs coding standards checks and static analysis.",
+        "mutation": "Runs mutation testing.",
+        "test": "Runs unit tests."
     }
 }

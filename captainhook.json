@@ -17,6 +17,9 @@
         "enabled": true,
         "actions": [
             {
+                "action": "composer lint"
+            },
+            {
                 "action": "composer test"
             }
         ]
