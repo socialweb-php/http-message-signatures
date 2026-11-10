@@ -321,7 +321,7 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->verified);
         $this->assertSame(FailureReason::MalformedSignature, $result->reason);
         $this->assertSame(
-            'the value of authorization holds a line break, which a component value cannot',
+            'the value of "authorization" holds a line break, which a component value cannot',
             $result->detail,
         );
         $this->assertSame(Form::Cavage, $result->form);
@@ -649,7 +649,7 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->verified);
         $this->assertSame(FailureReason::MissingComponent, $result->reason);
         $this->assertSame(
-            'the value of content-digest holds a line break, which a component value cannot',
+            'the value of "content-digest" holds a line break, which a component value cannot',
             $result->detail,
         );
         $this->assertSame('sig1', $result->label);
@@ -666,7 +666,7 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->verified);
         $this->assertSame(FailureReason::MissingComponent, $result->reason);
         $this->assertSame(
-            'the value of signature-input holds a line break, which a component value cannot',
+            'the value of "signature-input" holds a line break, which a component value cannot',
             $result->detail,
         );
         $this->assertSame(Form::Rfc9421, $result->form);

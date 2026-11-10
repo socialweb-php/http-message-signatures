@@ -189,7 +189,7 @@ final class DigestField
             $value = $member instanceof Item ? $member->value() : null;
 
             if (!$value instanceof Bytes) {
-                return sprintf('the %s member of %s is not a Byte Sequence', $key, self::CONTENT_DIGEST);
+                return sprintf('the "%s" member of %s is not a Byte Sequence', $key, self::CONTENT_DIGEST);
             }
 
             $claims[] = [$algorithm, $value->decoded()];
@@ -230,11 +230,11 @@ final class DigestField
             $bytes = base64_decode($parts[1], true);
 
             if ($bytes === false) {
-                return sprintf('the %s value in %s is not valid Base64', $parts[0], self::DIGEST);
+                return sprintf('the "%s" value in %s is not valid Base64', $parts[0], self::DIGEST);
             }
 
             if (strlen($bytes) !== $algorithm->digestLength()) {
-                return sprintf('the %s value in %s has the wrong length', $parts[0], self::DIGEST);
+                return sprintf('the "%s" value in %s has the wrong length', $parts[0], self::DIGEST);
             }
 
             $claims[] = [$algorithm, $bytes];
@@ -248,6 +248,10 @@ final class DigestField
      */
     private static function noKnownAlgorithm(string $fieldName, array $offered): string
     {
-        return sprintf('%s names no algorithm the package knows; it offered: %s', $fieldName, implode(', ', $offered));
+        return sprintf(
+            '%s names no algorithm the package knows; it offered: %s',
+            $fieldName,
+            implode(', ', array_map(static fn (string $name): string => sprintf('"%s"', $name), $offered)),
+        );
     }
 }

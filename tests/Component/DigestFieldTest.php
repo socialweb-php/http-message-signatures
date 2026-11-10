@@ -127,12 +127,12 @@ final class DigestFieldTest extends TestCase
         yield 'content-digest with a sha-384 key alone' => [
             'content-digest',
             'sha-384=:' . base64_encode(hash('sha384', self::BODY, true)) . ':',
-            'content-digest names no algorithm the package knows; it offered: sha-384',
+            'content-digest names no algorithm the package knows; it offered: "sha-384"',
         ];
         yield 'digest with a SHA-384 token alone' => [
             'digest',
             'SHA-384=' . base64_encode(hash('sha384', self::BODY, true)),
-            'digest names no algorithm the package knows; it offered: SHA-384',
+            'digest names no algorithm the package knows; it offered: "SHA-384"',
         ];
         yield 'content-digest with a wrong digest' => [
             'content-digest',
@@ -157,17 +157,17 @@ final class DigestFieldTest extends TestCase
         yield 'content-digest whose member is a String' => [
             'content-digest',
             'sha-256="' . self::SHA256 . '"',
-            'the sha-256 member of content-digest is not a Byte Sequence',
+            'the "sha-256" member of content-digest is not a Byte Sequence',
         ];
         yield 'content-digest whose member is an Inner List' => [
             'content-digest',
             'sha-256=(:' . self::SHA256 . ':)',
-            'the sha-256 member of content-digest is not a Byte Sequence',
+            'the "sha-256" member of content-digest is not a Byte Sequence',
         ];
         yield 'content-digest with no known algorithm' => [
             'content-digest',
             'md5=:' . base64_encode(hash('md5', self::BODY, true)) . ':, adler=:AAAA:',
-            'content-digest names no algorithm the package knows; it offered: md5, adler',
+            'content-digest names no algorithm the package knows; it offered: "md5", "adler"',
         ];
         yield 'content-digest that is empty' => [
             'content-digest',
@@ -194,12 +194,12 @@ final class DigestFieldTest extends TestCase
         yield 'digest whose value is not Base64' => [
             'digest',
             'SHA-256=not*base64',
-            'the SHA-256 value in digest is not valid Base64',
+            'the "SHA-256" value in digest is not valid Base64',
         ];
         yield 'digest whose value has the wrong length' => [
             'digest',
             'SHA-256=' . self::SHA512,
-            'the SHA-256 value in digest has the wrong length',
+            'the "SHA-256" value in digest has the wrong length',
         ];
         yield 'digest without an equals sign' => [
             'digest',
@@ -214,7 +214,7 @@ final class DigestFieldTest extends TestCase
         yield 'digest with the deprecated SHA-1 only' => [
             'digest',
             'SHA=' . base64_encode(hash('sha1', self::BODY, true)),
-            'digest names no algorithm the package knows; it offered: SHA',
+            'digest names no algorithm the package knows; it offered: "SHA"',
         ];
         yield 'digest that is empty' => ['digest', '', 'digest names no algorithm the package knows; it offered: '];
         yield 'digest with a leading empty entry' => ['digest', ', SHA-256=' . self::SHA256, null];

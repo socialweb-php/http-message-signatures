@@ -357,7 +357,7 @@ final class SignerTest extends TestCase
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
             $this->assertSame(
-                'Cannot sign the message: the value of signature-input holds a line break, which a component value'
+                'Cannot sign the message: the value of "signature-input" holds a line break, which a component value'
                 . ' cannot',
                 $exception->getMessage(),
             );
@@ -536,7 +536,7 @@ final class SignerTest extends TestCase
         yield '(created) under a named algorithm' => [
             'test-key-rsa',
             new SigningOptions(form: Form::Cavage, coveredComponents: ['(request-target)', '(created)']),
-            'Cannot sign the message: (created) cannot be covered under the algorithm rsa-sha256',
+            'Cannot sign the message: (created) cannot be covered under the algorithm "rsa-sha256"',
         ];
         yield '(created) without the creation time' => [
             'test-key-ed25519',

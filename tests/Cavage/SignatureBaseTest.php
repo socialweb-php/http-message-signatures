@@ -144,7 +144,7 @@ final class SignatureBaseTest extends TestCase
             '1402170695',
             null,
             FailureReason::MalformedSignature,
-            '(created) cannot be covered under the algorithm rsa-sha256',
+            '(created) cannot be covered under the algorithm "rsa-sha256"',
         ];
         yield '(expires) under hmac-sha256' => [
             $request,
@@ -153,7 +153,7 @@ final class SignatureBaseTest extends TestCase
             null,
             '1402170699',
             FailureReason::MalformedSignature,
-            '(expires) cannot be covered under the algorithm hmac-sha256',
+            '(expires) cannot be covered under the algorithm "hmac-sha256"',
         ];
         yield '(created) under ecdsa-sha256' => [
             $request,
@@ -162,7 +162,7 @@ final class SignatureBaseTest extends TestCase
             '1402170695',
             null,
             FailureReason::MalformedSignature,
-            '(created) cannot be covered under the algorithm ecdsa-sha256',
+            '(created) cannot be covered under the algorithm "ecdsa-sha256"',
         ];
         yield '(created) without the parameter' => [
             $request,

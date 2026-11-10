@@ -109,7 +109,7 @@ final class SignatureBase
         if ($algorithm !== null && preg_match(self::NAMED_ALGORITHM_PATTERN, $algorithm) === 1) {
             throw new Failure(
                 FailureReason::MalformedSignature,
-                sprintf('(%s) cannot be covered under the algorithm %s', $name, $algorithm),
+                sprintf('(%s) cannot be covered under the algorithm "%s"', $name, $algorithm),
             );
         }
 

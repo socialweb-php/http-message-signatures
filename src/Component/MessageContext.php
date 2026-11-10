@@ -147,7 +147,10 @@ final class MessageContext
      */
     public function field(string $name): string
     {
-        return self::withoutLineBreak(implode(', ', $this->fieldLines($name)), strtolower($name));
+        return self::withoutLineBreak(
+            implode(', ', $this->fieldLines($name)),
+            sprintf('"%s"', strtolower($name)),
+        );
     }
 
     /**
@@ -223,7 +226,7 @@ final class MessageContext
             return (string) $this->message->getStatusCode();
         }
 
-        $request = $this->request($name);
+        $request = $this->request(sprintf('"%s"', $name));
         $uri = $request->getUri();
 
         $value = match ($name) {
@@ -240,7 +243,7 @@ final class MessageContext
             ),
             default => throw new ComponentFailure(
                 FailureReason::UnsupportedSignature,
-                sprintf('the derived component %s is not implemented', $name),
+                sprintf('the derived component "%s" is not implemented', $name),
             ),
         };
 

@@ -167,7 +167,7 @@ final class FieldParserTest extends TestCase
         yield 'a duplicated parameter in another case' => [
             'keyId="a",KEYID="b",signature="c2lnbmF0dXJl"',
             FailureReason::MalformedSignature,
-            'the parameter keyid appears more than once',
+            'the parameter "keyid" appears more than once',
         ];
         yield 'no keyId' => [
             'signature="c2lnbmF0dXJl"',
@@ -242,7 +242,7 @@ final class FieldParserTest extends TestCase
         yield 'a name in parentheses the draft does not define' => [
             'keyId="a",signature="c2lnbmF0dXJl",headers="(request-target) (nonce)"',
             FailureReason::UnsupportedSignature,
-            '(nonce) is not a name the draft form defines',
+            '"(nonce)" is not a name the draft form defines',
         ];
     }
 
@@ -291,7 +291,7 @@ final class FieldParserTest extends TestCase
         $this->assertFailure(
             new MessageContext($request),
             FailureReason::MalformedSignature,
-            'the value of signature holds a line break, which a component value cannot',
+            'the value of "signature" holds a line break, which a component value cannot',
         );
     }
 

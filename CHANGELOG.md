@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - `SigningOptions::$form` defaults to `Form::Rfc9421`, so `new SigningOptions()` signs in the RFC 9421 form.
 - The `SigningFailed` constructor takes a `SigningFailedReason` first, then the message, then an optional previous throwable. It took a message, a code, and an optional previous throwable, so code that constructs the exception itself must pass a reason.
 - `InvalidArgument` messages put a covered component identifier, an EC curve name, and a field name in double quotes, and name a digest algorithm by its case, as in `Digest algorithm Sha256 appears more than once`.
+- Result details put a name taken from the message in double quotes, as exception messages do, such as the parameter in `the parameter "headers" appears more than once`.
 
 ### Removed
 

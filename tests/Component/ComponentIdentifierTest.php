@@ -282,7 +282,7 @@ final class ComponentIdentifierTest extends TestCase
         yield 'a name in parentheses the draft does not define' => [
             '(foo)',
             FailureReason::UnsupportedSignature,
-            '(foo) is not a name the draft form defines',
+            '"(foo)" is not a name the draft form defines',
         ];
         yield 'a quoted name' => ['"date"', FailureReason::MalformedSignature, '""date"" is not a field name'];
         yield 'a field name followed by parentheses' => [

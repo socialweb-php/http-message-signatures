@@ -272,7 +272,7 @@ final class SignatureBaseTest extends TestCase
             $request,
             ['@future'],
             FailureReason::UnsupportedSignature,
-            'the derived component @future is not implemented',
+            'the derived component "@future" is not implemented',
         ];
         yield 'name on a field' => [
             $request,

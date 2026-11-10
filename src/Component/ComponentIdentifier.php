@@ -169,7 +169,7 @@ final readonly class ComponentIdentifier
         if (preg_match('/^\(.*\)\z/', $name) === 1) {
             throw new Failure(
                 FailureReason::UnsupportedSignature,
-                sprintf('%s is not a name the draft form defines', $name),
+                sprintf('"%s" is not a name the draft form defines', $name),
             );
         }
 

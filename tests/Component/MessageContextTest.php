@@ -380,7 +380,7 @@ final class MessageContextTest extends TestCase
         } catch (ComponentFailure $failure) {
             $this->assertSame(FailureReason::MissingComponent, $failure->reason);
             $this->assertSame(
-                'the value of x-broken holds a line break, which a component value cannot',
+                'the value of "x-broken" holds a line break, which a component value cannot',
                 $failure->detail,
             );
         }
@@ -486,8 +486,8 @@ final class MessageContextTest extends TestCase
         $unsupported = FailureReason::UnsupportedSignature;
 
         yield '@status of a request' => [$request, '@status', $unsupported, '@status is a response component'];
-        yield '@method of a response' => [$response, '@method', $unsupported, '@method is a request component'];
-        yield '@path of a response' => [$response, '@path', $unsupported, '@path is a request component'];
+        yield '@method of a response' => [$response, '@method', $unsupported, '"@method" is a request component'];
+        yield '@path of a response' => [$response, '@path', $unsupported, '"@path" is a request component'];
         yield '@query-param without a name' => [
             $request,
             '@query-param',
@@ -498,7 +498,7 @@ final class MessageContextTest extends TestCase
             $request,
             '@signature-params',
             FailureReason::UnsupportedSignature,
-            'the derived component @signature-params is not implemented',
+            'the derived component "@signature-params" is not implemented',
         ];
         yield 'a URI without an authority' => [
             new Request('GET', '/path'),

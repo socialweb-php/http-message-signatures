@@ -626,7 +626,7 @@ final class VerifierCavageTest extends TestCase
         $result = self::verify($message);
 
         $this->assertSame(FailureReason::MalformedSignature, $result->reason);
-        $this->assertSame('(created) cannot be covered under the algorithm rsa-sha256', $result->detail);
+        $this->assertSame('(created) cannot be covered under the algorithm "rsa-sha256"', $result->detail);
     }
 
     public function testACoveredCreatedWithoutItsParameterIsReportedByThePolicyFirst(): void

@@ -221,7 +221,7 @@ final class FieldParser
             if (isset($parameters[$name])) {
                 throw new Failure(
                     FailureReason::MalformedSignature,
-                    sprintf('the parameter %s appears more than once', $name),
+                    sprintf('the parameter "%s" appears more than once', $name),
                 );
             }
 
