@@ -37,7 +37,7 @@
         "ramsey/composer-repl": "^1.5",
         "ramsey/conventional-commits": "^1.7",
         "roave/security-advisories": "dev-latest",
-        "socialweb/jwk": "^0.1"
+        "socialweb/jwk": "^0.2"
     },
     "suggest": {
         "socialweb/jwk": "To build a VerificationKey from a JSON Web Key with VerificationKey::fromJwk()"
