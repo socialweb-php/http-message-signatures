@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\HashAlgorithm;
@@ -599,6 +600,24 @@ final class SignerTest extends TestCase
             );
             $this->assertInstanceOf(ComponentFailure::class, $exception->getPrevious());
             $this->assertSame(0, $exception->getCode());
+        }
+    }
+
+    public function testRefusesAComponentThatTheSignatureBaseCannotBuild(): void
+    {
+        try {
+            self::signer()->sign(
+                self::request(),
+                self::key(),
+                new SigningOptions(form: Form::Rfc9421, coveredComponents: ['@method', 'x-custom;tr']),
+            );
+            $this->fail('Expected an InvalidArgument');
+        } catch (InvalidArgument $exception) {
+            $this->assertSame(
+                'Cannot sign the message: trailer fields are not implemented, so "x-custom";tr cannot be covered',
+                $exception->getMessage(),
+            );
+            $this->assertInstanceOf(Failure::class, $exception->getPrevious());
         }
     }
 

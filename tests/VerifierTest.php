@@ -656,6 +656,22 @@ final class VerifierTest extends TestCase
         $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
+    public function testASignatureInputFieldWithALineBreakIsAResult(): void
+    {
+        $signed = self::signed(self::request());
+        $message = $this->withField($signed, 'Signature-Input', $signed->getHeaderLine('Signature-Input') . "\r\nx");
+
+        $result = self::verify($message);
+
+        $this->assertFalse($result->verified);
+        $this->assertSame(FailureReason::MissingComponent, $result->reason);
+        $this->assertSame(
+            'the value of signature-input holds a line break, which a component value cannot',
+            $result->detail,
+        );
+        $this->assertSame(Form::Rfc9421, $result->form);
+    }
+
     public function testAKeyTheResolverDoesNotHaveIsNotFound(): void
     {
         $resolver = new ArrayKeyResolver([]);
@@ -1016,6 +1032,27 @@ final class VerifierTest extends TestCase
         $this->assertFalse($result->verified);
         $this->assertSame(FailureReason::MalformedSignature, $result->reason);
         $this->assertTrue($result->maxSignaturesExceeded);
+    }
+
+    public function testTheDefaultLimitIsThreeSignatures(): void
+    {
+        $three = self::request()
+            ->withHeader('Signature-Input', 'a=("@method");keyid="k", b=("@method");keyid="k", c=("@method");keyid="k"')
+            ->withHeader('Signature', 'a=:AQ==:, b=:AQ==:, c=:AQ==:');
+        $four = $three
+            ->withHeader(
+                'Signature-Input',
+                $three->getHeaderLine('Signature-Input') . ', d=("@method");keyid="k"',
+            )
+            ->withHeader('Signature', $three->getHeaderLine('Signature') . ', d=:AQ==:');
+
+        $withThree = self::verify($three, resolver: new ArrayKeyResolver([]));
+        $withFour = self::verify($four, resolver: new ArrayKeyResolver([]));
+
+        $this->assertFalse($withThree->verified);
+        $this->assertFalse($withThree->maxSignaturesExceeded);
+        $this->assertFalse($withFour->verified);
+        $this->assertTrue($withFour->maxSignaturesExceeded);
     }
 
     public function testARequiredComponentOfTheDraftFormDoesNotApplyUnderRfc9421(): void
