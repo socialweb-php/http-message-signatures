@@ -114,7 +114,7 @@ final class FieldSerializer
             return StructuredFields::parseDictionary((new MessageContext($message))->field($field));
         } catch (SyntaxError $error) {
             throw new InvalidArgument(
-                sprintf('The %s field of the message does not parse as a Dictionary', $field),
+                sprintf('The "%s" field of the message does not parse as a Dictionary', $field),
                 0,
                 $error,
             );

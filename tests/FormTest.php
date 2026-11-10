@@ -6,19 +6,18 @@ namespace SocialWeb\Test\Http\MessageSignatures;
 
 use SocialWeb\Http\MessageSignatures\Form;
 
+use function array_map;
+
 /**
  * Checks the two signature forms
  */
 final class FormTest extends TestCase
 {
-    public function testNamesTheDraftByItsIdentifier(): void
+    public function testHasTwoFormsNamedByTheirCases(): void
     {
-        $this->assertSame('draft-cavage-http-signatures-12', Form::Cavage->value);
-        $this->assertSame('rfc9421', Form::Rfc9421->value);
-    }
-
-    public function testHasTwoForms(): void
-    {
-        $this->assertCount(2, Form::cases());
+        $this->assertSame(
+            ['Cavage', 'Rfc9421'],
+            array_map(static fn (Form $form): string => $form->name, Form::cases()),
+        );
     }
 }

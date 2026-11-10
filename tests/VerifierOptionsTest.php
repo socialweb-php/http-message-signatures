@@ -81,7 +81,7 @@ final class VerifierOptionsTest extends TestCase
         ];
         yield 'a duplicate form' => [
             static fn (): VerifierOptions => new VerifierOptions(forms: [Form::Rfc9421, Form::Rfc9421]),
-            'The form rfc9421 appears more than once',
+            'The form Rfc9421 appears more than once',
         ];
         yield 'an empty required component' => [
             static fn (): VerifierOptions => new VerifierOptions(requiredComponents: ['date', '']),

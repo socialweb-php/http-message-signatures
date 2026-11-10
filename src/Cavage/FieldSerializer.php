@@ -77,7 +77,7 @@ final class FieldSerializer
 
         if ($algorithmName === null) {
             throw new InvalidArgument(
-                sprintf('The algorithm %s has no name in the form %s', $algorithm->name, Form::Cavage->value),
+                sprintf('The algorithm %s has no name in the form %s', $algorithm->name, Form::Cavage->name),
             );
         }
 

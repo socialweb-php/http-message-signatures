@@ -238,7 +238,7 @@ final class Signer
         }
 
         throw new InvalidArgument(
-            sprintf('The key permits no algorithm that has a name in the form %s', $options->form->value),
+            sprintf('The key permits no algorithm that has a name in the form %s', $options->form->name),
         );
     }
 

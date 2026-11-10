@@ -110,7 +110,7 @@ final class FieldSerializerTest extends TestCase
             $this->fail('Expected an InvalidArgument');
         } catch (InvalidArgument $exception) {
             $this->assertSame(
-                'The signature-input field of the message does not parse as a Dictionary',
+                'The "signature-input" field of the message does not parse as a Dictionary',
                 $exception->getMessage(),
             );
             $this->assertInstanceOf(SyntaxError::class, $exception->getPrevious());
@@ -124,7 +124,9 @@ final class FieldSerializerTest extends TestCase
         $params = FieldSerializer::signatureParams([], ['keyid' => 'k']);
 
         $this->expectException(InvalidArgument::class);
-        $this->expectExceptionMessageIsOrContains('The signature field of the message does not parse as a Dictionary');
+        $this->expectExceptionMessageIsOrContains(
+            'The "signature" field of the message does not parse as a Dictionary',
+        );
 
         FieldSerializer::append($message, 'sig2', $params, "\x01");
     }

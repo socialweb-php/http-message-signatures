@@ -679,7 +679,7 @@ final class VerifierCavageTest extends TestCase
 
         $this->assertSame(FailureReason::AlgorithmNotPermitted, $result->reason);
         $this->assertSame(
-            'the key permits no algorithm that has a name in the form draft-cavage-http-signatures-12',
+            'the key permits no algorithm that has a name in the form Cavage',
             $result->detail,
         );
         $this->assertNull($result->algorithm);

@@ -129,7 +129,7 @@ final class RoundTripTest extends TestCase
                 }
 
                 foreach ($messages as $description => $message) {
-                    yield sprintf('%s, %s on %s', $form->value, $name, $description) => [$form, $algorithm, $message];
+                    yield sprintf('%s, %s on %s', $form->name, $name, $description) => [$form, $algorithm, $message];
                 }
             }
         }

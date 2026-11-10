@@ -29,15 +29,15 @@ namespace SocialWeb\Http\MessageSignatures;
 /**
  * The two signature forms this package produces and verifies
  */
-enum Form: string
+enum Form
 {
     /**
      * The form of the expired Internet-Draft draft-cavage-http-signatures-12
      */
-    case Cavage = 'draft-cavage-http-signatures-12';
+    case Cavage;
 
     /**
      * HTTP Message Signatures, RFC 9421
      */
-    case Rfc9421 = 'rfc9421';
+    case Rfc9421;
 }

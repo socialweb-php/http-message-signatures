@@ -334,7 +334,7 @@ final readonly class KeyMaterial
                 'prime256v1' => SigningKeyType::EcP256,
                 'secp384r1' => SigningKeyType::EcP384,
                 default => throw new InvalidArgument(
-                    sprintf('EC keys on the curve %s are not implemented; use P-256 or P-384', $curve),
+                    sprintf('EC keys on the curve "%s" are not implemented; use P-256 or P-384', $curve),
                 ),
             };
         }

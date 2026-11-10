@@ -100,7 +100,7 @@ final class Verifier
             return new VerificationResult(
                 verified: false,
                 reason: FailureReason::UnsupportedSignature,
-                detail: sprintf('the form %s is not accepted', $form->value),
+                detail: sprintf('the form %s is not accepted', $form->name),
                 form: $form,
             );
         }
@@ -698,7 +698,7 @@ final class Verifier
 
         if ($outcome['algorithm'] === null) {
             $outcome['reason'] = FailureReason::AlgorithmNotPermitted;
-            $outcome['detail'] = sprintf('the key permits no algorithm that has a name in the form %s', $form->value);
+            $outcome['detail'] = sprintf('the key permits no algorithm that has a name in the form %s', $form->name);
 
             return $outcome;
         }

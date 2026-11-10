@@ -23,7 +23,7 @@ final class SigningOptionsTest extends TestCase
 {
     public function testHasTheDocumentedDefaults(): void
     {
-        $options = new SigningOptions(form: Form::Rfc9421);
+        $options = new SigningOptions();
 
         $this->assertSame(Form::Rfc9421, $options->form);
         $this->assertNull($options->coveredComponents);
@@ -103,7 +103,7 @@ final class SigningOptionsTest extends TestCase
         ];
         yield 'a duplicate under the draft' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['date', 'Date']),
-            'The covered component date appears more than once',
+            'The covered component "date" appears more than once',
         ];
         yield 'an empty component identifier' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, coveredComponents: ['@method', '']),
@@ -125,14 +125,14 @@ final class SigningOptionsTest extends TestCase
                 form: Form::Rfc9421,
                 coveredComponents: ['@method', 'Date', 'date'],
             ),
-            'The covered component date appears more than once',
+            'The covered component "date" appears more than once',
         ];
         yield 'a covered component that appears twice with the same parameters' => [
             static fn (): SigningOptions => new SigningOptions(
                 form: Form::Rfc9421,
                 coveredComponents: ['@query-param;name="Pet"', '@query-param;name="Pet"'],
             ),
-            'The covered component @query-param;name="Pet" appears more than once',
+            'The covered component "@query-param;name="Pet"" appears more than once',
         ];
         yield '@signature-params among the covered components' => [
             static fn (): SigningOptions => new SigningOptions(
@@ -143,7 +143,7 @@ final class SigningOptionsTest extends TestCase
         ];
         yield 'an algorithm with no draft name' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, algorithm: Algorithm::RsaPssSha512),
-            'Algorithm RsaPssSha512 has no name in the form draft-cavage-http-signatures-12',
+            'Algorithm RsaPssSha512 has no name in the form Cavage',
         ];
         yield 'a label with an uppercase letter' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, label: 'Sig1'),

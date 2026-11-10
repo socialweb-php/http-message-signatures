@@ -284,7 +284,7 @@ final class VerifierTest extends TestCase
         $result = self::verify(self::signed(self::request()), new VerifierOptions(forms: [Form::Cavage]));
 
         $this->assertSame(FailureReason::UnsupportedSignature, $result->reason);
-        $this->assertSame('the form rfc9421 is not accepted', $result->detail);
+        $this->assertSame('the form Rfc9421 is not accepted', $result->detail);
         $this->assertSame(Form::Rfc9421, $result->form);
 
         $draft = self::verify(
@@ -292,7 +292,7 @@ final class VerifierTest extends TestCase
             new VerifierOptions(forms: [Form::Rfc9421]),
         );
 
-        $this->assertSame('the form draft-cavage-http-signatures-12 is not accepted', $draft->detail);
+        $this->assertSame('the form Cavage is not accepted', $draft->detail);
         $this->assertSame(Form::Cavage, $draft->form);
     }
 

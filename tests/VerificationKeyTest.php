@@ -400,7 +400,7 @@ final class VerificationKeyTest extends TestCase
 
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains(
-            'EC keys on the curve secp521r1 are not implemented; use P-256 or P-384',
+            'EC keys on the curve "secp521r1" are not implemented; use P-256 or P-384',
         );
 
         VerificationKey::fromJwk($jwk);

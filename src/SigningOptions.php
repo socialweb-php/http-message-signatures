@@ -108,7 +108,7 @@ final readonly class SigningOptions
      *     or holds `Sha384`, which the registries of the digest fields lack
      */
     public function __construct(
-        public Form $form,
+        public Form $form = Form::Rfc9421,
         ?array $coveredComponents = null,
         public ?Algorithm $algorithm = null,
         public string $label = 'sig1',
@@ -122,7 +122,7 @@ final readonly class SigningOptions
 
         if ($algorithm !== null && $algorithm->name($form) === null) {
             throw new InvalidArgument(
-                sprintf('Algorithm %s has no name in the form %s', $algorithm->name, $form->value),
+                sprintf('Algorithm %s has no name in the form %s', $algorithm->name, $form->name),
             );
         }
 
@@ -220,7 +220,7 @@ final readonly class SigningOptions
             foreach ($identifiers as $earlier) {
                 if ($earlier->equals($identifier)) {
                     throw new InvalidArgument(
-                        sprintf('The covered component %s appears more than once', $identifier->toString()),
+                        sprintf('The covered component "%s" appears more than once', $identifier->toString()),
                     );
                 }
             }

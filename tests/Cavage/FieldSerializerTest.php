@@ -121,7 +121,7 @@ final class FieldSerializerTest extends TestCase
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains(
-            'The algorithm EcdsaP256Sha256 has no name in the form draft-cavage-http-signatures-12',
+            'The algorithm EcdsaP256Sha256 has no name in the form Cavage',
         );
 
         FieldSerializer::serialize('a', Algorithm::EcdsaP256Sha256, null, null, self::identifiers(['date']), 'x');

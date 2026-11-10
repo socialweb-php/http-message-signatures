@@ -551,7 +551,7 @@ final class SignerTest extends TestCase
         yield 'a key with no algorithm in the draft form' => [
             'test-key-ecc-p256',
             new SigningOptions(form: Form::Cavage),
-            'The key permits no algorithm that has a name in the form draft-cavage-http-signatures-12',
+            'The key permits no algorithm that has a name in the form Cavage',
         ];
         yield 'a field the message lacks' => [
             'test-key-rsa',

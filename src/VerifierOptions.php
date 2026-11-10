@@ -119,7 +119,7 @@ final readonly class VerifierOptions
 
         foreach ($forms as $form) {
             if (in_array($form, $seen, true)) {
-                throw new InvalidArgument(sprintf('The form %s appears more than once', $form->value));
+                throw new InvalidArgument(sprintf('The form %s appears more than once', $form->name));
             }
 
             $seen[] = $form;
