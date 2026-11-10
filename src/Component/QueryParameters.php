@@ -37,6 +37,8 @@ use function urlencode;
  * URL standard
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-2.2.8 Query Parameters
  */
 final class QueryParameters
 {

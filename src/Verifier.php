@@ -85,6 +85,8 @@ use function trim;
  * not, limited to the creation time plus `maximumLifetime` either way. The
  * default intervals are what the largest implementation enforces; RFC 9421
  * section 3.2.1 leaves the values to the application.
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-3.2 Verifying a Signature
  */
 final class Verifier
 {
@@ -775,7 +777,14 @@ final class Verifier
      *     draft the one without the query string
      * @param string $signatureName what the detail calls the signature
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: non-empty-string | null}
+     * @return array{
+     *     reason: FailureReason | null,
+     *     detail: string,
+     *     algorithm: Algorithm | null,
+     *     keyRefreshed: bool,
+     *     withoutQuery: bool,
+     *     keyOwner: non-empty-string | null,
+     * }
      */
     private function checkWithKey(
         KeyLookup $lookup,
@@ -823,7 +832,14 @@ final class Verifier
      *     resolved, or `null` when the key decides
      * @param non-empty-list<string> $bases
      *
-     * @return array{reason: FailureReason | null, detail: string, algorithm: Algorithm | null, keyRefreshed: bool, withoutQuery: bool, keyOwner: non-empty-string | null}
+     * @return array{
+     *     reason: FailureReason | null,
+     *     detail: string,
+     *     algorithm: Algorithm | null,
+     *     keyRefreshed: bool,
+     *     withoutQuery: bool,
+     *     keyOwner: non-empty-string | null,
+     * }
      */
     private static function check(
         VerificationKey $key,

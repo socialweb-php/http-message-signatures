@@ -48,6 +48,8 @@ use function sprintf;
  * others quoted-strings.
  *
  * @internal
+ *
+ * @link https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-4.1 Signature Header
  */
 final class FieldSerializer
 {

@@ -137,7 +137,11 @@ final readonly class SigningKey
     }
 
     /**
-     * @return array{keyId: string, type: SigningKeyType, permittedAlgorithms: non-empty-list<Algorithm>}
+     * @return array{
+     *     keyId: string,
+     *     type: SigningKeyType,
+     *     permittedAlgorithms: non-empty-list<Algorithm>,
+     * }
      */
     public function __debugInfo(): array
     {

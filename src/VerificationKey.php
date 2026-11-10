@@ -280,7 +280,11 @@ final readonly class VerificationKey
     }
 
     /**
-     * @return array{type: SigningKeyType, permittedAlgorithms: non-empty-list<Algorithm>, owner: non-empty-string | null}
+     * @return array{
+     *     type: SigningKeyType,
+     *     permittedAlgorithms: non-empty-list<Algorithm>,
+     *     owner: non-empty-string | null,
+     * }
      */
     public function __debugInfo(): array
     {

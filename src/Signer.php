@@ -53,6 +53,8 @@ use function sprintf;
  * the message it was given, of the same class, with the digest field added
  * when the covered components include it and the signature fields of the
  * chosen form added.
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-3.1 Creating a Signature
  */
 final class Signer
 {
@@ -174,7 +176,9 @@ final class Signer
      *
      * @return T
      *
-     * @throws InvalidArgument
+     * @throws InvalidArgument when the key identifier has a character outside
+     *     printable ASCII, or when a covered component cannot be taken from
+     *     the message
      *
      * @template T of MessageInterface
      */

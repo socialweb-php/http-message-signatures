@@ -57,6 +57,9 @@ use const PREG_UNMATCHED_AS_NULL;
  * draft does not define is ignored.
  *
  * @internal
+ *
+ * @link https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-3.1 Authorization Header
+ * @link https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-4.1 Signature Header
  */
 final class FieldParser
 {
@@ -150,7 +153,9 @@ final class FieldParser
     /**
      * @return array{string, string} the field's name and its value
      *
-     * @throws Failure `NoSignature` or `MalformedSignature`
+     * @throws Failure `NoSignature` when the message has neither field, and
+     *     `MalformedSignature` when the value of the field holds a line break
+     *     or the `Authorization` field does not have the `Signature` scheme
      */
     private static function fieldValue(MessageContext $context): array
     {
@@ -185,7 +190,8 @@ final class FieldParser
      * @return array<string, string> the parameters by lowercased name, with
      *     a quoted-string's quoted-pairs undone
      *
-     * @throws Failure `MalformedSignature`
+     * @throws Failure `MalformedSignature` when the value is not a list of
+     *     auth-params or a parameter appears twice
      */
     private static function parameters(string $field, string $value): array
     {
@@ -242,7 +248,10 @@ final class FieldParser
     /**
      * @return list<ComponentIdentifier>
      *
-     * @throws Failure
+     * @throws Failure `MalformedSignature` when the `headers` parameter is
+     *     empty or has an empty name or a name that is not a field name, and
+     *     `UnsupportedSignature` for a name in parentheses that the draft
+     *     does not define
      */
     private static function coveredComponents(?string $headers, ?string $algorithm): array
     {

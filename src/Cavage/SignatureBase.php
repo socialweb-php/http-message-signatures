@@ -48,6 +48,8 @@ use function sprintf;
  * space, as `MessageContext` gives it.
  *
  * @internal
+ *
+ * @link https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.3 Signature String Construction
  */
 final class SignatureBase
 {
@@ -99,7 +101,8 @@ final class SignatureBase
     }
 
     /**
-     * @throws Failure `MalformedSignature`
+     * @throws Failure `MalformedSignature` when the algorithm is a named one,
+     *     or when the parameter is absent or is not an integer
      */
     private static function parameter(string $name, ?string $value, ?string $algorithm): string
     {

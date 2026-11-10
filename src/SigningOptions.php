@@ -202,7 +202,8 @@ final readonly class SigningOptions
      *
      * @return list<ComponentIdentifier>
      *
-     * @throws InvalidArgument
+     * @throws InvalidArgument when a component identifier is empty, does not
+     *     parse in the form, names `@signature-params`, or appears twice
      */
     private static function parseIdentifiers(array $components, Form $form): array
     {

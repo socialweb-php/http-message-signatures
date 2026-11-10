@@ -382,7 +382,7 @@ final readonly class KeyMaterial
      * The OpenSSL functions read a local file for a string that begins with
      * `file://`; a key is given as PEM text, never as a path.
      *
-     * @throws InvalidArgument
+     * @throws InvalidArgument when the string begins with `file://`
      */
     private static function refuseFilePath(
         #[SensitiveParameter]

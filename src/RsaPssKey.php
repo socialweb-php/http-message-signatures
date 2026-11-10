@@ -51,6 +51,9 @@ use function substr;
  * loads as an ordinary RSA key.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc5208#section-5 Private-Key Information Syntax
+ * @link https://www.rfc-editor.org/rfc/rfc5280#section-4.1 Basic Certificate Fields
  */
 final class RsaPssKey
 {

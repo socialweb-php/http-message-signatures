@@ -49,6 +49,9 @@ use const STR_PAD_LEFT;
  * integer that overruns the value or exceeds the curve, which is refused.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-3.3.4 ECDSA Using Curve P-256 DSS and SHA-256
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-3.3.5 ECDSA Using Curve P-384 DSS and SHA-384
  */
 final class EcdsaSignature
 {

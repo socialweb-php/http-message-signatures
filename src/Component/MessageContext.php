@@ -57,6 +57,9 @@ use function trim;
  * `ComponentFailure` with the reason the verifier reports.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-2.1 HTTP Fields
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-2.2 Derived Components
  */
 final class MessageContext
 {
@@ -401,7 +404,8 @@ final class MessageContext
      * the draft's section 2.3 both require, since one would add a line to the
      * signature base.
      *
-     * @throws ComponentFailure `MissingComponent`
+     * @throws ComponentFailure `MissingComponent` when the value holds a line
+     *     break
      */
     private static function withoutLineBreak(string $value, string $component): string
     {

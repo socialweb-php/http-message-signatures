@@ -44,6 +44,8 @@ use function strtolower;
  * entry of a digest field. The deprecated entries of the RFC 9530 registry,
  * and the MD5 and SHA-1 of RFC 3230, are refused on both sides, because RFC
  * 9530 section 5 forbids a deprecated algorithm where the digest is signed.
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9530#section-5 Hash Algorithm Considerations and Registration
  */
 enum HashAlgorithm: string
 {

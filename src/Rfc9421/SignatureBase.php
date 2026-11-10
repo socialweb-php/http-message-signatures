@@ -53,6 +53,8 @@ use function sprintf;
  * cannot go into the base, is `MissingComponent`.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-2.5 Creating the Signature Base
  */
 final class SignatureBase
 {

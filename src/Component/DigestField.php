@@ -57,6 +57,9 @@ use function trim;
  * or `SHA-512`, the spelling of RFC 5843, and the value is strict Base64.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9530#section-2 The Content-Digest Field
+ * @link https://www.rfc-editor.org/rfc/rfc3230#section-4.3.2 Digest
  */
 final class DigestField
 {

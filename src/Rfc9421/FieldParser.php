@@ -58,6 +58,8 @@ use function sprintf;
  * because the resolver needs it.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-4 Including a Message Signature in a Message
  */
 final class FieldParser
 {

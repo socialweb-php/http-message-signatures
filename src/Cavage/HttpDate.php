@@ -46,6 +46,8 @@ use function strlen;
  * section says.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9110#section-5.6.7 Date/Time Formats
  */
 final class HttpDate
 {

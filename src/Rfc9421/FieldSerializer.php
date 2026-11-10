@@ -48,6 +48,8 @@ use function sprintf;
  * each; a label already present is `InvalidArgument`.
  *
  * @internal
+ *
+ * @link https://www.rfc-editor.org/rfc/rfc9421#section-4 Including a Message Signature in a Message
  */
 final class FieldSerializer
 {
