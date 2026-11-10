@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures\Rfc9421;
 
+use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+
 /**
  * What `FieldParser` read from the `Signature-Input` and `Signature` fields:
  * the signatures, up to the limit it was given, and whether the fields have
@@ -40,10 +42,16 @@ final readonly class ParsedFields
      *     order of `Signature-Input`
      * @param bool $labelsLeftUnread whether the fields have more labels than
      *     the limit, so that some were not read
+     *
+     * @throws InvalidArgument when no signatures were read and labels were left
+     *     unread, since the limit is at least 1
      */
     public function __construct(
         public array $signatures,
         public bool $labelsLeftUnread,
     ) {
+        if ($signatures === [] && $labelsLeftUnread) {
+            throw new InvalidArgument('labelsLeftUnread cannot be true when no signatures were read');
+        }
     }
 }

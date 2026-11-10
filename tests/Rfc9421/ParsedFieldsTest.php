@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SocialWeb\Test\Http\MessageSignatures\Rfc9421;
 
 use Bakame\Http\StructuredFields\InnerList;
+use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Rfc9421\ParsedFields;
 use SocialWeb\Http\MessageSignatures\Rfc9421\ParsedSignature;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
@@ -41,5 +42,15 @@ final class ParsedFieldsTest extends TestCase
 
         $this->assertSame([], $fields->signatures);
         $this->assertFalse($fields->labelsLeftUnread);
+    }
+
+    public function testRefusesUnreadLabelsWhenNoSignatureWasRead(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains(
+            'labelsLeftUnread cannot be true when no signatures were read',
+        );
+
+        new ParsedFields([], true);
     }
 }
