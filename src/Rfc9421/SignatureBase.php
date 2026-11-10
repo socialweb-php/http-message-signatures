@@ -29,7 +29,8 @@ namespace SocialWeb\Http\MessageSignatures\Rfc9421;
 use Bakame\Http\StructuredFields\InnerList;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
@@ -67,7 +68,11 @@ final class SignatureBase
      * @param InnerList $signatureParams the value of the `@signature-params`
      *     line
      *
-     * @throws Failure with the reason the section's error case maps to
+     * @throws ComponentFailure when the value of a covered component cannot
+     *     be taken from the message, with the reason the section's error case
+     *     maps to
+     * @throws Failure when the list of covered components or a parameter of
+     *     one is at fault, with the reason the section's error case maps to
      */
     public static function build(MessageContext $context, array $coveredComponents, InnerList $signatureParams): string
     {

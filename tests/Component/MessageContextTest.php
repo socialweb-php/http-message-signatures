@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
-use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 

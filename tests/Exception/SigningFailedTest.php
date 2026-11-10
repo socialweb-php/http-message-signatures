@@ -7,6 +7,7 @@ namespace SocialWeb\Test\Http\MessageSignatures\Exception;
 use RuntimeException;
 use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
+use SocialWeb\Http\MessageSignatures\Exception\SigningFailedReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 /**
@@ -18,22 +19,35 @@ final class SigningFailedTest extends TestCase
     {
         $this->expectException(MessageSignaturesException::class);
 
-        throw new SigningFailed('OpenSSL could not sign');
+        throw new SigningFailed(SigningFailedReason::OpenSslError, 'OpenSSL could not sign');
     }
 
     public function testCanBeCaughtAsARuntimeException(): void
     {
         $this->expectException(RuntimeException::class);
 
-        throw new SigningFailed('OpenSSL could not sign');
+        throw new SigningFailed(SigningFailedReason::OpenSslError, 'OpenSSL could not sign');
     }
 
-    public function testHasTheMessageAndThePrevious(): void
+    public function testHasTheReasonTheMessageAndThePrevious(): void
     {
         $previous = new RuntimeException('cause');
-        $exception = new SigningFailed('OpenSSL could not sign', 0, $previous);
+        $exception = new SigningFailed(
+            SigningFailedReason::SignatureDoesNotFitCurve,
+            'OpenSSL produced an ECDSA signature that does not fit the curve',
+            $previous,
+        );
 
-        $this->assertSame('OpenSSL could not sign', $exception->getMessage());
+        $this->assertSame(SigningFailedReason::SignatureDoesNotFitCurve, $exception->reason);
+        $this->assertSame('OpenSSL produced an ECDSA signature that does not fit the curve', $exception->getMessage());
         $this->assertSame($previous, $exception->getPrevious());
+        $this->assertSame(0, $exception->getCode());
+    }
+
+    public function testThePreviousIsOptional(): void
+    {
+        $exception = new SigningFailed(SigningFailedReason::OpenSslError, 'OpenSSL could not sign');
+
+        $this->assertNull($exception->getPrevious());
     }
 }

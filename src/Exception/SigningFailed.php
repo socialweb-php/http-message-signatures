@@ -27,11 +27,20 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures\Exception;
 
 use RuntimeException;
+use Throwable;
 
 /**
- * Thrown when OpenSSL fails while signing; the message has OpenSSL's error
- * text
+ * Thrown when a signature could not be produced
+ *
+ * The reason says what went wrong.
  */
 final class SigningFailed extends RuntimeException implements MessageSignaturesException
 {
+    public function __construct(
+        public readonly SigningFailedReason $reason,
+        string $message,
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct($message, 0, $previous);
+    }
 }

@@ -34,7 +34,8 @@ use Bakame\Http\StructuredFields\Parameters;
 use Bakame\Http\StructuredFields\SyntaxError;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
@@ -70,6 +71,8 @@ final class FieldParser
      *
      * @return list<ParsedSignature>
      *
+     * @throws ComponentFailure `MissingComponent` when the value of a field
+     *     holds a line break
      * @throws Failure `MalformedSignature` when a field does not parse or has
      *     a label the other lacks, or when a signature does not have the
      *     shape section 4 gives it

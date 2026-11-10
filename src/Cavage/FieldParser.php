@@ -28,7 +28,8 @@ namespace SocialWeb\Http\MessageSignatures\Cavage;
 
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 
 use function base64_decode;
@@ -166,7 +167,7 @@ final class FieldParser
             }
 
             $value = $context->field(self::AUTHORIZATION);
-        } catch (Failure $failure) {
+        } catch (ComponentFailure $failure) {
             throw new Failure(FailureReason::MalformedSignature, $failure->detail, $failure);
         }
 

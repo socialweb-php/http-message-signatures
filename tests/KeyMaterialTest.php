@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
+use SocialWeb\Http\MessageSignatures\Exception\SigningFailedReason;
 use SocialWeb\Http\MessageSignatures\KeyMaterial;
 use SocialWeb\Http\MessageSignatures\SigningKeyType;
 
@@ -348,6 +349,7 @@ final class KeyMaterialTest extends TestCase
             $material->sign(Algorithm::RsaV15Sha256, 'base');
             $this->fail('Expected a SigningFailed');
         } catch (SigningFailed $exception) {
+            $this->assertSame(SigningFailedReason::OpenSslError, $exception->reason);
             $this->assertStringStartsWith('OpenSSL could not sign: error:', $exception->getMessage());
             $this->assertSame(1, substr_count($exception->getMessage(), 'error:'));
         }

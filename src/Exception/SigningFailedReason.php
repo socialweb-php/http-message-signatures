@@ -24,26 +24,22 @@
 
 declare(strict_types=1);
 
-namespace SocialWeb\Http\MessageSignatures;
-
-use RuntimeException;
-use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
-use Throwable;
+namespace SocialWeb\Http\MessageSignatures\Exception;
 
 /**
- * Raised inside the package when a message cannot be verified, with the
- * reason the result reports; `Verifier` turns it into a result and `Signer`
- * into `InvalidArgument`
- *
- * @internal
+ * Why signing failed
  */
-class Failure extends RuntimeException implements MessageSignaturesException
+enum SigningFailedReason
 {
-    public function __construct(
-        public readonly FailureReason $reason,
-        public readonly string $detail,
-        ?Throwable $previous = null,
-    ) {
-        parent::__construct($reason->name . ': ' . $detail, 0, $previous);
-    }
+    /**
+     * OpenSSL reported an error while it signed; the message has OpenSSL's
+     * error text
+     */
+    case OpenSslError;
+
+    /**
+     * OpenSSL returned an ECDSA signature whose two integers do not fit the
+     * length the curve gives them, so it has no fixed-length form
+     */
+    case SignatureDoesNotFitCurve;
 }

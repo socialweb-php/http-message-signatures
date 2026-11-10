@@ -14,9 +14,8 @@ use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
-use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
-use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\Form;
 use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Http\MessageSignatures\Signer;
@@ -362,7 +361,7 @@ final class SignerTest extends TestCase
                 $exception->getMessage(),
             );
             $this->assertSame(0, $exception->getCode());
-            $this->assertInstanceOf(Failure::class, $exception->getPrevious());
+            $this->assertInstanceOf(ComponentFailure::class, $exception->getPrevious());
         }
     }
 

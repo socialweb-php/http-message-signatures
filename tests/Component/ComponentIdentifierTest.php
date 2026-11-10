@@ -9,8 +9,8 @@ use Bakame\Http\StructuredFields\Item;
 use Bakame\Http\StructuredFields\SyntaxError;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
-use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 

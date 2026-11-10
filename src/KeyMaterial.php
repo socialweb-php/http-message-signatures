@@ -30,6 +30,7 @@ use OpenSSLAsymmetricKey;
 use SensitiveParameter;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
+use SocialWeb\Http\MessageSignatures\Exception\SigningFailedReason;
 
 use function array_search;
 use function hash_equals;
@@ -192,7 +193,8 @@ final readonly class KeyMaterial
      *
      * @throws InvalidArgument when a shared secret is asked for an asymmetric
      *     algorithm or a key for HMAC
-     * @throws SigningFailed when OpenSSL fails
+     * @throws SigningFailed when OpenSSL fails, or returns an ECDSA signature
+     *     that does not fit the curve
      */
     public function sign(Algorithm $algorithm, string $signatureBase): string
     {
@@ -215,7 +217,10 @@ final readonly class KeyMaterial
             };
 
             if (!$signed || !is_string($signature)) {
-                throw new SigningFailed('OpenSSL could not sign: ' . self::openSslErrors());
+                throw new SigningFailed(
+                    SigningFailedReason::OpenSslError,
+                    'OpenSSL could not sign: ' . self::openSslErrors(),
+                );
             }
 
             $integerLength = self::ecdsaIntegerLength($algorithm);
@@ -227,7 +232,10 @@ final readonly class KeyMaterial
             $raw = EcdsaSignature::derToRaw($signature, $integerLength);
 
             if ($raw === null) {
-                throw new SigningFailed('OpenSSL produced an ECDSA signature that does not fit the curve');
+                throw new SigningFailed(
+                    SigningFailedReason::SignatureDoesNotFitCurve,
+                    'OpenSSL produced an ECDSA signature that does not fit the curve',
+                );
             }
 
             return $raw;

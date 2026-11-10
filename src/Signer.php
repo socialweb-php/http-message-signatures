@@ -35,6 +35,8 @@ use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\Content;
 use SocialWeb\Http\MessageSignatures\Component\DigestField;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Exception\SigningFailed;
 use SocialWeb\Http\MessageSignatures\Rfc9421\FieldSerializer;
@@ -86,7 +88,8 @@ final class Signer
      *     label is already present under RFC 9421, when the key identifier has
      *     a character outside printable ASCII under the draft form, or when a
      *     covered component cannot be taken from the message
-     * @throws SigningFailed when OpenSSL fails
+     * @throws SigningFailed when OpenSSL fails, or returns an ECDSA signature
+     *     that does not fit the curve
      *
      * @template T of MessageInterface
      */
@@ -148,7 +151,7 @@ final class Signer
 
         try {
             $base = SignatureBase::build(new MessageContext($message, $relatedRequest), $covered, $signatureParams);
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             throw new InvalidArgument('Cannot sign the message: ' . $failure->detail, 0, $failure);
         }
 
@@ -197,7 +200,7 @@ final class Signer
                 $created === null ? null : (string) $created,
                 $expires === null ? null : (string) $expires,
             );
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             throw new InvalidArgument('Cannot sign the message: ' . $failure->detail, 0, $failure);
         }
 

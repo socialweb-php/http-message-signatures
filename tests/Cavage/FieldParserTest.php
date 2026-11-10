@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Cavage\FieldParser;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 

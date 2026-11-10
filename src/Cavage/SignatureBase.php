@@ -28,7 +28,8 @@ namespace SocialWeb\Http\MessageSignatures\Cavage;
 
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 
 use function implode;
@@ -67,11 +68,11 @@ final class SignatureBase
      * @param bool $includeQuery whether `(request-target)` has the query
      *     string; `false` only for the verifier's second try
      *
+     * @throws ComponentFailure `UnsupportedSignature` for `(request-target)`
+     *     of a response, and `MissingComponent` for a field the message lacks
+     *     or a value with a line break
      * @throws Failure `MalformedSignature` for `(created)` or `(expires)`
-     *     under a named algorithm, or covered without an integer parameter;
-     *     `UnsupportedSignature` for `(request-target)` of a response; and
-     *     `MissingComponent` for a field the message lacks or a value with a
-     *     line break
+     *     under a named algorithm, or covered without an integer parameter
      */
     public static function build(
         MessageContext $context,

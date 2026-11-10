@@ -7,7 +7,7 @@ namespace SocialWeb\Test\Http\MessageSignatures\Rfc9421;
 use Nyholm\Psr7\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\Rfc9421\FieldParser;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;

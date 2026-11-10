@@ -29,8 +29,8 @@ namespace SocialWeb\Http\MessageSignatures\Component;
 use Bakame\Http\StructuredFields\Item;
 use Bakame\Http\StructuredFields\Parameters;
 use Bakame\Http\StructuredFields\SyntaxError;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
-use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 

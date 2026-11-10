@@ -11,7 +11,8 @@ use Psr\Http\Message\MessageInterface;
 use SocialWeb\Http\MessageSignatures\Cavage\SignatureBase;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
-use SocialWeb\Http\MessageSignatures\Failure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
@@ -241,7 +242,7 @@ final class SignatureBaseTest extends TestCase
         try {
             SignatureBase::build(new MessageContext($message), self::names($headers), $algorithm, $created, $expires);
             $this->fail('Expected a Failure');
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             $this->assertSame($reason, $failure->reason);
             $this->assertSame($detail, $failure->detail);
         }

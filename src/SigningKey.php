@@ -123,8 +123,9 @@ final readonly class SigningKey
      * Signs the signature base and returns the raw signature bytes
      *
      * @throws InvalidArgument when the algorithm is not in the permitted list
-     * @throws SigningFailed when OpenSSL fails; the message has OpenSSL's
-     *     error text
+     * @throws SigningFailed when OpenSSL fails, in which case the message has
+     *     OpenSSL's error text, or returns an ECDSA signature that does not
+     *     fit the curve
      */
     public function sign(Algorithm $algorithm, string $signatureBase): string
     {

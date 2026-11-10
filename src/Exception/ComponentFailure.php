@@ -24,17 +24,26 @@
 
 declare(strict_types=1);
 
-namespace SocialWeb\Http\MessageSignatures\Component;
+namespace SocialWeb\Http\MessageSignatures\Exception;
 
-use SocialWeb\Http\MessageSignatures\Failure;
+use RuntimeException;
+use SocialWeb\Http\MessageSignatures\FailureReason;
+use Throwable;
 
 /**
  * Raised inside the package when a component value cannot be taken from the
- * message, and caught by the procedures, which turn it into a result on verify
- * and into `InvalidArgument` on sign
+ * message, with the reason the result reports; the procedures catch it and
+ * turn it into a result on verify and into `InvalidArgument` on sign
  *
  * @internal
  */
-final class ComponentFailure extends Failure
+final class ComponentFailure extends RuntimeException implements MessageSignaturesException
 {
+    public function __construct(
+        public readonly FailureReason $reason,
+        public readonly string $detail,
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct($reason->name . ': ' . $detail, 0, $previous);
+    }
 }

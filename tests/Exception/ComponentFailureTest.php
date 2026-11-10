@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace SocialWeb\Test\Http\MessageSignatures\Component;
+namespace SocialWeb\Test\Http\MessageSignatures\Exception;
 
 use RuntimeException;
-use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
 use SocialWeb\Http\MessageSignatures\Exception\MessageSignaturesException;
 use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
+
+use function get_parent_class;
 
 /**
  * Checks the exception raised for a component value that cannot be taken from
@@ -21,6 +23,13 @@ final class ComponentFailureTest extends TestCase
         $this->expectException(MessageSignaturesException::class);
 
         throw new ComponentFailure(FailureReason::MissingComponent, 'the field "date" is not in the message');
+    }
+
+    public function testExtendsRuntimeExceptionAndNotFailure(): void
+    {
+        $failure = new ComponentFailure(FailureReason::MissingComponent, 'the field "date" is not in the message');
+
+        $this->assertSame(RuntimeException::class, get_parent_class($failure));
     }
 
     public function testHasTheReasonAndTheDetail(): void

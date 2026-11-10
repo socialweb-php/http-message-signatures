@@ -34,6 +34,8 @@ use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\Content;
 use SocialWeb\Http\MessageSignatures\Component\DigestField;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
+use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
+use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Rfc9421\FieldParser;
 use SocialWeb\Http\MessageSignatures\Rfc9421\ParsedSignature;
@@ -111,7 +113,7 @@ final class Verifier
 
         try {
             $signatures = FieldParser::parse($context, $this->options->maxSignatures);
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             return new VerificationResult(
                 verified: false,
                 reason: $failure->reason,
@@ -284,7 +286,7 @@ final class Verifier
             }
 
             self::checkDigests($covered, $context, $content);
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             return $result($failure->reason, $failure->detail);
         }
 
@@ -378,7 +380,7 @@ final class Verifier
         try {
             $base = SignatureBase::build($context, $signature->coveredComponents, $signature->signatureParams);
             self::checkDigests($signature->coveredComponents, $context, $content);
-        } catch (Failure $failure) {
+        } catch (ComponentFailure | Failure $failure) {
             return $result($failure->reason, $failure->detail);
         }
 
@@ -596,8 +598,10 @@ final class Verifier
      *
      * @param list<ComponentIdentifier> $covered
      *
-     * @throws Failure `DigestMismatch`, or `MissingComponent` for a field
-     *     value with a line break
+     * @throws ComponentFailure `MissingComponent` for a field value with a
+     *     line break
+     * @throws Failure `DigestMismatch` when a digest does not match the
+     *     content
      */
     private static function checkDigests(array $covered, MessageContext $context, Content $content): void
     {
