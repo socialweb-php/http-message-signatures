@@ -34,7 +34,6 @@ use Psr\Http\Message\MessageInterface;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Http\MessageSignatures\Component\MessageContext;
 use SocialWeb\Http\MessageSignatures\Exception\ComponentFailure;
-use SocialWeb\Http\MessageSignatures\Exception\Failure;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
@@ -121,7 +120,7 @@ final class FieldSerializer
                 0,
                 $error,
             );
-        } catch (ComponentFailure | Failure $failure) {
+        } catch (ComponentFailure $failure) {
             throw new InvalidArgument('Cannot sign the message: ' . $failure->detail, 0, $failure);
         }
     }
