@@ -28,6 +28,7 @@ namespace SocialWeb\Http\MessageSignatures;
 
 use DateInterval;
 use DateTimeImmutable;
+use DateTimeInterface;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 use function min;
@@ -82,16 +83,20 @@ final readonly class TimePolicy
      * its option `requireCreationTime` is off, is judged by `expires` alone,
      * with no clamping, and passes when that is absent too.
      *
-     * @param DateTimeImmutable $now the injected clock's current time
-     * @param DateTimeImmutable | null $created the signature's creation time
-     * @param DateTimeImmutable | null $expires the signature's `expires`
+     * @param DateTimeInterface $now the injected clock's current time
+     * @param DateTimeInterface | null $created the signature's creation time
+     * @param DateTimeInterface | null $expires the signature's `expires`
      *     parameter, as sent
      */
     public function evaluate(
-        DateTimeImmutable $now,
-        ?DateTimeImmutable $created,
-        ?DateTimeImmutable $expires,
+        DateTimeInterface $now,
+        ?DateTimeInterface $created,
+        ?DateTimeInterface $expires,
     ): ?FailureReason {
+        $now = DateTimeImmutable::createFromInterface($now);
+        $created = $created === null ? null : DateTimeImmutable::createFromInterface($created);
+        $expires = $expires === null ? null : DateTimeImmutable::createFromInterface($expires);
+
         if ($created === null) {
             $effectiveExpiry = $expires;
         } else {

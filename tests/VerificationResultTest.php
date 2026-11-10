@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SocialWeb\Test\Http\MessageSignatures;
 
 use Closure;
+use DateTime;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
@@ -47,12 +48,25 @@ final class VerificationResultTest extends TestCase
         $this->assertSame('https://example.com/users/alice', $result->keyOwner);
         $this->assertSame('sig-b26', $result->label);
         $this->assertSame(['date', '@method'], $result->coveredComponents);
-        $this->assertSame($created, $result->created);
-        $this->assertSame($expires, $result->expires);
+        $this->assertEquals($created, $result->created);
+        $this->assertEquals($expires, $result->expires);
         $this->assertSame('n', $result->nonce);
         $this->assertSame('bytes', $result->signature);
         $this->assertTrue($result->keyRefreshed);
         $this->assertFalse($result->requestTargetVerifiedWithoutQuery);
+    }
+
+    public function testKeepsItsOwnCopyOfADateItIsGiven(): void
+    {
+        $created = new DateTime('@1618884473');
+        $expires = new DateTime('@1618884773');
+
+        $result = new VerificationResult(verified: true, form: Form::Rfc9421, created: $created, expires: $expires);
+        $created->modify('+1 day');
+        $expires->modify('+1 day');
+
+        $this->assertSame(1618884473, $result->created?->getTimestamp());
+        $this->assertSame(1618884773, $result->expires?->getTimestamp());
     }
 
     public function testASuccessUnderAKeyWithNoOwnerHasNone(): void

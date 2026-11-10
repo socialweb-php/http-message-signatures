@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures\Cavage;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use DateTimeZone;
 
 use function checkdate;
@@ -79,10 +80,10 @@ final class HttpDate
     /**
      * Returns the time the value names, or `null` when it is not an HTTP date
      *
-     * @param DateTimeImmutable $now the verifier's clock, against which a
+     * @param DateTimeInterface $now the verifier's clock, against which a
      *     two-digit year is placed
      */
-    public static function parse(string $value, DateTimeImmutable $now): ?DateTimeImmutable
+    public static function parse(string $value, DateTimeInterface $now): ?DateTimeImmutable
     {
         if (
             preg_match(self::IMF_FIXDATE, $value, $matches) !== 1
@@ -95,7 +96,9 @@ final class HttpDate
         $year = (int) $matches['year'];
 
         if (strlen($matches['year']) === 2) {
-            $thisYear = (int) $now->setTimezone(new DateTimeZone('UTC'))->format('Y');
+            $thisYear = (int) DateTimeImmutable::createFromInterface($now)
+                ->setTimezone(new DateTimeZone('UTC'))
+                ->format('Y');
             $year += intdiv($thisYear, 100) * 100;
 
             if ($year > $thisYear + 50) {

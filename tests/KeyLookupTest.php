@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Test\Http\MessageSignatures;
 
+use DateTime;
 use DateTimeImmutable;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
@@ -62,10 +63,29 @@ final class KeyLookupTest extends TestCase
         $this->assertSame($request, $lookup->relatedRequest);
         $this->assertSame('sig1', $lookup->label);
         $this->assertSame(Algorithm::Ed25519, $lookup->algorithm);
-        $this->assertSame($created, $lookup->created);
-        $this->assertSame($expires, $lookup->expires);
+        $this->assertEquals($created, $lookup->created);
+        $this->assertEquals($expires, $lookup->expires);
         $this->assertSame('n1', $lookup->nonce);
         $this->assertSame('example', $lookup->tag);
         $this->assertSame(['@status', '@method;req', 'content-digest'], $lookup->coveredComponents);
+    }
+
+    public function testKeepsItsOwnCopyOfADateItIsGiven(): void
+    {
+        $created = new DateTime('@1618884473');
+        $expires = new DateTime('@1618884773');
+
+        $lookup = new KeyLookup(
+            message: new Request('GET', 'https://example.com/'),
+            form: Form::Rfc9421,
+            keyId: 'test-key-ed25519',
+            created: $created,
+            expires: $expires,
+        );
+        $created->modify('+1 day');
+        $expires->modify('+1 day');
+
+        $this->assertSame(1618884473, $lookup->created?->getTimestamp());
+        $this->assertSame(1618884773, $lookup->expires?->getTimestamp());
     }
 }

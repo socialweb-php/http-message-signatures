@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 
@@ -43,6 +44,16 @@ use Psr\Http\Message\RequestInterface;
 final readonly class KeyLookup
 {
     /**
+     * The creation time the time policy judged, as the result reports it
+     */
+    public ?DateTimeImmutable $created;
+
+    /**
+     * The expiry as sent, before clamping, as the result reports it
+     */
+    public ?DateTimeImmutable $expires;
+
+    /**
      * @param MessageInterface $message the request or response being
      *     verified
      * @param Form $form the form detected
@@ -54,9 +65,9 @@ final readonly class KeyLookup
      * @param Algorithm | null $algorithm the algorithm the signature names,
      *     resolved, or `null` when the key decides: an absent `alg` under
      *     RFC 9421, or an absent or `hs2019` `algorithm` under the draft
-     * @param DateTimeImmutable | null $created the creation time the time
+     * @param DateTimeInterface | null $created the creation time the time
      *     policy judged, as the result reports it
-     * @param DateTimeImmutable | null $expires the expiry as sent, before
+     * @param DateTimeInterface | null $expires the expiry as sent, before
      *     clamping, as the result reports it
      * @param string | null $nonce the `nonce` parameter; RFC 9421 only
      * @param string | null $tag the `tag` parameter; RFC 9421 only
@@ -71,11 +82,13 @@ final readonly class KeyLookup
         public ?RequestInterface $relatedRequest = null,
         public ?string $label = null,
         public ?Algorithm $algorithm = null,
-        public ?DateTimeImmutable $created = null,
-        public ?DateTimeImmutable $expires = null,
+        ?DateTimeInterface $created = null,
+        ?DateTimeInterface $expires = null,
         public ?string $nonce = null,
         public ?string $tag = null,
         public array $coveredComponents = [],
     ) {
+        $this->created = $created === null ? null : DateTimeImmutable::createFromInterface($created);
+        $this->expires = $expires === null ? null : DateTimeImmutable::createFromInterface($expires);
     }
 }

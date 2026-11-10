@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace SocialWeb\Http\MessageSignatures;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 
 /**
@@ -40,6 +41,16 @@ use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
  */
 final readonly class VerificationResult
 {
+    /**
+     * The creation time
+     */
+    public ?DateTimeImmutable $created;
+
+    /**
+     * The expiry as sent, before clamping
+     */
+    public ?DateTimeImmutable $expires;
+
     /**
      * @param bool $verified whether the signature verified
      * @param FailureReason | null $reason why it did not; `null` on success
@@ -55,8 +66,8 @@ final readonly class VerificationResult
      *     not verify under the key
      * @param string | null $label the signature label; RFC 9421 only
      * @param list<string> $coveredComponents as the signature named them
-     * @param DateTimeImmutable | null $created the creation time
-     * @param DateTimeImmutable | null $expires the expiry as sent, before
+     * @param DateTimeInterface | null $created the creation time
+     * @param DateTimeInterface | null $expires the expiry as sent, before
      *     clamping
      * @param string | null $nonce the nonce parameter
      * @param string | null $signature the raw signature bytes
@@ -79,8 +90,8 @@ final readonly class VerificationResult
         public ?string $keyOwner = null,
         public ?string $label = null,
         public array $coveredComponents = [],
-        public ?DateTimeImmutable $created = null,
-        public ?DateTimeImmutable $expires = null,
+        ?DateTimeInterface $created = null,
+        ?DateTimeInterface $expires = null,
         public ?string $nonce = null,
         public ?string $signature = null,
         public bool $keyRefreshed = false,
@@ -109,5 +120,8 @@ final readonly class VerificationResult
         if (($form === null) !== ($reason === FailureReason::NoSignature)) {
             throw new InvalidArgument('The form is absent exactly when the reason is NoSignature');
         }
+
+        $this->created = $created === null ? null : DateTimeImmutable::createFromInterface($created);
+        $this->expires = $expires === null ? null : DateTimeImmutable::createFromInterface($expires);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SocialWeb\Test\Http\MessageSignatures;
 
 use DateInterval;
+use DateTime;
 use DateTimeImmutable;
 use Ergebnis\Clock\FrozenClock;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -136,6 +137,19 @@ final class TimePolicyTest extends TestCase
         $expires = $expiresOffset === null ? null : $reference->modify(sprintf('%+d seconds', $expiresOffset));
 
         $this->assertSame($expected, $policy->evaluate($now, null, $expires));
+    }
+
+    public function testEvaluatesAnyDateTimeInterface(): void
+    {
+        $policy = new TimePolicy();
+        $created = new DateTime('@1618884473');
+
+        $this->assertNull($policy->evaluate(new DateTime('@1618884473'), $created, new DateTime('@1618884773')));
+        $this->assertSame(
+            FailureReason::Expired,
+            $policy->evaluate(new DateTime('@1618892000'), $created, new DateTime('@1618884773')),
+        );
+        $this->assertSame(1618884473, $created->getTimestamp());
     }
 
     public function testAZeroSkewAcceptsACreationTimeEqualToNow(): void

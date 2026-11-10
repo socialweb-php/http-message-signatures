@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SocialWeb\Test\Http\MessageSignatures\Cavage;
 
+use DateTime;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Cavage\HttpDate;
@@ -95,6 +96,13 @@ final class HttpDateTest extends TestCase
     public function testRefusesWhatIsNotAnHttpDate(string $value): void
     {
         $this->assertNull(HttpDate::parse($value, new DateTimeImmutable('2026-10-16')));
+    }
+
+    public function testPlacesATwoDigitYearAgainstAnyDateTimeInterface(): void
+    {
+        $date = HttpDate::parse('Sunday, 06-Nov-94 08:49:37 GMT', new DateTime('2026-01-01T00:00:00Z'));
+
+        $this->assertSame('1994-11-06T08:49:37+00:00', $date?->format('c'));
     }
 
     public function testAcceptsALeapSecond(): void
