@@ -8,8 +8,8 @@ use Nyholm\Psr7\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Component\Content;
 use SocialWeb\Http\MessageSignatures\Component\DigestField;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 use function base64_encode;
@@ -35,7 +35,7 @@ final class DigestFieldTest extends TestCase
 
     public function testSerializesContentDigestAsADictionaryOfByteSequences(): void
     {
-        $digests = self::content()->digests([DigestAlgorithm::Sha512, DigestAlgorithm::Sha256]);
+        $digests = self::content()->digests([HashAlgorithm::Sha512, HashAlgorithm::Sha256]);
 
         $this->assertSame(
             'sha-512=:' . self::SHA512 . ':, sha-256=:' . self::SHA256 . ':',
@@ -45,7 +45,7 @@ final class DigestFieldTest extends TestCase
 
     public function testSerializesDigestWithTheRfc5843Tokens(): void
     {
-        $digests = self::content()->digests([DigestAlgorithm::Sha256, DigestAlgorithm::Sha512]);
+        $digests = self::content()->digests([HashAlgorithm::Sha256, HashAlgorithm::Sha512]);
 
         $this->assertSame(
             'SHA-256=' . self::SHA256 . ', SHA-512=' . self::SHA512,
@@ -67,6 +67,24 @@ final class DigestFieldTest extends TestCase
         $this->expectExceptionMessageIsOrContains('"md5" is not a digest algorithm the package knows');
 
         DigestField::serialize('digest', ['md5' => hash('md5', '', true)]);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function digestFields(): iterable
+    {
+        yield 'Content-Digest' => ['content-digest'];
+        yield 'Digest' => ['digest'];
+    }
+
+    #[DataProvider('digestFields')]
+    public function testRefusesToSerializeSha384WhichNeitherFieldHas(string $fieldName): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessageIsOrContains('Hash algorithm Sha384 has no entry in the digest field registries');
+
+        DigestField::serialize($fieldName, self::content()->digests([HashAlgorithm::Sha256, HashAlgorithm::Sha384]));
     }
 
     public function testRefusesToSerializeAnotherField(): void
@@ -100,6 +118,21 @@ final class DigestFieldTest extends TestCase
             'content-digest',
             'md5=:' . base64_encode(hash('md5', self::BODY, true)) . ':, sha-256=:' . self::SHA256 . ':',
             null,
+        ];
+        yield 'content-digest with a matching digest beside a sha-384 key, which is not read' => [
+            'content-digest',
+            'sha-384=:' . base64_encode(hash('sha384', 'x', true)) . ':, sha-256=:' . self::SHA256 . ':',
+            null,
+        ];
+        yield 'content-digest with a sha-384 key alone' => [
+            'content-digest',
+            'sha-384=:' . base64_encode(hash('sha384', self::BODY, true)) . ':',
+            'content-digest names no algorithm the package knows; it offered: sha-384',
+        ];
+        yield 'digest with a SHA-384 token alone' => [
+            'digest',
+            'SHA-384=' . base64_encode(hash('sha384', self::BODY, true)),
+            'digest names no algorithm the package knows; it offered: SHA-384',
         ];
         yield 'content-digest with a wrong digest' => [
             'content-digest',

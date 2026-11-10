@@ -26,20 +26,29 @@ declare(strict_types=1);
 
 namespace SocialWeb\Http\MessageSignatures;
 
+use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+
+use function sprintf;
 use function strtolower;
 
 /**
- * A hash algorithm for the `Content-Digest` and `Digest` fields
+ * A hash function, with the names the `Content-Digest` and `Digest` fields
+ * give it
  *
- * These are the two entries the RFC 9530 registry marks Active. The value of
- * each case is the RFC 9530 algorithm key, which is also the `Content-Digest`
- * Dictionary key. The deprecated entries of that registry, and the MD5 and
- * SHA-1 of RFC 3230, are refused on both sides, because RFC 9530 section 5
- * forbids a deprecated algorithm where the digest is signed.
+ * The cases and their values are the ones every socialweb package uses. The
+ * value of `Sha256` and of `Sha512` is also the algorithm key of RFC 9530,
+ * which is the `Content-Digest` Dictionary key: they are the two entries the
+ * RFC 9530 registry marks Active, and the two RFC 5843 registers for the
+ * `Digest` field of RFC 3230. `Sha384` is in neither registry, so the package
+ * refuses it where a digest field is written and does not read a `sha-384`
+ * entry of a digest field. The deprecated entries of the RFC 9530 registry,
+ * and the MD5 and SHA-1 of RFC 3230, are refused on both sides, because RFC
+ * 9530 section 5 forbids a deprecated algorithm where the digest is signed.
  */
-enum DigestAlgorithm: string
+enum HashAlgorithm: string
 {
     case Sha256 = 'sha-256';
+    case Sha384 = 'sha-384';
     case Sha512 = 'sha-512';
 
     /**
@@ -49,6 +58,7 @@ enum DigestAlgorithm: string
     {
         return match ($this) {
             self::Sha256 => 'sha256',
+            self::Sha384 => 'sha384',
             self::Sha512 => 'sha512',
         };
     }
@@ -60,8 +70,18 @@ enum DigestAlgorithm: string
     {
         return match ($this) {
             self::Sha256 => 32,
+            self::Sha384 => 48,
             self::Sha512 => 64,
         };
+    }
+
+    /**
+     * Returns whether the registries of the two digest fields have this
+     * algorithm, which is so for `Sha256` and `Sha512`
+     */
+    public function isDigestFieldAlgorithm(): bool
+    {
+        return $this !== self::Sha384;
     }
 
     /**
@@ -70,12 +90,17 @@ enum DigestAlgorithm: string
      *
      * The token is compared case-insensitively on the way in, as RFC 3230
      * section 4.1.1 says, and emitted in this spelling on the way out.
+     *
+     * @throws InvalidArgument for `Sha384`, which has no token
      */
     public function rfc3230Token(): string
     {
         return match ($this) {
             self::Sha256 => 'SHA-256',
             self::Sha512 => 'SHA-512',
+            self::Sha384 => throw new InvalidArgument(
+                sprintf('Hash algorithm %s has no token in the Digest field', $this->name),
+            ),
         };
     }
 

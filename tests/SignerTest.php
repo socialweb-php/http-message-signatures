@@ -15,10 +15,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Component\ComponentFailure;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Failure;
 use SocialWeb\Http\MessageSignatures\Form;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Http\MessageSignatures\Signer;
 use SocialWeb\Http\MessageSignatures\SigningKey;
 use SocialWeb\Http\MessageSignatures\SigningOptions;
@@ -167,7 +167,7 @@ final class SignerTest extends TestCase
             new SigningOptions(
                 form: Form::Rfc9421,
                 coveredComponents: ['@method', '@target-uri', 'content-digest'],
-                digestAlgorithms: [DigestAlgorithm::Sha512, DigestAlgorithm::Sha256],
+                digestAlgorithms: [HashAlgorithm::Sha512, HashAlgorithm::Sha256],
             ),
         );
 

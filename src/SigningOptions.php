@@ -74,7 +74,7 @@ final readonly class SigningOptions
     /**
      * Which digests to compute for the digest field
      *
-     * @var non-empty-list<DigestAlgorithm>
+     * @var non-empty-list<HashAlgorithm>
      */
     public array $digestAlgorithms;
 
@@ -95,8 +95,8 @@ final readonly class SigningOptions
      *     creation time; under the draft form only when `(expires)` is covered
      * @param string | null $nonce RFC 9421 only
      * @param string | null $tag RFC 9421 only
-     * @param list<DigestAlgorithm> $digestAlgorithms which digests to compute
-     *     for the digest field; must not be empty
+     * @param list<HashAlgorithm> $digestAlgorithms which digests to compute
+     *     for the digest field, each `Sha256` or `Sha512`; must not be empty
      *
      * @throws InvalidArgument for an option that does not fit the form: an
      *     algorithm with no name in the form, or a `nonce`, `tag`, or `label`
@@ -104,7 +104,8 @@ final readonly class SigningOptions
      *     no form: a component identifier that is empty, does not parse,
      *     appears twice, or names `@signature-params`, a label that is not a
      *     valid Dictionary key, a negative expiry, a nonce or tag outside
-     *     printable ASCII, or a digest list that is empty or holds a duplicate
+     *     printable ASCII, or a digest list that is empty, holds a duplicate,
+     *     or holds `Sha384`, which the registries of the digest fields lack
      */
     public function __construct(
         public Form $form,
@@ -115,7 +116,7 @@ final readonly class SigningOptions
         public ?DateInterval $expires = null,
         public ?string $nonce = null,
         public ?string $tag = null,
-        array $digestAlgorithms = [DigestAlgorithm::Sha256],
+        array $digestAlgorithms = [HashAlgorithm::Sha256],
     ) {
         $identifiers = $coveredComponents === null ? null : self::parseIdentifiers($coveredComponents, $form);
 
@@ -164,8 +165,15 @@ final readonly class SigningOptions
         foreach ($digestAlgorithms as $digestAlgorithm) {
             if (in_array($digestAlgorithm, $seen, true)) {
                 throw new InvalidArgument(
-                    sprintf('Digest algorithm %s appears more than once', $digestAlgorithm->value),
+                    sprintf('Digest algorithm %s appears more than once', $digestAlgorithm->name),
                 );
+            }
+
+            if (!$digestAlgorithm->isDigestFieldAlgorithm()) {
+                throw new InvalidArgument(sprintf(
+                    'Hash algorithm %s has no entry in the digest field registries',
+                    $digestAlgorithm->name,
+                ));
             }
 
             $seen[] = $digestAlgorithm;

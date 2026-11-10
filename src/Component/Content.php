@@ -28,8 +28,8 @@ namespace SocialWeb\Http\MessageSignatures\Component;
 
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\StreamInterface;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 
 use function hash_final;
 use function hash_init;
@@ -81,7 +81,7 @@ final class Content
      * Returns the digest of the content under each algorithm, keyed by the
      * algorithm's RFC 9530 key, with the raw bytes as values
      *
-     * @param non-empty-list<DigestAlgorithm> $algorithms
+     * @param non-empty-list<HashAlgorithm> $algorithms
      *
      * @return array<string, string>
      */

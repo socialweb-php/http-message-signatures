@@ -30,8 +30,8 @@ use Bakame\Http\StructuredFields\Bytes;
 use Bakame\Http\StructuredFields\Dictionary;
 use Bakame\Http\StructuredFields\Item;
 use Bakame\Http\StructuredFields\SyntaxError;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Http\MessageSignatures\StructuredFields;
 
 use function array_map;
@@ -79,8 +79,8 @@ final class DigestField
      *     them
      *
      * @throws InvalidArgument for a field name that is not a digest field, an
-     *     empty list of digests, or a key that is not an algorithm the package
-     *     knows
+     *     empty list of digests, a key that is not an algorithm the package
+     *     knows, or the key of `Sha384`, which neither field's registry has
      */
     public static function serialize(string $fieldName, array $digests): string
     {
@@ -91,10 +91,16 @@ final class DigestField
         $entries = [];
 
         foreach ($digests as $key => $bytes) {
-            $algorithm = DigestAlgorithm::tryFrom($key);
+            $algorithm = HashAlgorithm::tryFrom($key);
 
             if ($algorithm === null) {
                 throw new InvalidArgument(sprintf('"%s" is not a digest algorithm the package knows', $key));
+            }
+
+            if (!$algorithm->isDigestFieldAlgorithm()) {
+                throw new InvalidArgument(
+                    sprintf('Hash algorithm %s has no entry in the digest field registries', $algorithm->name),
+                );
             }
 
             $entries[] = [$algorithm, $bytes];
@@ -155,7 +161,7 @@ final class DigestField
     }
 
     /**
-     * @return non-empty-list<array{DigestAlgorithm, string}> | string the
+     * @return non-empty-list<array{HashAlgorithm, string}> | string the
      *     known digests, or the detail of why there are none
      */
     private static function parseContentDigest(string $fieldValue): array | string
@@ -171,9 +177,9 @@ final class DigestField
 
         foreach ($dictionary as [$key, $member]) {
             $offered[] = $key;
-            $algorithm = DigestAlgorithm::tryFrom($key);
+            $algorithm = HashAlgorithm::tryFrom($key);
 
-            if ($algorithm === null) {
+            if ($algorithm === null || !$algorithm->isDigestFieldAlgorithm()) {
                 continue;
             }
 
@@ -190,7 +196,7 @@ final class DigestField
     }
 
     /**
-     * @return non-empty-list<array{DigestAlgorithm, string}> | string the
+     * @return non-empty-list<array{HashAlgorithm, string}> | string the
      *     known digests, or the detail of why there are none
      */
     private static function parseDigest(string $fieldValue): array | string
@@ -212,7 +218,7 @@ final class DigestField
             }
 
             $offered[] = $parts[0];
-            $algorithm = DigestAlgorithm::tryFromRfc3230Token($parts[0]);
+            $algorithm = HashAlgorithm::tryFromRfc3230Token($parts[0]);
 
             if ($algorithm === null) {
                 continue;

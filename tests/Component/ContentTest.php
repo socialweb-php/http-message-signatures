@@ -9,8 +9,8 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\Stream;
 use Psr\Http\Message\StreamInterface;
 use SocialWeb\Http\MessageSignatures\Component\Content;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 use function array_keys;
@@ -62,7 +62,7 @@ final class ContentTest extends TestCase
         $body->read(5);
         $content = new Content(new Request('POST', 'https://example.com/foo', [], $body));
 
-        $digests = $content->digests([DigestAlgorithm::Sha512, DigestAlgorithm::Sha256]);
+        $digests = $content->digests([HashAlgorithm::Sha512, HashAlgorithm::Sha256]);
 
         $this->assertSame(['sha-512', 'sha-256'], array_keys($digests));
         $this->assertSame(
@@ -79,7 +79,7 @@ final class ContentTest extends TestCase
         $text = str_repeat('0123456789', 3000);
         $content = new Content(new Response(200, [], $text));
 
-        $this->assertSame(['sha-256' => hash('sha256', $text, true)], $content->digests([DigestAlgorithm::Sha256]));
+        $this->assertSame(['sha-256' => hash('sha256', $text, true)], $content->digests([HashAlgorithm::Sha256]));
     }
 
     public function testHashesABodyOfUnknownSizeToTheEnd(): void
@@ -87,7 +87,14 @@ final class ContentTest extends TestCase
         $text = str_repeat('x', 8192 * 2 + 1);
         $content = new Content(new Response(200, [], self::sizeless($text)));
 
-        $this->assertSame(['sha-512' => hash('sha512', $text, true)], $content->digests([DigestAlgorithm::Sha512]));
+        $this->assertSame(['sha-512' => hash('sha512', $text, true)], $content->digests([HashAlgorithm::Sha512]));
+    }
+
+    public function testHashesUnderSha384ThoughNoDigestFieldHasIt(): void
+    {
+        $content = new Content(new Response(200, [], 'x'));
+
+        $this->assertSame(['sha-384' => hash('sha384', 'x', true)], $content->digests([HashAlgorithm::Sha384]));
     }
 
     public function testADuplicateAlgorithmIsHashedOnce(): void
@@ -96,7 +103,7 @@ final class ContentTest extends TestCase
 
         $this->assertSame(
             ['sha-256' => hash('sha256', 'x', true)],
-            $content->digests([DigestAlgorithm::Sha256, DigestAlgorithm::Sha256]),
+            $content->digests([HashAlgorithm::Sha256, HashAlgorithm::Sha256]),
         );
     }
 

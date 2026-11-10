@@ -9,9 +9,9 @@ use DateInterval;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SocialWeb\Http\MessageSignatures\Algorithm;
 use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
-use SocialWeb\Http\MessageSignatures\DigestAlgorithm;
 use SocialWeb\Http\MessageSignatures\Exception\InvalidArgument;
 use SocialWeb\Http\MessageSignatures\Form;
+use SocialWeb\Http\MessageSignatures\HashAlgorithm;
 use SocialWeb\Http\MessageSignatures\SigningOptions;
 
 use function array_map;
@@ -33,7 +33,7 @@ final class SigningOptionsTest extends TestCase
         $this->assertNull($options->expires);
         $this->assertNull($options->nonce);
         $this->assertNull($options->tag);
-        $this->assertSame([DigestAlgorithm::Sha256], $options->digestAlgorithms);
+        $this->assertSame([HashAlgorithm::Sha256], $options->digestAlgorithms);
     }
 
     public function testAcceptsEveryOptionUnderRfc9421(): void
@@ -48,7 +48,7 @@ final class SigningOptionsTest extends TestCase
             expires: $expires,
             nonce: 'b3k2pp5k7z-50gnwp.yemd',
             tag: 'header-example',
-            digestAlgorithms: [DigestAlgorithm::Sha512, DigestAlgorithm::Sha256],
+            digestAlgorithms: [HashAlgorithm::Sha512, HashAlgorithm::Sha256],
         );
 
         $this->assertSame(['@method', '@target-uri', 'content-digest'], $options->coveredComponents);
@@ -58,7 +58,7 @@ final class SigningOptionsTest extends TestCase
         $this->assertSame($expires, $options->expires);
         $this->assertSame('b3k2pp5k7z-50gnwp.yemd', $options->nonce);
         $this->assertSame('header-example', $options->tag);
-        $this->assertSame([DigestAlgorithm::Sha512, DigestAlgorithm::Sha256], $options->digestAlgorithms);
+        $this->assertSame([HashAlgorithm::Sha512, HashAlgorithm::Sha256], $options->digestAlgorithms);
     }
 
     public function testAcceptsAnEmptyCoveredListAndADraftAlgorithm(): void
@@ -207,9 +207,16 @@ final class SigningOptionsTest extends TestCase
         yield 'a duplicate digest algorithm' => [
             static fn (): SigningOptions => new SigningOptions(
                 form: Form::Rfc9421,
-                digestAlgorithms: [DigestAlgorithm::Sha256, DigestAlgorithm::Sha256],
+                digestAlgorithms: [HashAlgorithm::Sha256, HashAlgorithm::Sha256],
             ),
-            'Digest algorithm sha-256 appears more than once',
+            'Digest algorithm Sha256 appears more than once',
+        ];
+        yield 'a digest algorithm the digest fields do not have' => [
+            static fn (): SigningOptions => new SigningOptions(
+                form: Form::Rfc9421,
+                digestAlgorithms: [HashAlgorithm::Sha256, HashAlgorithm::Sha384],
+            ),
+            'Hash algorithm Sha384 has no entry in the digest field registries',
         ];
     }
 
