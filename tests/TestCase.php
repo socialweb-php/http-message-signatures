@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SocialWeb\Test\Http\MessageSignatures;
 
 use DateInterval;
+use OpenSSLAsymmetricKey;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use RuntimeException;
 use SensitiveParameterValue;
@@ -99,8 +100,8 @@ class TestCase extends BaseTestCase
 
     /**
      * Asserts that the package's frames in the exception's trace recorded their
-     * arguments, redacted the sensitive ones, and hold none of the secrets
-     * and no key material object
+     * arguments, redacted the sensitive ones, and hold none of the secrets,
+     * no key material object, and no OpenSSL key object
      */
     protected function assertTraceHidesSecrets(Throwable $exception, string ...$secrets): void
     {
@@ -117,6 +118,12 @@ class TestCase extends BaseTestCase
 
         $jwks = array_filter($arguments, static fn (mixed $argument): bool => $argument instanceof Jwk);
         $this->assertEmpty($jwks, 'A Jwk object is in the trace');
+
+        $keys = array_filter(
+            $arguments,
+            static fn (mixed $argument): bool => $argument instanceof OpenSSLAsymmetricKey,
+        );
+        $this->assertEmpty($keys, 'An OpenSSL key object is in the trace');
 
         foreach ($secrets as $secret) {
             $leaked = array_filter(

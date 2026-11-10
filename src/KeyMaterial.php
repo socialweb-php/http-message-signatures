@@ -118,10 +118,14 @@ final readonly class KeyMaterial
         }
 
         // An encrypted PEM is exported again, unencrypted, so that a PSS key
-        // in it can be rewrapped.
+        // in it can be rewrapped. When the export fails, the PEM stays as it
+        // was given, and the queue is emptied so that the failure's errors
+        // are not left for a later call to report.
         if ($passphrase !== null) {
             $exported = null;
+            self::clearOpenSslErrors();
             openssl_pkey_export($key, $exported);
+            self::clearOpenSslErrors();
             $pem = is_string($exported) ? $exported : $pem;
         }
 
@@ -276,6 +280,7 @@ final readonly class KeyMaterial
             $signature = $der;
         }
 
+        self::clearOpenSslErrors();
         $result = match ($algorithm) {
             Algorithm::RsaV15Sha256 => openssl_verify($signatureBase, $signature, $this->material, 'sha256'),
             Algorithm::RsaPssSha512 => openssl_verify(
@@ -317,13 +322,15 @@ final readonly class KeyMaterial
      * `SigningKeyType::RsaPss`, so that it stays restricted to RSASSA-PSS.
      *
      * @throws InvalidArgument when the key is of a type the package does not
-     *     implement
+     *     implement, or when OpenSSL cannot read a rewrapped RSASSA-PSS key
      */
     private static function detectType(
+        #[SensitiveParameter]
         OpenSSLAsymmetricKey &$key,
         #[SensitiveParameter]
         string $pem,
     ): SigningKeyType {
+        self::clearOpenSslErrors();
         /** @var array{type: int, ec?: array{curve_name?: string}} $details */
         $details = openssl_pkey_get_details($key);
 
@@ -350,15 +357,20 @@ final readonly class KeyMaterial
         $pkcs1 = RsaPssKey::toPkcs1Pem($pem);
 
         if ($pkcs1 !== null) {
+            self::clearOpenSslErrors();
             $rewrapped = str_contains($pkcs1, 'PRIVATE')
                 ? openssl_pkey_get_private($pkcs1)
                 : openssl_pkey_get_public($pkcs1);
 
-            if ($rewrapped !== false) {
-                $key = $rewrapped;
-
-                return SigningKeyType::RsaPss;
+            if ($rewrapped === false) {
+                throw new InvalidArgument(
+                    'OpenSSL cannot read the RSASSA-PSS key in PKCS#1 form: ' . self::openSslErrors(),
+                );
             }
+
+            $key = $rewrapped;
+
+            return SigningKeyType::RsaPss;
         }
 
         throw new InvalidArgument(
