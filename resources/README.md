@@ -5,7 +5,7 @@ The files in these directories are test keys and signed requests copied from the
 | Directory | Source | License |
 | --- | --- | --- |
 | `rfc9421/` | [RFC 9421, HTTP Message Signatures](https://www.rfc-editor.org/rfc/rfc9421), appendix B.1: the test keys, transcribed from the RFC's text. The RFC says these keys MUST NOT be used for any purpose other than testing | [IETF Trust Legal Provisions][tlp] |
-| `cavage/` | [draft-cavage-http-signatures-12, Signing HTTP Messages](https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12), appendix C: the RSA key pair whose `keyId` is `Test`, transcribed from the draft's text | [IETF Trust Legal Provisions][tlp] |
+| `cavage/` | [draft-cavage-http-signatures-12, Signing HTTP Messages](https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12), appendix C: the RSA key pair whose `keyId` is `Test`, transcribed from the Cavage draft's text | [IETF Trust Legal Provisions][tlp] |
 | `fedify/` | Signed requests from the test suite of [Fedify](https://github.com/fedify-dev/fedify) at commit `f56118e197798465021d622a2177ec8c017df073`, each with the public key of its signer | MIT License, in `fedify/LICENSE` |
 
 [`manifest.json`](manifest.json) records the rest for each set: the source's URL and title, its copyright line, the license, the date the files were copied, the commit or the appendix sections they come from, and one SHA-256 checksum for the whole set.
@@ -24,9 +24,9 @@ Each PEM file starts with a comment line that names its appendix section, which 
 | `test-key-ed25519.public.pem`, `test-key-ed25519.private.pem` | B.1.4 | `test-key-ed25519` |
 | `test-shared-secret.base64` | B.1.5 | `test-shared-secret`, 64 bytes, Base64 on one line |
 
-## The draft's key pair
+## The Cavage draft's key pair
 
-`test-key.public.pem` and `test-key.private.pem` are the RSA key pair of the draft's appendix C. The draft calls it a 2048-bit key; it is 1024 bits. Each file starts with a comment line that names its source, which OpenSSL ignores. `Cavage\ExamplesTest` holds the appendix's request and its C.1 and C.2 signatures, which verify and which the signer reproduces byte for byte. C.3 is not used: it lists `(created)` and `(expires)` under `rsa-sha256`, which the draft's section 2.3 forbids, and its signature is over a string without them.
+`test-key.public.pem` and `test-key.private.pem` are the RSA key pair of the Cavage draft's appendix C. Cavage calls it a 2048-bit key; it is 1024 bits. Each file starts with a comment line that names its source, which OpenSSL ignores. `Cavage\ExamplesTest` holds the appendix's request and its C.1 and C.2 signatures, which verify and which the signer reproduces byte for byte. C.3 is not used: it lists `(created)` and `(expires)` under `rsa-sha256`, which the Cavage draft's section 2.3 forbids, and its signature is over a string without them.
 
 ## The Fedify requests
 

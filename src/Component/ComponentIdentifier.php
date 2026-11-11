@@ -44,17 +44,17 @@ use function strtolower;
 use function substr;
 
 /**
- * A component identifier: under RFC 9421, a component name and its
- * parameters, as section 2 defines them; under the draft form, a name from the
- * `headers` parameter, with nothing after it
+ * A component identifier: under RFC 9421, a component name and its parameters,
+ * as section 2 defines them; under the Cavage form, a name from the `headers`
+ * parameter, with nothing after it
  *
  * The options write an identifier as the name followed by its parameters in
  * the syntax of RFC 8941, as in `@query-param;name="Pet"` or
  * `content-digest;req`. The signature base writes it with the name in double
- * quotes, as in `"@query-param";name="Pet"`. A field name is lowercased on
- * the way in; a derived component name is lowercase by the registry. Under
- * the draft form a name is a field name or one of the draft's three names in
- * parentheses, such as `(request-target)`.
+ * quotes, as in `"@query-param";name="Pet"`. A field name is lowercased on the
+ * way in; a derived component name is lowercase by the registry. Under the
+ * Cavage form a name is a field name or one of the Cavage draft's three names
+ * in parentheses, such as `(request-target)`.
  *
  * @internal
  */
@@ -118,8 +118,8 @@ final readonly class ComponentIdentifier
     }
 
     /**
-     * Reads a name of the draft form as the options write it: a field name or
-     * one of the draft's three names in parentheses, in any case
+     * Reads a name of the Cavage form as the options write it: a field name or
+     * one of the Cavage draft's three names in parentheses, in any case
      *
      * @throws InvalidArgument when the name is empty or is neither
      */
@@ -133,7 +133,7 @@ final readonly class ComponentIdentifier
         $isPseudoHeader = in_array($lowercase, self::CAVAGE_PSEUDO_HEADERS, true);
 
         if (!$isPseudoHeader && preg_match(self::FIELD_NAME_PATTERN, $name) !== 1) {
-            throw new InvalidArgument(sprintf('"%s" is not a component name of the draft form', $name));
+            throw new InvalidArgument(sprintf('"%s" is not a component name of the Cavage form', $name));
         }
 
         return new self($lowercase, Parameters::new());
@@ -141,7 +141,7 @@ final readonly class ComponentIdentifier
 
     /**
      * Reads an identifier that may be written in either form: a name in
-     * parentheses as the draft form writes it, and anything else as RFC 9421
+     * parentheses as the Cavage form writes it, and anything else as RFC 9421
      * writes it
      *
      * @throws InvalidArgument when the identifier does not parse in the form
@@ -153,12 +153,12 @@ final readonly class ComponentIdentifier
     }
 
     /**
-     * Builds an identifier from a name of the draft form's `headers`
+     * Builds an identifier from a name of the Cavage form's `headers`
      * parameter, which the parser has lowercased
      *
      * @throws Failure `UnsupportedSignature` for a name in parentheses that
-     *     the draft does not define, and `MalformedSignature` for a name that
-     *     is not a field name
+     *     Cavage does not define, and `MalformedSignature` for a name that is
+     *     not a field name
      */
     public static function fromHeadersName(string $name): self
     {
@@ -169,7 +169,7 @@ final readonly class ComponentIdentifier
         if (preg_match('/^\(.*\)\z/', $name) === 1) {
             throw new Failure(
                 FailureReason::UnsupportedSignature,
-                sprintf('"%s" is not a name the draft form defines', $name),
+                sprintf('"%s" is not a name the Cavage form defines', $name),
             );
         }
 
@@ -217,7 +217,7 @@ final readonly class ComponentIdentifier
     }
 
     /**
-     * Returns whether this is one of the draft form's names in parentheses
+     * Returns whether this is one of the Cavage form's names in parentheses
      */
     public function isPseudoHeader(): bool
     {

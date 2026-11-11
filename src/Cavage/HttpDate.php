@@ -36,7 +36,7 @@ use function preg_match;
 use function strlen;
 
 /**
- * Reads the `Date` field that the draft form takes as the creation time when
+ * Reads the `Date` field that the Cavage form takes as the creation time when
  * the `created` parameter is absent
  *
  * RFC 9110 section 5.6.7 says a recipient must accept all three formats of an

@@ -18,7 +18,7 @@ use function array_map;
 use function base64_decode;
 
 /**
- * Writes the value of the draft form's `Signature` field
+ * Writes the value of the Cavage form's `Signature` field
  */
 final class FieldSerializerTest extends TestCase
 {
@@ -111,13 +111,13 @@ final class FieldSerializerTest extends TestCase
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains(
-            'Under the draft form the key identifier must hold only printable ASCII characters',
+            'Under the Cavage form the key identifier must hold only printable ASCII characters',
         );
 
         FieldSerializer::serialize($keyId, Algorithm::HmacSha256, null, null, self::identifiers(['date']), 'x');
     }
 
-    public function testRefusesAnAlgorithmWithNoNameInTheDraftForm(): void
+    public function testRefusesAnAlgorithmWithNoNameInTheCavageForm(): void
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains(

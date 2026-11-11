@@ -33,7 +33,7 @@ use function array_map;
 use function strstr;
 
 /**
- * The signature of a message in the draft form, as its `Signature` or
+ * The signature of a message in the Cavage form, as its `Signature` or
  * `Authorization` field gave it
  *
  * @internal
@@ -52,7 +52,8 @@ final readonly class ParsedSignature
      * @param string | null $created the `created` parameter, as sent: an
      *     integer
      * @param string | null $expires the `expires` parameter, as sent: an
-     *     integer, or a decimal number as the draft's section 2.1.5 allows
+     *     integer, or a decimal number as the Cavage draft's section 2.1.5
+     *     allows
      * @param list<ComponentIdentifier> $coveredComponents the `headers`
      *     parameter in order, or its default when it is absent
      * @param string $signature the raw signature bytes

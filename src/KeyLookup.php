@@ -63,8 +63,8 @@ final readonly class KeyLookup
      *     answers, as given to `Verifier::verify()`
      * @param string | null $label the signature label; RFC 9421 only
      * @param Algorithm | null $algorithm the algorithm the signature names,
-     *     resolved, or `null` when the key decides: an absent `alg` under
-     *     RFC 9421, or an absent or `hs2019` `algorithm` under the draft
+     *     resolved, or `null` when the key decides: an absent `alg` under RFC
+     *     9421, or an absent or `hs2019` `algorithm` under the Cavage form
      * @param DateTimeInterface | null $created the creation time the time
      *     policy judged, as the result reports it
      * @param DateTimeInterface | null $expires the expiry as sent, before

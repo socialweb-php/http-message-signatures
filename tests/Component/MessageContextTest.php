@@ -589,7 +589,7 @@ final class MessageContextTest extends TestCase
         (new MessageContext(new Response()))->queryParameter('a');
     }
 
-    public function testTheDraftRequestTargetLowercasesTheMethod(): void
+    public function testTheCavageRequestTargetLowercasesTheMethod(): void
     {
         $context = new MessageContext(new Request('POST', 'https://example.com/foo?param=value&pet=dog'));
 
@@ -598,14 +598,14 @@ final class MessageContextTest extends TestCase
         $this->assertSame('post /foo', $context->cavageRequestTarget(false));
     }
 
-    public function testTheDraftRequestTargetWithoutAQueryIsUnchangedByTheRetry(): void
+    public function testTheCavageRequestTargetWithoutAQueryIsUnchangedByTheRetry(): void
     {
         $context = new MessageContext(new Request('GET', 'https://example.com/foo'));
 
         $this->assertSame('get /foo', $context->cavageRequestTarget(false));
     }
 
-    public function testTheDraftRequestTargetOfAResponseIsUnsupported(): void
+    public function testTheCavageRequestTargetOfAResponseIsUnsupported(): void
     {
         $this->expectException(ComponentFailure::class);
         $this->expectExceptionMessageIsOrContains('UnsupportedSignature: (request-target) is a request component');

@@ -36,7 +36,7 @@ use function min;
 /**
  * How far a signature's times may stray from the verifier's clock
  *
- * The creation time is the `created` parameter, or in the draft form without
+ * The creation time is the `created` parameter, or in the Cavage form without
  * one, the covered `Date` field. The effective expiry is the `expires`
  * parameter when present and the creation time plus `defaultLifetime` when
  * not, clamped to the creation time plus `maximumLifetime` either way. The

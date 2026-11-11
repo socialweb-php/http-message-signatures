@@ -28,9 +28,9 @@ use function strlen;
 use function strtolower;
 
 /**
- * Reaches every `FailureReason` of the draft form through `verify()`
+ * Reaches every `FailureReason` of the Cavage form through `verify()`
  *
- * Several cases are those of the draft-form tests of Mastodon's
+ * Several cases are those of the Cavage-form tests of Mastodon's
  * `spec/requests/signature_verification_spec.rb`, rebuilt with this package's
  * keys: a query string left out of `(request-target)`, a changed query, path,
  * or method, a `Date` field that is not a date or is too old, a digest that is
@@ -43,7 +43,7 @@ final class VerifierCavageTest extends TestCase
     private const int NOW = 1618884473;
 
     /**
-     * The string the draft form signs for `request()` under its defaults with
+     * The string the Cavage form signs for `request()` under its defaults with
      * no content
      */
     private const string BASE = "(request-target): post /foo?param=Value&Pet=dog\nhost: example.com\n"
@@ -186,7 +186,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame(Algorithm::RsaV15Sha256, $result->algorithm);
     }
 
-    public function testTheResolverReceivesTheDraftSignatureAsTheVerifierReadIt(): void
+    public function testTheResolverReceivesTheCavageSignatureAsTheVerifierReadIt(): void
     {
         $message = self::signed(self::request('{"hello": "world"}'));
         $resolver = self::resolver();
@@ -305,7 +305,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame(['date', 'digest'], $result->coveredComponents);
     }
 
-    public function testTheResolverSeesTheRelatedRequestOfADraftFormResponse(): void
+    public function testTheResolverSeesTheRelatedRequestOfACavageFormResponse(): void
     {
         $request = self::request('{"hello": "world"}');
         $response = self::signed(
@@ -527,7 +527,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame([], $resolver->resolvedKeyIds());
     }
 
-    public function testTheRequiredComponentsThatApplyToTheDraft(): void
+    public function testTheRequiredComponentsThatApplyToTheCavageForm(): void
     {
         $message = self::signed(self::request());
 
@@ -541,7 +541,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame('the required component content-type is not covered', $result->detail);
     }
 
-    public function testRequiredFieldNamesAreMetByTheFieldsADraftSignatureCovers(): void
+    public function testRequiredFieldNamesAreMetByTheFieldsACavageSignatureCovers(): void
     {
         $message = self::signed(self::request('{"hello": "world"}'));
         $settings = ['requiredComponents' => ['Host', 'date', '(request-target)', 'digest']];
@@ -551,7 +551,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertTrue($result->verified, $result->detail);
     }
 
-    public function testARequiredDraftNameIsReadInAnyCase(): void
+    public function testARequiredCavageNameIsReadInAnyCase(): void
     {
         $covering = self::signed(self::request());
         $notCovering = self::signed(self::request(), ['host', 'date']);
@@ -565,7 +565,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertSame('the required component (request-target) is not covered', $result->detail);
     }
 
-    public function testTheNonceRuleDoesNotApplyToTheDraft(): void
+    public function testTheNonceRuleDoesNotApplyToTheCavageForm(): void
     {
         $result = self::verify(self::signed(self::request()), ['requireNonce' => true]);
 
@@ -682,7 +682,7 @@ final class VerifierCavageTest extends TestCase
         $this->assertTrue($result->keyRefreshed);
     }
 
-    public function testAKeyWithNoAlgorithmInTheDraftFormIsRefused(): void
+    public function testAKeyWithNoAlgorithmInTheCavageFormIsRefused(): void
     {
         $message = self::signedByHand(
             self::request(),

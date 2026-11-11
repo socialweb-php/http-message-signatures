@@ -61,7 +61,7 @@ final class SigningOptionsTest extends TestCase
         $this->assertSame([HashAlgorithm::Sha512, HashAlgorithm::Sha256], $options->digestAlgorithms);
     }
 
-    public function testAcceptsAnEmptyCoveredListAndADraftAlgorithm(): void
+    public function testAcceptsAnEmptyCoveredListAndACavageAlgorithm(): void
     {
         $options = new SigningOptions(form: Form::Cavage, coveredComponents: [], algorithm: Algorithm::Ed25519);
 
@@ -86,22 +86,22 @@ final class SigningOptionsTest extends TestCase
      */
     public static function rejectedOptions(): iterable
     {
-        yield 'a derived component under the draft' => [
+        yield 'a derived component under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['@method']),
-            '"@method" is not a component name of the draft form',
+            '"@method" is not a component name of the Cavage form',
         ];
-        yield 'a component with a parameter under the draft' => [
+        yield 'a component with a parameter under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['date;req']),
-            '"date;req" is not a component name of the draft form',
+            '"date;req" is not a component name of the Cavage form',
         ];
-        yield 'a draft name under RFC 9421' => [
+        yield 'a Cavage name under RFC 9421' => [
             static fn (): SigningOptions => new SigningOptions(
                 form: Form::Rfc9421,
                 coveredComponents: ['(request-target)'],
             ),
             '"(request-target)" is not a component name',
         ];
-        yield 'a duplicate under the draft' => [
+        yield 'a duplicate under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, coveredComponents: ['date', 'Date']),
             'The covered component "date" appears more than once',
         ];
@@ -141,7 +141,7 @@ final class SigningOptionsTest extends TestCase
             ),
             '@signature-params cannot be a covered component',
         ];
-        yield 'an algorithm with no draft name' => [
+        yield 'an algorithm with no Cavage name' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, algorithm: Algorithm::RsaPssSha512),
             'Algorithm RsaPssSha512 has no name in the form Cavage',
         ];
@@ -188,17 +188,17 @@ final class SigningOptionsTest extends TestCase
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, tag: "a\x7fb"),
             'The tag must hold only printable ASCII characters',
         ];
-        yield 'a label under the draft' => [
+        yield 'a label under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, label: 'sig2'),
-            'The draft form has no signature labels; leave label at its default',
+            'The Cavage form has no signature labels; leave label at its default',
         ];
-        yield 'a nonce under the draft' => [
+        yield 'a nonce under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, nonce: 'n'),
-            'The draft form has no nonce parameter',
+            'The Cavage form has no nonce parameter',
         ];
-        yield 'a tag under the draft' => [
+        yield 'a tag under the Cavage form' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Cavage, tag: 't'),
-            'The draft form has no tag parameter',
+            'The Cavage form has no tag parameter',
         ];
         yield 'an empty digest list' => [
             static fn (): SigningOptions => new SigningOptions(form: Form::Rfc9421, digestAlgorithms: []),

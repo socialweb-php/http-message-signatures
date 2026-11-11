@@ -72,12 +72,12 @@ final class Signer
      * Returns the message with a signature added in the form the options
      * choose
      *
-     * When the covered components include a digest field, it is computed
-     * over the content and set, replacing any existing one. When `date` is
-     * covered and the message has no `Date` field, one is added from the
-     * clock; an existing one is never replaced. Under RFC 9421 a label the
-     * message already has is `InvalidArgument`; under the draft the
-     * `Signature` field is replaced, since the draft has one.
+     * When the covered components include a digest field, it is computed over
+     * the content and set, replacing any existing one. When `date` is covered
+     * and the message has no `Date` field, one is added from the clock; an
+     * existing one is never replaced. Under RFC 9421 a label the message
+     * already has is `InvalidArgument`; under the Cavage form the `Signature`
+     * field is replaced, since Cavage has one.
      *
      * @param T $message the request or response to sign
      * @param RequestInterface | null $relatedRequest the request a response
@@ -88,7 +88,7 @@ final class Signer
      * @throws InvalidArgument when the message body cannot be rewound, when
      *     the key permits no algorithm that has a name in the form, when the
      *     label is already present under RFC 9421, when the key identifier has
-     *     a character outside printable ASCII under the draft form, or when a
+     *     a character outside printable ASCII under the Cavage form, or when a
      *     covered component cannot be taken from the message
      * @throws SigningFailed when OpenSSL fails, or returns an ECDSA signature
      *     that does not fit the curve
@@ -161,15 +161,15 @@ final class Signer
     }
 
     /**
-     * Signs in the draft form and sets the `Signature` field, replacing any
+     * Signs in the Cavage form and sets the `Signature` field, replacing any
      * existing one
      *
-     * The draft signs a parameter only through its pseudo-header, so `created`
+     * Cavage signs a parameter only through its pseudo-header, so `created`
      * and `expires` are emitted only when `(created)` and `(expires)` are
      * covered; a parameter the signature does not cover would be unsigned.
-     * The draft forbids those pseudo-headers under the named algorithms, so
-     * the parameters are emitted under `hs2019` alone. The signer never uses
-     * the `Authorization` field.
+     * Cavage forbids those pseudo-headers under the named algorithms, so the
+     * parameters are emitted under `hs2019` alone. The signer never uses the
+     * `Authorization` field.
      *
      * @param T $message
      * @param list<ComponentIdentifier> $covered
@@ -228,7 +228,7 @@ final class Signer
      * @return array{Algorithm, string}
      *
      * @throws InvalidArgument when the key permits no algorithm that has a
-     *     name in the form, as for an ECDSA key under the draft
+     *     name in the form, as for an ECDSA key under the Cavage form
      */
     private static function algorithm(SigningKey $key, SigningOptions $options): array
     {
@@ -251,8 +251,8 @@ final class Signer
 
     /**
      * The default covered components: under RFC 9421, `@method`,
-     * `@target-uri`, `host`, and `date` for a request and `@status` and
-     * `date` for a response; under the draft, `(request-target)`, `host`, and
+     * `@target-uri`, `host`, and `date` for a request and `@status` and `date`
+     * for a response; under the Cavage form, `(request-target)`, `host`, and
      * `date` for a request and `date` for a response; and the form's digest
      * field when the message has content
      *

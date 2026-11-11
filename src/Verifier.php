@@ -58,28 +58,29 @@ use function trim;
  * base, a covered digest, the key, the algorithm, and last the bytes. Under
  * RFC 9421 the labels are tried in the order of `Signature-Input` until one
  * verifies or the limit is reached, and the result reports the last label
- * tried. Under the draft, a signature that fails is tried once more with the
- * query string removed from `(request-target)` when
+ * tried. Under the Cavage form, a signature that fails is tried once more with
+ * the query string removed from `(request-target)` when
  * `acceptRequestTargetWithoutQuery` is on, and the `created` and `expires`
  * parameters count only when `(created)` and `(expires)` are covered, since
- * the draft signs a parameter only through its pseudo-header.
+ * Cavage signs a parameter only through its pseudo-header.
  *
  * The target rule is a rule and not a literal list, so that the ways the
- * specifications allow all satisfy it. Under the draft, a request satisfies it
- * when `(request-target)` is covered. Under RFC 9421, a request satisfies it
- * when `@method` is covered together with `@target-uri`, with `@authority` and
- * `@path`, or with `@authority` and `@request-target`. A response satisfies it
- * when `@status` is covered under RFC 9421, and always under the draft, which
- * has no response target. The creation-time rule is satisfied by a `created`
- * parameter in either form, or by a covered `date` field under the draft,
- * which is where the implementations put it when `created` is absent.
+ * specifications allow all satisfy it. Under the Cavage form, a request
+ * satisfies it when `(request-target)` is covered. Under RFC 9421, a request
+ * satisfies it when `@method` is covered together with `@target-uri`, with
+ * `@authority` and `@path`, or with `@authority` and `@request-target`. A
+ * response satisfies it when `@status` is covered under RFC 9421, and always
+ * under the Cavage form, which has no response target. The creation-time rule
+ * is satisfied by a `created` parameter in either form, or by a covered `date`
+ * field under the Cavage form, which is where the implementations put it when
+ * `created` is absent.
  *
  * Each required component applies to the forms it can be written in: a field
  * name with no parameters to both, a name in parentheses such as
- * `(request-target)` to the draft only, and a derived component or a
+ * `(request-target)` to the Cavage form only, and a derived component or a
  * component with parameters to RFC 9421 only.
  *
- * The creation time is the `created` parameter, or in the draft form without
+ * The creation time is the `created` parameter, or in the Cavage form without
  * one, the covered `Date` field. The effective expiry is the `expires`
  * parameter when present and the creation time plus `defaultLifetime` when
  * not, limited to the creation time plus `maximumLifetime` either way. The
@@ -121,14 +122,14 @@ final class Verifier
      * @param list<string> $requiredComponents component identifiers that must
      *     be covered, in addition to the rules above, each a component name
      *     followed by its parameters in the syntax of RFC 8941, as in
-     *     `content-digest;req`, or one of the draft form's
+     *     `content-digest;req`, or one of the Cavage form's
      *     `(request-target)`, `(created)`, and `(expires)`
      * @param bool $requireNonce the `nonce` parameter must be present; RFC
      *     9421 only
      * @param bool $retryWithRefreshedKey call the resolver's `refresh()` once
      *     after a failure a rotated key could explain
-     * @param bool $acceptRequestTargetWithoutQuery under the draft, try the
-     *     signature base once more with the query string removed from
+     * @param bool $acceptRequestTargetWithoutQuery under the Cavage form, try
+     *     the signature base once more with the query string removed from
      *     `(request-target)` after a failure
      * @param int $maxSignatures how many RFC 9421 labels are tried before
      *     giving up; at least 1. A message with more labels gets a result
@@ -257,7 +258,7 @@ final class Verifier
     /**
      * Step 1 of the procedure: `Signature-Input` means RFC 9421, as the RFC's
      * appendix A advises; otherwise `Signature` or an `Authorization` field
-     * with the `Signature` scheme means the draft
+     * with the `Signature` scheme means the Cavage form
      *
      * Only the first word of `Authorization` is read here, after any leading
      * whitespace, as the message gives it; a line break later in the value is
@@ -283,7 +284,7 @@ final class Verifier
     }
 
     /**
-     * Steps 2 to 10 of the procedure under the draft form
+     * Steps 2 to 10 of the procedure under the Cavage form
      *
      * The creation time is the `created` parameter when `(created)` is
      * covered, or, when it is not, the covered `Date` field read as an HTTP
@@ -567,11 +568,11 @@ final class Verifier
     }
 
     /**
-     * Step 3 under the draft form: a request satisfies the target rule when
+     * Step 3 under the Cavage form: a request satisfies the target rule when
      * `(request-target)` is covered, and a response always does; the
-     * creation-time rule is satisfied by a covered `(created)` or by a
-     * covered `Date` field that is an HTTP date; `requireNonce` applies to RFC
-     * 9421 only, since the draft has no nonce
+     * creation-time rule is satisfied by a covered `(created)` or by a covered
+     * `Date` field that is an HTTP date; `requireNonce` applies to RFC 9421
+     * only, since Cavage has no nonce
      */
     private function cavagePolicyViolation(
         Cavage\ParsedSignature $signature,
@@ -597,10 +598,10 @@ final class Verifier
     }
 
     /**
-     * The required components, as parsed, that apply to the form: a field
-     * name with no parameters to both forms, a name in parentheses to the
-     * draft only, and a derived component or a component with parameters to
-     * RFC 9421 only
+     * The required components, as parsed, that apply to the form: a field name
+     * with no parameters to both forms, a name in parentheses to the Cavage
+     * form only, and a derived component or a component with parameters to RFC
+     * 9421 only
      *
      * @return list<ComponentIdentifier>
      */
@@ -624,7 +625,7 @@ final class Verifier
     }
 
     /**
-     * Why a draft signature has no creation time, for the policy's detail
+     * Why a Cavage signature has no creation time, for the policy's detail
      *
      * @param list<ComponentIdentifier> $covered
      */
@@ -775,7 +776,7 @@ final class Verifier
      *     is the one the message names, resolved, or `null` when the key
      *     decides
      * @param non-empty-list<string> $bases the signature base, and under the
-     *     draft the one without the query string
+     *     Cavage form the one without the query string
      * @param string $signatureName what the detail calls the signature
      *
      * @return array{

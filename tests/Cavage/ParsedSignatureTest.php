@@ -10,8 +10,8 @@ use SocialWeb\Http\MessageSignatures\Component\ComponentIdentifier;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 /**
- * Checks what a parsed draft signature reports about its algorithm, its times,
- * and its covered names
+ * Checks what a parsed Cavage signature reports about its algorithm, its
+ * times, and its covered names
  */
 final class ParsedSignatureTest extends TestCase
 {

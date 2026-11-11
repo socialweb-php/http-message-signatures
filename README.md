@@ -76,7 +76,7 @@ echo $signedRequest->getHeaderLine('Signature-Input'), "\n";
 echo $legacySignedRequest->getHeaderLine('Signature'), "\n";
 ```
 
-With an RSA key, this prints an RFC 9421 `Signature-Input` field and a Cavage draft-form `Signature` field like these:
+With an RSA key, this prints an RFC 9421 `Signature-Input` field and a Cavage `Signature` field like these:
 
 ```text
 sig1=("@method" "@target-uri" "host" "date" "content-digest");created=1792108800;alg="rsa-v1_5-sha256";keyid="https://example.com/keys/1"
@@ -88,9 +88,9 @@ keyId="https://example.com/keys/1",algorithm="rsa-sha256",headers="(request-targ
 The signed request is an ordinary PSR-7 request. Send it with any [PSR-18][psr-18] HTTP client, and the receiver verifies the signature from its fields. In the example below, `$httpClient` is that client.
 
 > [!NOTE]
-> To sign a message in both RFC 9421 and Cavage draft forms with the same key, use an RSA key. The draft form has no name for the ECDSA and RSASSA-PSS algorithms, and its receivers do not all accept Ed25519.
+> To sign a message in both RFC 9421 and Cavage draft forms with the same key, use an RSA key. The Cavage form has no name for the ECDSA and RSASSA-PSS algorithms, and its receivers do not all accept Ed25519.
 
-RFC 9421 was published in 2024, after many services had implemented draft-cavage-http-signatures-12, and some of them still accept only the draft form. There is no standard response specified to indicate the receiver refused the signature. If a receiver cannot verify a signature for any reason, it usually responds with `401 Unauthorized`, and some respond with `400 Bad Request` or `403 Forbidden`. A sender that does not know which form a receiver accepts signs the request once in each form, as above, and sends the RFC 9421 form first. Check the status code of the response, and when the receiver responds with 400, 401, or 403, send the Cavage draft form once. If the draft form is refused, too, the form was not the problem; do not try again. Remember which form each receiver accepted so that the next request to it is sent once.
+RFC 9421 was published in 2024, after many services had implemented draft-cavage-http-signatures-12, and some of them still accept only the Cavage form. There is no standard response specified to indicate the receiver refused the signature. If a receiver cannot verify a signature for any reason, it usually responds with `401 Unauthorized`, and some respond with `400 Bad Request` or `403 Forbidden`. A sender that does not know which form a receiver accepts signs the request once in each form, as above, and sends the RFC 9421 form first. Check the status code of the response, and when the receiver responds with 400, 401, or 403, send the Cavage form once. If the Cavage form is refused, too, the form was not the problem; do not try again. Remember which form each receiver accepted so that the next request to it is sent once.
 
 ```php
 $sentRequest = $signedRequest;

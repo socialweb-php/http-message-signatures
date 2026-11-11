@@ -53,8 +53,8 @@ use const PREG_UNMATCHED_AS_NULL;
  * field with the `Signature` scheme. The value is a comma-separated list of
  * auth-params as RFC 7235 section 2.1 defines them, `token "=" ( token /
  * quoted-string )`, whose names are matched case-insensitively. A duplicated
- * parameter is malformed, as the draft's section 2.2 says, and a parameter the
- * draft does not define is ignored.
+ * parameter is malformed, as the Cavage draft's section 2.2 says, and a
+ * parameter Cavage does not define is ignored.
  *
  * @internal
  *
@@ -81,17 +81,17 @@ final class FieldParser
     private const string CREATED_PATTERN = '/^[0-9]{1,15}\z/';
 
     /**
-     * An integer number of seconds, or a decimal one as the draft's section
-     * 2.1.5 allows for `expires`
+     * An integer number of seconds, or a decimal one as the Cavage draft's
+     * section 2.1.5 allows for `expires`
      */
     private const string EXPIRES_PATTERN = '/^[0-9]{1,15}(?:\.[0-9]{1,15})?\z/';
 
     /**
      * Parses the message's signature
      *
-     * When `headers` is absent, the default is `(created)` when `algorithm`
-     * is absent or `hs2019`, and `date` otherwise. The draft's section 2.1.6
-     * gives `(created)` as the default and its section 2.3 refuses
+     * When `headers` is absent, the default is `(created)` when `algorithm` is
+     * absent or `hs2019`, and `date` otherwise. The Cavage draft's section
+     * 2.1.6 gives `(created)` as the default and its section 2.3 refuses
      * `(created)` under an algorithm that begins with `rsa`, `hmac`, or
      * `ecdsa`; its appendix C.1 signs `date` by default under `rsa-sha256`.
      *
@@ -100,8 +100,8 @@ final class FieldParser
      *     parameter appears twice, `keyId` or `signature` is absent or empty,
      *     the signature is not strict Base64, `created` or `expires` is not a
      *     number of seconds, or `headers` is empty or has an empty name; and
-     *     `UnsupportedSignature` for a name in parentheses that the draft
-     *     does not define
+     *     `UnsupportedSignature` for a name in parentheses that Cavage does
+     *     not define
      */
     public static function parse(MessageContext $context): ParsedSignature
     {
@@ -250,8 +250,8 @@ final class FieldParser
      *
      * @throws Failure `MalformedSignature` when the `headers` parameter is
      *     empty or has an empty name or a name that is not a field name, and
-     *     `UnsupportedSignature` for a name in parentheses that the draft
-     *     does not define
+     *     `UnsupportedSignature` for a name in parentheses that Cavage does
+     *     not define
      */
     private static function coveredComponents(?string $headers, ?string $algorithm): array
     {

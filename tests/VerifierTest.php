@@ -195,9 +195,9 @@ final class VerifierTest extends TestCase
             static fn (): Verifier => new Verifier($resolver, $clock, requiredComponents: ['content-digest;req=']),
             'The parameters of the component identifier "content-digest;req=" do not parse',
         ];
-        yield 'a required name in parentheses the draft does not define' => [
+        yield 'a required name in parentheses Cavage does not define' => [
             static fn (): Verifier => new Verifier($resolver, $clock, requiredComponents: ['(foo)']),
-            '"(foo)" is not a component name of the draft form',
+            '"(foo)" is not a component name of the Cavage form',
         ];
         yield 'zero signatures' => [
             static fn (): Verifier => new Verifier($resolver, $clock, maxSignatures: 0),
@@ -312,7 +312,7 @@ final class VerifierTest extends TestCase
         );
     }
 
-    public function testAnAuthorizationFieldOfTheSignatureSchemeWithALineBreakIsTheDraftForm(): void
+    public function testAnAuthorizationFieldOfTheSignatureSchemeWithALineBreakIsTheCavageForm(): void
     {
         $message = $this->withField(self::request(), 'Authorization', "Signature a\r\nb");
 
@@ -349,7 +349,7 @@ final class VerifierTest extends TestCase
     /**
      * @return iterable<string, array{Request}>
      */
-    public static function draftFormRequests(): iterable
+    public static function cavageFormRequests(): iterable
     {
         yield 'a Signature field' => [self::request()->withHeader('Signature', 'keyId="k",signature="AQ=="')];
         yield 'an Authorization field with the Signature scheme' => [
@@ -360,8 +360,8 @@ final class VerifierTest extends TestCase
         ];
     }
 
-    #[DataProvider('draftFormRequests')]
-    public function testTheDraftFormIsDetected(Request $request): void
+    #[DataProvider('cavageFormRequests')]
+    public function testTheCavageFormIsDetected(Request $request): void
     {
         $result = self::verify($request);
 
@@ -385,13 +385,13 @@ final class VerifierTest extends TestCase
         $this->assertSame('the form Rfc9421 is not accepted', $result->detail);
         $this->assertSame(Form::Rfc9421, $result->form);
 
-        $draft = self::verify(
+        $cavage = self::verify(
             self::request()->withHeader('Signature', 'keyId="k"'),
             ['forms' => [Form::Rfc9421]],
         );
 
-        $this->assertSame('the form Cavage is not accepted', $draft->detail);
-        $this->assertSame(Form::Cavage, $draft->form);
+        $this->assertSame('the form Cavage is not accepted', $cavage->detail);
+        $this->assertSame(Form::Cavage, $cavage->form);
     }
 
     public function testTwoEmptySignatureFieldsAreMalformed(): void
@@ -1055,7 +1055,7 @@ final class VerifierTest extends TestCase
         $this->assertTrue($withFour->maxSignaturesExceeded);
     }
 
-    public function testARequiredComponentOfTheDraftFormDoesNotApplyUnderRfc9421(): void
+    public function testARequiredComponentOfTheCavageFormDoesNotApplyUnderRfc9421(): void
     {
         $result = self::verify(self::signed(self::request()), ['requiredComponents' => ['(request-target)', 'Host']]);
 

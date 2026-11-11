@@ -72,7 +72,7 @@ final readonly class VerificationResult
      * @param string | null $nonce the nonce parameter
      * @param string | null $signature the raw signature bytes
      * @param bool $keyRefreshed whether the resolver's `refresh()` was called
-     * @param bool $requestTargetVerifiedWithoutQuery whether the draft form's
+     * @param bool $requestTargetVerifiedWithoutQuery whether the Cavage form's
      *     retry without the query string is what verified
      * @param bool $maxSignaturesExceeded whether the message has more RFC
      *     9421 labels than the verifier's `maxSignatures`, so that the labels

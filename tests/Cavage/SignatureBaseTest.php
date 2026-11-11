@@ -20,8 +20,8 @@ use function array_map;
 use function explode;
 
 /**
- * Builds the draft form's signing string from the draft's examples and refuses
- * what the draft forbids
+ * Builds the Cavage form's signing string from the Cavage draft's examples and
+ * refuses what Cavage forbids
  */
 final class SignatureBaseTest extends TestCase
 {

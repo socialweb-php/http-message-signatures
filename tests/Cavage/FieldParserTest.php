@@ -17,7 +17,7 @@ use function base64_decode;
 use function strtolower;
 
 /**
- * Reads the draft form's `Signature` and `Authorization` fields and refuses
+ * Reads the Cavage form's `Signature` and `Authorization` fields and refuses
  * what is malformed
  */
 final class FieldParserTest extends TestCase
@@ -239,10 +239,10 @@ final class FieldParserTest extends TestCase
             FailureReason::MalformedSignature,
             '"@method" is not a field name',
         ];
-        yield 'a name in parentheses the draft does not define' => [
+        yield 'a name in parentheses Cavage does not define' => [
             'keyId="a",signature="c2lnbmF0dXJl",headers="(request-target) (nonce)"',
             FailureReason::UnsupportedSignature,
-            '"(nonce)" is not a name the draft form defines',
+            '"(nonce)" is not a name the Cavage form defines',
         ];
     }
 

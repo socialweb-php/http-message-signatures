@@ -291,7 +291,7 @@ final class MessageContext
     }
 
     /**
-     * Returns the value of the draft form's `(request-target)`: the method
+     * Returns the value of the Cavage form's `(request-target)`: the method
      * lowercased, a space, and the request target as is, or with its query
      * string removed
      *
@@ -404,8 +404,8 @@ final class MessageContext
 
     /**
      * A component value never holds a line break, as RFC 9421 section 2 and
-     * the draft's section 2.3 both require, since one would add a line to the
-     * signature base.
+     * the Cavage draft's section 2.3 both require, since one would add a line
+     * to the signature base.
      *
      * @throws ComponentFailure `MissingComponent` when the value holds a line
      *     break

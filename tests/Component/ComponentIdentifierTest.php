@@ -15,8 +15,8 @@ use SocialWeb\Http\MessageSignatures\FailureReason;
 use SocialWeb\Test\Http\MessageSignatures\TestCase;
 
 /**
- * Reads component identifiers as the options, the draft's `headers` parameter,
- * and `Signature-Input` write them
+ * Reads component identifiers as the options, the Cavage draft's `headers`
+ * parameter, and `Signature-Input` write them
  */
 final class ComponentIdentifierTest extends TestCase
 {
@@ -187,7 +187,7 @@ final class ComponentIdentifierTest extends TestCase
     }
 
     #[DataProvider('cavageNames')]
-    public function testReadsADraftName(string $given, string $name, bool $isPseudoHeader): void
+    public function testReadsACavageName(string $given, string $name, bool $isPseudoHeader): void
     {
         $identifier = ComponentIdentifier::fromCavage($given);
 
@@ -204,13 +204,13 @@ final class ComponentIdentifierTest extends TestCase
     public static function rejectedCavageNames(): iterable
     {
         yield 'empty' => ['', 'A component identifier must not be empty'];
-        yield 'a derived component' => ['@method', '"@method" is not a component name of the draft form'];
-        yield 'a name in parentheses the draft does not define' => [
+        yield 'a derived component' => ['@method', '"@method" is not a component name of the Cavage form'];
+        yield 'a name in parentheses Cavage does not define' => [
             '(foo)',
-            '"(foo)" is not a component name of the draft form',
+            '"(foo)" is not a component name of the Cavage form',
         ];
-        yield 'a field with a parameter' => ['date;req', '"date;req" is not a component name of the draft form'];
-        yield 'a name with a space' => ['content type', '"content type" is not a component name of the draft form'];
+        yield 'a field with a parameter' => ['date;req', '"date;req" is not a component name of the Cavage form'];
+        yield 'a name with a space' => ['content type', '"content type" is not a component name of the Cavage form'];
     }
 
     /**
@@ -218,7 +218,7 @@ final class ComponentIdentifierTest extends TestCase
      */
     public static function identifiersInEitherForm(): iterable
     {
-        yield 'a draft name in another case' => ['(Request-Target)', '(request-target)'];
+        yield 'a Cavage name in another case' => ['(Request-Target)', '(request-target)'];
         yield 'a derived component' => ['@method', '@method'];
         yield 'a field with a parameter' => ['content-digest;req', 'content-digest;req'];
         yield 'a field in another case' => ['Host', 'host'];
@@ -235,13 +235,13 @@ final class ComponentIdentifierTest extends TestCase
      */
     public static function rejectedIdentifiersInEitherForm(): iterable
     {
-        yield 'a name in parentheses the draft does not define' => [
+        yield 'a name in parentheses Cavage does not define' => [
             '(foo)',
-            '"(foo)" is not a component name of the draft form',
+            '"(foo)" is not a component name of the Cavage form',
         ];
-        yield 'a draft name with a parameter' => [
+        yield 'a Cavage name with a parameter' => [
             '(created);req',
-            '"(created);req" is not a component name of the draft form',
+            '"(created);req" is not a component name of the Cavage form',
         ];
         yield 'a name that is neither' => ['content type', '"content type" is not a component name'];
     }
@@ -256,7 +256,7 @@ final class ComponentIdentifierTest extends TestCase
     }
 
     #[DataProvider('rejectedCavageNames')]
-    public function testRejectsWhatIsNotADraftName(string $given, string $message): void
+    public function testRejectsWhatIsNotACavageName(string $given, string $message): void
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains($message);
@@ -279,10 +279,10 @@ final class ComponentIdentifierTest extends TestCase
      */
     public static function rejectedHeadersParameterNames(): iterable
     {
-        yield 'a name in parentheses the draft does not define' => [
+        yield 'a name in parentheses Cavage does not define' => [
             '(foo)',
             FailureReason::UnsupportedSignature,
-            '"(foo)" is not a name the draft form defines',
+            '"(foo)" is not a name the Cavage form defines',
         ];
         yield 'a quoted name' => ['"date"', FailureReason::MalformedSignature, '""date"" is not a field name'];
         yield 'a field name followed by parentheses' => [

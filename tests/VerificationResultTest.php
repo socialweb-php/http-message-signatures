@@ -169,7 +169,7 @@ final class VerificationResultTest extends TestCase
             static fn (): VerificationResult => new VerificationResult(verified: false, reason: FailureReason::Expired),
             'The form is absent exactly when the reason is NoSignature',
         ];
-        yield 'more labels than the limit under the draft form' => [
+        yield 'more labels than the limit under the Cavage form' => [
             static fn (): VerificationResult => new VerificationResult(
                 verified: true,
                 form: Form::Cavage,

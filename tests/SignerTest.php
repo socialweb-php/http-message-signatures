@@ -366,7 +366,7 @@ final class SignerTest extends TestCase
         }
     }
 
-    public function testSignsARequestInTheDraftFormWithTheDefaultComponents(): void
+    public function testSignsARequestInTheCavageFormWithTheDefaultComponents(): void
     {
         $signed = self::signer()->sign(
             self::request(),
@@ -391,7 +391,7 @@ final class SignerTest extends TestCase
         );
     }
 
-    public function testSignsARequestWithContentInTheDraftFormAndAddsItsDigest(): void
+    public function testSignsARequestWithContentInTheCavageFormAndAddsItsDigest(): void
     {
         $signed = self::signer()->sign(
             self::request('{"hello": "world"}'),
@@ -407,7 +407,7 @@ final class SignerTest extends TestCase
         $this->assertFalse($signed->hasHeader('Content-Digest'));
     }
 
-    public function testSignsAResponseInTheDraftFormWithTheDefaultComponents(): void
+    public function testSignsAResponseInTheCavageFormWithTheDefaultComponents(): void
     {
         $signed = self::signer()->sign(
             new Response(200, [], '{"message": "good dog"}'),
@@ -492,7 +492,7 @@ final class SignerTest extends TestCase
         );
     }
 
-    public function testSignsInTheDraftFormWithTheAlgorithmTheOptionsName(): void
+    public function testSignsInTheCavageFormWithTheAlgorithmTheOptionsName(): void
     {
         $signed = self::signer()->sign(
             self::request(),
@@ -531,7 +531,7 @@ final class SignerTest extends TestCase
     /**
      * @return iterable<string, array{string, SigningOptions, string}>
      */
-    public static function rejectedDraftFormOptions(): iterable
+    public static function rejectedCavageFormOptions(): iterable
     {
         yield '(created) under a named algorithm' => [
             'test-key-rsa',
@@ -548,7 +548,7 @@ final class SignerTest extends TestCase
             new SigningOptions(form: Form::Cavage, coveredComponents: ['(expires)']),
             'Cannot sign the message: (expires) is covered and the expires parameter is absent',
         ];
-        yield 'a key with no algorithm in the draft form' => [
+        yield 'a key with no algorithm in the Cavage form' => [
             'test-key-ecc-p256',
             new SigningOptions(form: Form::Cavage),
             'The key permits no algorithm that has a name in the form Cavage',
@@ -560,8 +560,8 @@ final class SignerTest extends TestCase
         ];
     }
 
-    #[DataProvider('rejectedDraftFormOptions')]
-    public function testRefusesWhatTheDraftFormCannotSign(string $key, SigningOptions $options, string $message): void
+    #[DataProvider('rejectedCavageFormOptions')]
+    public function testRefusesWhatTheCavageFormCannotSign(string $key, SigningOptions $options, string $message): void
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains($message);
@@ -570,11 +570,11 @@ final class SignerTest extends TestCase
         self::signer()->sign(self::request(), self::key($key), $options);
     }
 
-    public function testRefusesADraftKeyIdentifierAQuotedStringCannotHold(): void
+    public function testRefusesACavageKeyIdentifierAQuotedStringCannotHold(): void
     {
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessageIsOrContains(
-            'Under the draft form the key identifier must hold only printable ASCII characters',
+            'Under the Cavage form the key identifier must hold only printable ASCII characters',
         );
 
         self::signer()->sign(

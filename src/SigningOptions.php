@@ -38,14 +38,14 @@ use function sprintf;
  * What `Signer::sign()` produces
  *
  * The default covered components are what the implementations accept. Under
- * the draft form: `(request-target)`, `host`, `date`, and `digest` when the
+ * the Cavage form: `(request-target)`, `host`, `date`, and `digest` when the
  * message has content. Under RFC 9421: `@method`, `@target-uri`, `host`,
  * `date`, and `content-digest` when the message has content. For a response,
  * the defaults are `@status` under RFC 9421, `date`, and the digest field when
- * the message has content. A caller who names the components gets exactly
- * what was named: the digest field is then included only if listed, and
- * listing it on a message without content signs the digest of empty content,
- * which RFC 9530 allows.
+ * the message has content. A caller who names the components gets exactly what
+ * was named: the digest field is then included only if listed, and listing it
+ * on a message without content signs the digest of empty content, which RFC
+ * 9530 allows.
  */
 final readonly class SigningOptions
 {
@@ -84,15 +84,16 @@ final readonly class SigningOptions
      *     signing order; under RFC 9421 each is a component name followed by
      *     its parameters in the syntax of RFC 8941, as in
      *     `@query-param;name="Pet"` or `content-digest;req`, and under the
-     *     draft form each is a field name or `(request-target)`, `(created)`,
+     *     Cavage form each is a field name or `(request-target)`, `(created)`,
      *     or `(expires)`; `null` means the form's default
      * @param Algorithm | null $algorithm `null` means the first algorithm the
      *     key permits that has a name in the form
      * @param string $label the signature label; RFC 9421 only
-     * @param bool $created whether to emit the creation time; under the draft
+     * @param bool $created whether to emit the creation time; under the Cavage
      *     form it is emitted only when `(created)` is covered
      * @param DateInterval | null $expires emit an expiry this long after the
-     *     creation time; under the draft form only when `(expires)` is covered
+     *     creation time; under the Cavage form only when `(expires)` is
+     *     covered
      * @param string | null $nonce RFC 9421 only
      * @param string | null $tag RFC 9421 only
      * @param list<HashAlgorithm> $digestAlgorithms which digests to compute
@@ -100,8 +101,8 @@ final readonly class SigningOptions
      *
      * @throws InvalidArgument for an option that does not fit the form: an
      *     algorithm with no name in the form, or a `nonce`, `tag`, or `label`
-     *     other than the default under the draft; and for a value that fits
-     *     no form: a component identifier that is empty, does not parse,
+     *     other than the default under the Cavage form; and for a value that
+     *     fits no form: a component identifier that is empty, does not parse,
      *     appears twice, or names `@signature-params`, a label that is not a
      *     valid Dictionary key, a negative expiry, a nonce or tag outside
      *     printable ASCII, or a digest list that is empty, holds a duplicate,
@@ -144,15 +145,15 @@ final readonly class SigningOptions
 
         if ($form === Form::Cavage) {
             if ($label !== 'sig1') {
-                throw new InvalidArgument('The draft form has no signature labels; leave label at its default');
+                throw new InvalidArgument('The Cavage form has no signature labels; leave label at its default');
             }
 
             if ($nonce !== null) {
-                throw new InvalidArgument('The draft form has no nonce parameter');
+                throw new InvalidArgument('The Cavage form has no nonce parameter');
             }
 
             if ($tag !== null) {
-                throw new InvalidArgument('The draft form has no tag parameter');
+                throw new InvalidArgument('The Cavage form has no tag parameter');
             }
         }
 

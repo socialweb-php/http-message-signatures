@@ -30,8 +30,8 @@ namespace SocialWeb\Http\MessageSignatures;
  * A signature algorithm, independent of the form that uses it
  *
  * These are the six algorithms of the RFC 9421 "HTTP Signature Algorithms"
- * registry. The draft form names three of them, and puts Ed25519 under
- * `hs2019`, the draft's placeholder that defers to the key.
+ * registry. The Cavage form names three of them, and puts Ed25519 under
+ * `hs2019`, the Cavage draft's placeholder that defers to the key.
  */
 enum Algorithm
 {
@@ -69,8 +69,8 @@ enum Algorithm
      * Returns the name this algorithm has on the wire in the given form, or
      * `null` when the form has no name for it
      *
-     * Under the draft form, Ed25519 is sent as `hs2019`: the draft has no
-     * name of its own for it. The RSASSA-PSS and ECDSA algorithms have no draft
+     * Under the Cavage form, Ed25519 is sent as `hs2019`: Cavage has no name
+     * of its own for it. The RSASSA-PSS and ECDSA algorithms have no Cavage
      * name at all.
      */
     public function name(Form $form): ?string

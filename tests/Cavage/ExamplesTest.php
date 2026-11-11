@@ -30,12 +30,12 @@ use function preg_replace_callback;
 use const JSON_THROW_ON_ERROR;
 
 /**
- * Verifies the draft form's own test values and signatures that other
+ * Verifies the Cavage form's own test values and signatures that other
  * implementations produced, and signs the test values to the same bytes
  *
  * Appendix C of draft-cavage-http-signatures-12 is used where it holds: C.1,
- * the default `date` signing, and C.2, the basic signing string. Its C.3
- * lists `(created)` and `(expires)` under `rsa-sha256`, which the draft's
+ * the default `date` signing, and C.2, the basic signing string. Its C.3 lists
+ * `(created)` and `(expires)` under `rsa-sha256`, which the Cavage draft's
  * section 2.3 forbids, and its signature is over a string without them. The
  * other signatures are Fedify's, under `resources/fedify/`, each recording its
  * source; see `resources/README.md`.
@@ -76,8 +76,9 @@ final class ExamplesTest extends TestCase
     }
 
     /**
-     * Returns the contents of a file under `resources/`: the draft's key pair
-     * under `resources/cavage/`, or a Fedify request under `resources/fedify/`
+     * Returns the contents of a file under `resources/`: the Cavage draft's
+     * key pair under `resources/cavage/`, or a Fedify request under
+     * `resources/fedify/`
      */
     private static function copiedFile(string $file): string
     {

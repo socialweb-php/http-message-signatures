@@ -42,10 +42,10 @@ use function sprintf;
  * Serializes the `Signature` field of draft-cavage-http-signatures-12
  * section 4.1
  *
- * The parameters are written in the order of the draft's examples, `keyId`,
- * `algorithm`, `created`, `expires`, `headers`, and `signature`, separated by
- * a comma with no space; `created` and `expires` are bare integers and the
- * others quoted-strings.
+ * The parameters are written in the order of the Cavage draft's examples,
+ * `keyId`, `algorithm`, `created`, `expires`, `headers`, and `signature`,
+ * separated by a comma with no space; `created` and `expires` are bare
+ * integers and the others quoted-strings.
  *
  * @internal
  *
@@ -55,7 +55,7 @@ final class FieldSerializer
 {
     /**
      * @param string $keyId the `keyId` parameter
-     * @param Algorithm $algorithm the algorithm, written as its draft name in
+     * @param Algorithm $algorithm the algorithm, written as its Cavage name in
      *     the `algorithm` parameter
      * @param int | null $created the `created` parameter, when emitted
      * @param int | null $expires the `expires` parameter, when emitted
@@ -63,7 +63,7 @@ final class FieldSerializer
      *     parameter, in order
      * @param string $signature the raw signature bytes
      *
-     * @throws InvalidArgument when the algorithm has no name in the draft
+     * @throws InvalidArgument when the algorithm has no name in the Cavage
      *     form, or when the key identifier holds a character outside printable
      *     ASCII, which a quoted-string can hold only as obsolete text
      */
@@ -85,7 +85,7 @@ final class FieldSerializer
 
         if (preg_match('/^[\x20-\x7e]*\z/', $keyId) !== 1) {
             throw new InvalidArgument(
-                'Under the draft form the key identifier must hold only printable ASCII characters',
+                'Under the Cavage form the key identifier must hold only printable ASCII characters',
             );
         }
 
