@@ -89,8 +89,7 @@ final readonly class VerificationKey
      * @throws InvalidArgument when the owner is an empty string
      */
     private function __construct(
-        #[SensitiveParameter]
-        private KeyMaterial $material,
+        #[SensitiveParameter] private KeyMaterial $material,
         ?array $permittedAlgorithms,
         ?string $owner,
     ) {
@@ -135,8 +134,7 @@ final readonly class VerificationKey
      *     duplicate, or when the owner is an empty string
      */
     public static function fromSharedSecret(
-        #[SensitiveParameter]
-        string $secret,
+        #[SensitiveParameter] string $secret,
         ?array $permittedAlgorithms = null,
         ?string $owner = null,
     ): self {
@@ -175,8 +173,7 @@ final readonly class VerificationKey
      *     string
      */
     public static function fromJwk(
-        #[SensitiveParameter]
-        Jwk $jwk,
+        #[SensitiveParameter] Jwk $jwk,
         ?array $permittedAlgorithms = null,
         ?string $owner = null,
     ): self {
@@ -215,8 +212,7 @@ final readonly class VerificationKey
      *     the `alg`
      */
     private static function jwkAlgorithms(
-        #[SensitiveParameter]
-        Jwk $jwk,
+        #[SensitiveParameter] Jwk $jwk,
         ?array $permittedAlgorithms,
     ): ?array {
         if ($jwk->algorithm === null) {

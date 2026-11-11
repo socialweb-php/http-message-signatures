@@ -70,8 +70,7 @@ final readonly class KeyMaterial
 {
     private function __construct(
         public SigningKeyType $type,
-        #[SensitiveParameter]
-        private OpenSSLAsymmetricKey | string $material,
+        #[SensitiveParameter] private OpenSSLAsymmetricKey | string $material,
     ) {
     }
 
@@ -104,10 +103,8 @@ final readonly class KeyMaterial
      *     not implement
      */
     public static function fromPrivatePem(
-        #[SensitiveParameter]
-        string $pem,
-        #[SensitiveParameter]
-        ?string $passphrase,
+        #[SensitiveParameter] string $pem,
+        #[SensitiveParameter] ?string $passphrase,
     ): self {
         self::refuseFilePath($pem);
         self::clearOpenSslErrors();
@@ -136,8 +133,7 @@ final readonly class KeyMaterial
      * @throws InvalidArgument when the secret is empty
      */
     public static function fromSecret(
-        #[SensitiveParameter]
-        string $secret,
+        #[SensitiveParameter] string $secret,
     ): self {
         if ($secret === '') {
             throw new InvalidArgument('The shared secret must not be empty');
@@ -325,10 +321,8 @@ final readonly class KeyMaterial
      *     implement, or when OpenSSL cannot read a rewrapped RSASSA-PSS key
      */
     private static function detectType(
-        #[SensitiveParameter]
-        OpenSSLAsymmetricKey &$key,
-        #[SensitiveParameter]
-        string $pem,
+        #[SensitiveParameter] OpenSSLAsymmetricKey &$key,
+        #[SensitiveParameter] string $pem,
     ): SigningKeyType {
         self::clearOpenSslErrors();
         /** @var array{type: int, ec?: array{curve_name?: string}} $details */
@@ -385,8 +379,7 @@ final readonly class KeyMaterial
      * @throws InvalidArgument when the string begins with `file://`
      */
     private static function refuseFilePath(
-        #[SensitiveParameter]
-        string $pem,
+        #[SensitiveParameter] string $pem,
     ): void {
         if (str_starts_with($pem, 'file://')) {
             throw new InvalidArgument('A key must be given as PEM text, not as a file path');

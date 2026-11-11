@@ -70,8 +70,7 @@ final class RsaPssKey
      * id-RSASSA-PSS, or `null` for any other input
      */
     public static function toPkcs1Pem(
-        #[SensitiveParameter]
-        string $pem,
+        #[SensitiveParameter] string $pem,
     ): ?string {
         if (preg_match('/-----BEGIN (PRIVATE KEY|PUBLIC KEY)-----(.*?)-----END \1-----/s', $pem, $matches) !== 1) {
             return null;

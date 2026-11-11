@@ -59,8 +59,7 @@ final readonly class SigningKey
      */
     private function __construct(
         public string $keyId,
-        #[SensitiveParameter]
-        private KeyMaterial $material,
+        #[SensitiveParameter] private KeyMaterial $material,
         ?array $permittedAlgorithms,
     ) {
         $this->type = $material->type;
@@ -82,10 +81,8 @@ final readonly class SigningKey
      */
     public static function fromPem(
         string $keyId,
-        #[SensitiveParameter]
-        string $pem,
-        #[SensitiveParameter]
-        ?string $passphrase = null,
+        #[SensitiveParameter] string $pem,
+        #[SensitiveParameter] ?string $passphrase = null,
         ?array $permittedAlgorithms = null,
     ): self {
         return new self(self::checkKeyId($keyId), KeyMaterial::fromPrivatePem($pem, $passphrase), $permittedAlgorithms);
@@ -104,8 +101,7 @@ final readonly class SigningKey
      */
     public static function fromSharedSecret(
         string $keyId,
-        #[SensitiveParameter]
-        string $secret,
+        #[SensitiveParameter] string $secret,
         ?array $permittedAlgorithms = null,
     ): self {
         return new self(self::checkKeyId($keyId), KeyMaterial::fromSecret($secret), $permittedAlgorithms);
