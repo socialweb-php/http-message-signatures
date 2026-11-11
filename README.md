@@ -1,12 +1,12 @@
 <h1 align="center">socialweb/http-message-signatures</h1>
 
 <p align="center">
-    <a href="https://github.com/socialweb-php/http-message-signatures"><img src="https://img.shields.io/badge/source-socialweb/http--message--signatures-blue.svg?style=flat-square" alt="Source Code"></a>
-    <a href="https://packagist.org/packages/socialweb/http-message-signatures"><img src="https://img.shields.io/packagist/v/socialweb/http-message-signatures.svg?style=flat-square&label=release" alt="Download Package"></a>
-    <a href="https://php.net"><img src="https://img.shields.io/packagist/php-v/socialweb/http-message-signatures.svg?style=flat-square&colorB=%238892BF" alt="PHP Programming Language"></a>
-    <a href="https://github.com/socialweb-php/http-message-signatures/blob/main/COPYING.LESSER"><img src="https://img.shields.io/packagist/l/socialweb/http-message-signatures.svg?style=flat-square&colorB=darkcyan" alt="Read License"></a>
-    <a href="https://github.com/socialweb-php/http-message-signatures/actions/workflows/continuous-integration.yml"><img src="https://img.shields.io/github/actions/workflow/status/socialweb-php/http-message-signatures/continuous-integration.yml?branch=main&style=flat-square&logo=github" alt="Build Status"></a>
-    <a href="https://codecov.io/gh/socialweb-php/http-message-signatures"><img src="https://img.shields.io/codecov/c/gh/socialweb-php/http-message-signatures?label=codecov&logo=codecov&style=flat-square" alt="Codecov Code Coverage"></a>
+    <a href="https://github.com/socialweb-php/http-message-signatures"><img src="https://img.shields.io/badge/source-socialweb/http--message--signatures-blue.svg" alt="Source Code"></a>
+    <a href="https://packagist.org/packages/socialweb/http-message-signatures"><img src="https://img.shields.io/packagist/v/socialweb/http-message-signatures.svg?label=release" alt="Download Package"></a>
+    <a href="https://php.net"><img src="https://img.shields.io/packagist/php-v/socialweb/http-message-signatures.svg?colorB=%238892BF" alt="PHP Programming Language"></a>
+    <a href="https://github.com/socialweb-php/http-message-signatures/blob/main/COPYING.LESSER"><img src="https://img.shields.io/packagist/l/socialweb/http-message-signatures.svg?colorB=darkcyan" alt="Read License"></a>
+    <a href="https://github.com/socialweb-php/http-message-signatures/actions/workflows/continuous-integration.yml"><img src="https://img.shields.io/github/actions/workflow/status/socialweb-php/http-message-signatures/continuous-integration.yml?branch=main&logo=github" alt="Build Status"></a>
+    <a href="https://codecov.io/gh/socialweb-php/http-message-signatures"><img src="https://img.shields.io/codecov/c/gh/socialweb-php/http-message-signatures?label=codecov&logo=codecov" alt="Codecov Code Coverage"></a>
 </p>
 
 ## About
